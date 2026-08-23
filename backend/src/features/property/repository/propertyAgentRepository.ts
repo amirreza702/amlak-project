@@ -1,10 +1,18 @@
 import type { PropertyAgent } from "../types/propertyAgent";
 
 
+/*
+ * شبیه‌سازی موقت جدول ارتباطی Database
+ *
+ * بعداً به PostgreSQL منتقل می‌شود.
+ */
 const propertyAgents: PropertyAgent[] = [];
 
 
-// آیا این مشاور قبلاً به این ملک متصل شده؟
+/**
+ * بررسی می‌کند آیا یک مشاور قبلاً
+ * به یک ملک متصل شده است یا خیر.
+ */
 export function findPropertyAgent(
   propertyId: string,
   agentId: string
@@ -18,7 +26,10 @@ export function findPropertyAgent(
 }
 
 
-// اولین مشاوری که ملک را ثبت کرده
+/**
+ * بررسی می‌کند آیا این ملک
+ * حداقل یک مشاور دارد یا خیر.
+ */
 export function hasPropertyAgents(
   propertyId: string
 ): boolean {
@@ -30,24 +41,32 @@ export function hasPropertyAgents(
 }
 
 
-// اتصال مشاور به ملک
+/**
+ * ایجاد ارتباط بین مشاور و ملک
+ */
 export function createPropertyAgent(
   propertyId: string,
   agentId: string
 ): PropertyAgent {
 
   const propertyAgent: PropertyAgent = {
+
     propertyId,
 
     agentId,
 
-    registeredAt: new Date(),
+    registeredAt:
+      new Date(),
 
     isFirstRegistrant:
       !hasPropertyAgents(propertyId),
   };
 
-  propertyAgents.push(propertyAgent);
+
+  propertyAgents.push(
+    propertyAgent
+  );
+
 
   return propertyAgent;
 }

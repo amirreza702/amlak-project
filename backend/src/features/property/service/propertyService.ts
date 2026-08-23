@@ -1,14 +1,19 @@
-import { getAgentById } from "../../agent/service/agentService";
+import {
+  getAgentById,
+} from "../../agent/service/agentService";
+
 
 import {
   findPropertyByPostalCode,
   createProperty,
 } from "../repository/propertyRepository";
 
+
 import {
   findPropertyAgent,
   createPropertyAgent,
 } from "../repository/propertyAgentRepository";
+
 
 import type { Property } from "../types/property";
 
@@ -17,31 +22,45 @@ import type { RegisterPropertyInput } from "../types/registerProperty";
 import type { PropertyAgent } from "../types/propertyAgent";
 
 
+/**
+ * نتیجه Use Case ثبت ملک
+ */
 export interface RegisterPropertyResult {
+
   property: Property;
 
   propertyAgent: PropertyAgent;
 
+  /**
+   * مشخص می‌کند Property تازه ایجاد شده
+   * یا قبلاً وجود داشته است.
+   */
   isNewProperty: boolean;
 }
 
 
+/**
+ * Use Case:
+ *
+ * ثبت ملک توسط مشاور
+ */
 export function registerProperty(
   data: RegisterPropertyInput
 ): RegisterPropertyResult {
 
-  // -----------------------------------------
-  // مرحله 1
-  // بررسی می‌کنیم مشاور واقعاً وجود دارد
-  // -----------------------------------------
 
-  getAgentById(data.agentId);
+  // ==================================================
+  // 1. بررسی وجود مشاور
+  // ==================================================
+
+  getAgentById(
+    data.agentId
+  );
 
 
-  // -----------------------------------------
-  // مرحله 2
-  // جستجوی ملک بر اساس کد پستی
-  // -----------------------------------------
+  // ==================================================
+  // 2. جستجوی ملک بر اساس کد پستی
+  // ==================================================
 
   let property =
     findPropertyByPostalCode(
@@ -49,43 +68,47 @@ export function registerProperty(
     );
 
 
-  // -----------------------------------------
-  // مرحله 3
-  // مشخص می‌کنیم ملک جدید است یا قبلاً وجود داشته
-  // -----------------------------------------
+  // ==================================================
+  // 3. تشخیص جدید یا موجود بودن ملک
+  // ==================================================
 
   const isNewProperty =
-    !property;
+    property === undefined;
 
 
-  // -----------------------------------------
-  // مرحله 4
-  // اگر ملک وجود نداشت، ایجادش می‌کنیم
-  // -----------------------------------------
+  // ==================================================
+  // 4. اگر ملک وجود ندارد، ایجاد شود
+  // ==================================================
 
   if (!property) {
 
-    property = createProperty({
-      postalCode: data.postalCode,
+    property =
+      createProperty({
 
-      area: data.area,
+        postalCode:
+          data.postalCode,
 
-      rooms: data.rooms,
+        area:
+          data.area,
 
-      floor: data.floor,
-    });
+        rooms:
+          data.rooms,
+
+        floor:
+          data.floor,
+      });
   }
 
 
-  // -----------------------------------------
-  // مرحله 5
-  // بررسی می‌کنیم این مشاور قبلاً به این ملک
-  // متصل شده یا نه
-  // -----------------------------------------
+  // ==================================================
+  // 5. بررسی ارتباط قبلی مشاور با ملک
+  // ==================================================
 
   const existingPropertyAgent =
     findPropertyAgent(
+
       property.id,
+
       data.agentId
     );
 
@@ -98,24 +121,25 @@ export function registerProperty(
   }
 
 
-  // -----------------------------------------
-  // مرحله 6
-  // اتصال مشاور به ملک
-  // -----------------------------------------
+  // ==================================================
+  // 6. ایجاد ارتباط مشاور و ملک
+  // ==================================================
 
   const propertyAgent =
     createPropertyAgent(
+
       property.id,
+
       data.agentId
     );
 
 
-  // -----------------------------------------
-  // مرحله 7
-  // نتیجه Use Case
-  // -----------------------------------------
+  // ==================================================
+  // 7. برگرداندن نتیجه Use Case
+  // ==================================================
 
   return {
+
     property,
 
     propertyAgent,

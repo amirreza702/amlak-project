@@ -16,7 +16,7 @@ const initialState: PropertyFormData = {
   floor: "",
 };
 
-export function usePropertyForm() {
+export function usePropertyForm(agentId: string) {
   const [formData, setFormData] =
     useState<PropertyFormData>(initialState);
 
@@ -73,7 +73,7 @@ export function usePropertyForm() {
       setIsSubmitting(true);
 
       // ارسال اطلاعات به Backend
-      await createProperty(formData);
+      await createProperty(formData, agentId);
 
       // اگر موفق بود، فرم پاک شود
       reset();

@@ -1,55 +1,44 @@
-import type {
-  PropertyFormData,
-} from "../types/property";
-
+import type { PropertyFormData } from "../types/property";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL;
 
 
+/**
+ * ثبت ملک
+ *
+ * فعلاً agentId را دریافت می‌کنیم.
+ *
+ * در مرحله Authentication،
+ * این شناسه دیگر از Component دریافت نمی‌شود
+ * و از Session کاربر به دست می‌آید.
+ */
 export async function createProperty(
-  data: PropertyFormData
+  data: PropertyFormData,
+  agentId: string
 ) {
 
-  // ---------------------------------------
-  // تبدیل داده فرم به درخواست Backend
-  // ---------------------------------------
-
   const requestData = {
-
-    postalCode:
-      data.postalCode,
-
-    area:
-      Number(data.area),
-
-    rooms:
-      Number(data.rooms),
-
-    floor:
-      Number(data.floor),
-
-    // موقتاً تا زمان پیاده‌سازی Authentication
-    // شناسه مشاور را ثابت قرار داده‌ایم.
-    agentId: "agent-001",
+    postalCode: data.postalCode,
+    area: Number(data.area),
+    rooms: Number(data.rooms),
+    floor: Number(data.floor),
+    agentId,
   };
 
 
-  const response =
-    await fetch(
-      `${API_URL}/properties`,
-      {
-        method: "POST",
+  const response = await fetch(
+    `${API_URL}/properties`,
+    {
+      method: "POST",
 
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
+      headers: {
+        "Content-Type": "application/json",
+      },
 
-        body:
-          JSON.stringify(requestData),
-      }
-    );
+      body: JSON.stringify(requestData),
+    }
+  );
 
 
   if (!response.ok) {

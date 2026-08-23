@@ -1,16 +1,27 @@
 import type { Agent } from "../types/agent";
 
-// فعلاً به جای PostgreSQL یک آرایه در حافظه داریم.
-// بعداً فقط لایه Repository را به PostgreSQL متصل می‌کنیم.
+/*
+ * موقتاً نقش Database را بازی می‌کند.
+ *
+ * توجه:
+ * هیچ Business Logic نباید در این فایل باشد.
+ * بعداً این فایل را با PostgreSQL جایگزین می‌کنیم.
+ */
 const agents: Agent[] = [
   {
     id: "agent-001",
-    name: "مشاور نمونه",
+    name: "مشاور اول",
+  },
+  {
+    id: "agent-002",
+    name: "مشاور دوم",
   },
 ];
 
 
-// پیدا کردن مشاور بر اساس ID
+/**
+ * پیدا کردن یک مشاور با شناسه
+ */
 export function findAgentById(
   id: string
 ): Agent | undefined {

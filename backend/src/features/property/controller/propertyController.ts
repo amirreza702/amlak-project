@@ -3,9 +3,18 @@ import type {
   Response,
 } from "express";
 
-import { registerProperty } from "../service/propertyService";
+
+import {
+  registerProperty,
+} from "../service/propertyService";
 
 
+/**
+ * HTTP Controller
+ *
+ * مسئول دریافت HTTP Request و
+ * تبدیل نتیجه Use Case به HTTP Response است.
+ */
 export function registerPropertyController(
   req: Request,
   res: Response
@@ -13,26 +22,32 @@ export function registerPropertyController(
 
   try {
 
-    // اطلاعات ارسال‌شده توسط Client
-    const data = req.body;
+    // داده ارسال‌شده توسط Client
+    const data =
+      req.body;
 
 
-    // اجرای Use Case ثبت ملک
+    // اجرای Use Case
     const result =
       registerProperty(data);
 
 
     // پاسخ موفق
-    res.status(201).json(result);
+    res
+      .status(201)
+      .json(result);
 
   } catch (error) {
 
-    // تبدیل خطای Business به HTTP Response
-    res.status(400).json({
-      message:
-        error instanceof Error
-          ? error.message
-          : "خطای ناشناخته",
-    });
+    // خطای Business
+    res
+      .status(400)
+      .json({
+
+        message:
+          error instanceof Error
+            ? error.message
+            : "خطای ناشناخته",
+      });
   }
 }

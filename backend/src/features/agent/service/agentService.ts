@@ -1,7 +1,16 @@
-import { findAgentById } from "../repository/agentRepository";
+import {
+  findAgentById,
+} from "../repository/agentRepository";
+
 import type { Agent } from "../types/agent";
 
 
+/**
+ * دریافت مشاور بر اساس شناسه
+ *
+ * اینجا قوانین Business مربوط به Agent
+ * در صورت نیاز اعمال خواهند شد.
+ */
 export function getAgentById(
   id: string
 ): Agent {

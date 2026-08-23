@@ -1,10 +1,17 @@
 import type { Property } from "../types/property";
 
-// فعلاً شبیه‌سازی Database
+
+/*
+ * شبیه‌سازی موقت Database
+ *
+ * بعداً این قسمت با PostgreSQL جایگزین می‌شود.
+ */
 const properties: Property[] = [];
 
 
-// پیدا کردن ملک با کد پستی
+/**
+ * پیدا کردن ملک بر اساس کد پستی
+ */
 export function findPropertyByPostalCode(
   postalCode: string
 ): Property | undefined {
@@ -16,24 +23,33 @@ export function findPropertyByPostalCode(
 }
 
 
-// ایجاد Property جدید
+/**
+ * ایجاد یک ملک جدید
+ */
 export function createProperty(
   data: Omit<Property, "id">
 ): Property {
 
   const property: Property = {
+
     id: crypto.randomUUID(),
 
-    postalCode: data.postalCode,
+    postalCode:
+      data.postalCode,
 
-    area: data.area,
+    area:
+      data.area,
 
-    rooms: data.rooms,
+    rooms:
+      data.rooms,
 
-    floor: data.floor,
+    floor:
+      data.floor,
   };
 
+
   properties.push(property);
+
 
   return property;
 }
