@@ -2,7 +2,7 @@
 
 import { usePropertyForm } from "../hooks/usePropertyForm";
 
-import { PropertyFields } from "./PropertyFields";
+import { PropertyFields } from "./ui/PropertyFields";
 
 export function PropertyForm() {
   const {
