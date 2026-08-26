@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   },
   description: "سامانه جستجو، مشاهده و ثبت آگهی ملک هشتی",
   applicationName: "هشتی",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icons/hashti-browser-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
