@@ -1,27 +1,20 @@
-import {
-  findAgentById,
-} from "../repository/agentRepository";
+import { findAgentById } from "../repository/agentRepository";
+import { AuthError, Agent, AgentPublic } from "../types/agent";
 
-import type { Agent } from "../types/agent";
+/** حذف فیلدهای حساس و متادیتا قبل از ارسال به کلاینت */
+export function sanitizeAgent(agent: Agent): AgentPublic {
+  // به صورت صریح فیلد passwordHash جدا شده و بقیه فیلدها بازگردانده می‌شوند
+  const { passwordHash, ...safeAgent } = agent;
+  return safeAgent;
+}
 
+/** دریافت مشاور فعال با id — برای /me */
+export async function getAgentById(id: string): Promise<AgentPublic> {
+  const agent = await findAgentById(id);
 
-/**
- * دریافت مشاور بر اساس شناسه
- *
- * اینجا قوانین Business مربوط به Agent
- * در صورت نیاز اعمال خواهند شد.
- */
-export function getAgentById(
-  id: string
-): Agent {
-
-  const agent = findAgentById(id);
-
-  if (!agent) {
-    throw new Error(
-      "مشاور مورد نظر پیدا نشد."
-    );
+  if (!agent || !agent.isActive) {
+    throw new AuthError("مشاور مورد نظر پیدا نشد یا غیرفعال است.", 401);
   }
 
-  return agent;
+  return sanitizeAgent(agent);
 }

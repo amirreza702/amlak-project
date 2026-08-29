@@ -1,167 +1,81 @@
 import { Request, Response } from "express";
-import { findAgentById, findAgentByMobile } from "../repository/agentRepository";
-import { signToken, verifyPassword, verifyToken } from "../service/authService";
+import { findAgentByMobile } from "../repository/agentRepository";
+import { getAgentById, sanitizeAgent } from "../service/agentService";
+import { verifyPassword, signToken, verifyToken } from "../service/authService";
+import { AuthError, LoginPayload } from "../types/agent";
 
-/**
- * نام کوکی و تنظیمات طول عمر (۷ روز)
- */
-const AUTH_COOKIE_NAME = "hashti_token";
-const AUTH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const COOKIE_NAME = "hashti_token";
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 روز
 
-/**
- * تایپ کمکی برای فیلتر کردن اطلاعات حساس
- */
-type AgentWithPassword = {
-  id: string;
-  mobile: string;
-  passwordHash: string;
-  [key: string]: any;
-};
-
-function sanitizeAgent(agent: AgentWithPassword) {
-  const { passwordHash: _passwordHash, ...publicAgent } = agent;
-  return publicAgent;
-}
-
-/**
- * POST /api/agents/login
- * عملیات ورود مشاور و ست کردن کوکی
- */
-export async function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response): Promise<void> {
   try {
-    const body = req.body ?? {};
-    const mobile = typeof body.mobile === "string" ? body.mobile.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
+    const { mobile, password } = req.body as LoginPayload;
 
     if (!mobile || !password) {
-      return res.status(400).json({
-        error: "شماره موبایل و رمز عبور الزامی است.",
-      });
+      res.status(400).json({ error: "شماره موبایل و رمز عبور الزامی است." });
+      return;
     }
 
-    const agent = (await findAgentByMobile(mobile)) as AgentWithPassword | null;
-
+    const agent = await findAgentByMobile(mobile);
     if (!agent) {
-      return res.status(401).json({
-        error: "شماره موبایل یا رمز عبور اشتباه است.",
-      });
+      res.status(401).json({ error: "شماره موبایل یا رمز عبور اشتباه است." });
+      return;
+    }
+
+    if (!agent.isActive) {
+      res.status(403).json({ error: "حساب کاربری شما غیرفعال شده است." });
+      return;
     }
 
     const isMatch = await verifyPassword(password, agent.passwordHash);
-
     if (!isMatch) {
-      return res.status(401).json({
-        error: "شماره موبایل یا رمز عبور اشتباه است.",
-      });
+      res.status(401).json({ error: "شماره موبایل یا رمز عبور اشتباه است." });
+      return;
     }
 
-    // ساخت توکن بر اساس آیدی ایجنت
-    const token = signToken({ sub: agent.id });
+    const token = signToken(agent.id);
 
-    // ارسال توکن در کوکی امن
-    res.cookie(AUTH_COOKIE_NAME, token, {
+    res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
-      maxAge: AUTH_COOKIE_MAX_AGE,
+      sameSite: "lax",
+      maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "ورود با موفقیت انجام شد.",
       agent: sanitizeAgent(agent),
     });
   } catch (error) {
-    console.error("❌ Error in login controller:", error);
-    return res.status(500).json({
-      error: "خطای داخلی سرور در فرآیند ورود.",
-    });
+    console.error("Login Error:", error);
+    res.status(500).json({ error: "خطای سرور در فرآیند ورود." });
   }
 }
 
-/**
- * GET /api/agents/me
- * بررسی احراز هویت و برگرداندن مشخصات کاربر جاری
- */
-export async function me(req: Request, res: Response) {
+export async function me(req: Request, res: Response): Promise<void> {
   try {
-    const token = req.cookies?.[AUTH_COOKIE_NAME];
-
-    if (!token || typeof token !== "string") {
-      return res.status(401).json({
-        error: "احراز هویت انجام نشده است.",
-      });
+    const token = req.cookies?.[COOKIE_NAME];
+    if (!token) {
+      res.status(401).json({ error: "لطفاً ابتدا وارد حساب کاربری خود شوید." });
+      return;
     }
 
-    let payload: { sub?: string };
+    const agentId = verifyToken(token);
+    const agent = await getAgentById(agentId);
 
-    try {
-      payload = verifyToken(token);
-    } catch {
-      res.clearCookie(AUTH_COOKIE_NAME, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-      });
-      return res.status(401).json({
-        error: "نشست شما منقضی یا نامعتبر است.",
-      });
-    }
-
-    const agentId = payload?.sub;
-
-    if (!agentId || typeof agentId !== "string") {
-      return res.status(401).json({
-        error: "توکن احراز هویت نامعتبر است.",
-      });
-    }
-
-    const agent = (await findAgentById(agentId)) as AgentWithPassword | null;
-
-    if (!agent) {
-      res.clearCookie(AUTH_COOKIE_NAME, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-      });
-      return res.status(401).json({
-        error: "کاربر یافت نشد.",
-      });
-    }
-
-    return res.status(200).json({
-      agent: sanitizeAgent(agent),
-    });
+    res.status(200).json({ agent });
   } catch (error) {
-    console.error("❌ Error in me controller:", error);
-    return res.status(500).json({
-      error: "خطای داخلی سرور در دریافت اطلاعات کاربر.",
-    });
+    res.clearCookie(COOKIE_NAME, { path: "/" });
+    if (error instanceof AuthError) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    res.status(401).json({ error: "نشست نامعتبر است." });
   }
 }
 
-/**
- * POST /api/agents/logout
- * خروج و حذف کوکی احراز هویت
- */
-export async function logout(_req: Request, res: Response) {
-  try {
-    res.clearCookie(AUTH_COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    });
-
-    return res.status(200).json({
-      message: "با موفقیت خارج شدید.",
-    });
-  } catch (error) {
-    console.error("❌ Error in logout controller:", error);
-    return res.status(500).json({
-      error: "خطای داخلی سرور در فرآیند خروج.",
-    });
-  }
+export async function logout(_req: Request, res: Response): Promise<void> {
+  res.clearCookie(COOKIE_NAME, { path: "/" });
+  res.status(200).json({ message: "خروج با موفقیت انجام شد." });
 }

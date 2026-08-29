@@ -1,21 +1,38 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { AuthError } from "../types/agent";
 
-const JWT_SECRET = process.env.JWT_SECRET!; // در .env، نه در کد
-const TOKEN_TTL = "7d";
+const BCRYPT_COST = 12;
+const JWT_TTL = "7d";
 
-export async function hashPassword(plain: string) {
-  return bcrypt.hash(plain, 12);
+export function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, BCRYPT_COST);
 }
 
-export async function verifyPassword(plain: string, hash: string) {
+export async function verifyPassword(
+  plain: string,
+  hash: string
+): Promise<boolean> {
   return bcrypt.compare(plain, hash);
 }
 
-export function signToken(agentId: string) {
-  return jwt.sign({ sub: agentId }, JWT_SECRET, { expiresIn: TOKEN_TTL });
+/** امضای توکن برای یک agentId — امضای ساده و بدون ابهام */
+export function signToken(agentId: string): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new AuthError("کلید امضا (JWT_SECRET) تنظیم نشده است.", 500);
+  return jwt.sign({ sub: agentId }, secret, { expiresIn: JWT_TTL });
 }
 
-export function verifyToken(token: string): { sub: string } {
-  return jwt.verify(token, JWT_SECRET) as { sub: string };
+/** اعتبارسنجی توکن و برگرداندن agentId */
+export function verifyToken(token: string): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new AuthError("کلید امضا (JWT_SECRET) تنظیم نشده است.", 500);
+
+  try {
+    const payload = jwt.verify(token, secret) as { sub?: string };
+    if (!payload.sub) throw new Error("بدون subject");
+    return payload.sub;
+  } catch {
+    throw new AuthError("نشست شما منقضی شده است. دوباره وارد شوید.", 401);
+  }
 }
