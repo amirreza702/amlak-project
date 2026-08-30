@@ -1,55 +1,34 @@
-import type { Property } from "../types/property";
+// src/features/property/repository/propertyRepository.ts
+import { prisma } from "../../../lib/prisma";
+import { Property } from "../types/property";
 
+export class PropertyRepository {
+  async create(data: Omit<Property, "id" | "createdAt">): Promise<Property> {
+    return await prisma.property.create({
+      data: {
+        postalCode: data.postalCode,
+        area: data.area,
+        rooms: data.rooms,
+        floor: data.floor,
+      },
+    });
+  }
 
-/*
- * شبیه‌سازی موقت Database
- *
- * بعداً این قسمت با PostgreSQL جایگزین می‌شود.
- */
-const properties: Property[] = [];
+  async findByPostalCode(postalCode: string): Promise<Property | null> {
+    return await prisma.property.findUnique({
+      where: { postalCode },
+    });
+  }
 
+  async findById(id: string): Promise<Property | null> {
+    return await prisma.property.findUnique({
+      where: { id },
+    });
+  }
 
-/**
- * پیدا کردن ملک بر اساس کد پستی
- */
-export function findPropertyByPostalCode(
-  postalCode: string
-): Property | undefined {
-
-  return properties.find(
-    (property) =>
-      property.postalCode === postalCode
-  );
-}
-
-
-/**
- * ایجاد یک ملک جدید
- */
-export function createProperty(
-  data: Omit<Property, "id">
-): Property {
-
-  const property: Property = {
-
-    id: crypto.randomUUID(),
-
-    postalCode:
-      data.postalCode,
-
-    area:
-      data.area,
-
-    rooms:
-      data.rooms,
-
-    floor:
-      data.floor,
-  };
-
-
-  properties.push(property);
-
-
-  return property;
+  async findAll(): Promise<Property[]> {
+    return await prisma.property.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  }
 }

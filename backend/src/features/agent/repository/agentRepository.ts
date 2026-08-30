@@ -1,14 +1,26 @@
+// src/features/agent/repository/agentRepository.ts
 import { prisma } from "../../../lib/prisma";
-import type { Agent } from "../types/agent";
+import { Agent } from "../types/agent";
 
-/**
- * لایه دسترسی به داده — فقط Prisma، بدون منطق کسب‌وکار.
- */
+export class AgentRepository {
+  async create(data: Omit<Agent, "id" | "createdAt">): Promise<Agent> {
+    return await prisma.agent.create({
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+      },
+    });
+  }
 
-export async function findAgentByMobile(mobile: string): Promise<Agent | null> {
-  return prisma.agent.findUnique({ where: { mobile } }) as Promise<Agent | null>;
-}
+  async findById(id: string): Promise<Agent | null> {
+    return await prisma.agent.findUnique({
+      where: { id },
+    });
+  }
 
-export async function findAgentById(id: string): Promise<Agent | null> {
-  return prisma.agent.findUnique({ where: { id } }) as Promise<Agent | null>;
+  async findAll(): Promise<Agent[]> {
+    return await prisma.agent.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  }
 }

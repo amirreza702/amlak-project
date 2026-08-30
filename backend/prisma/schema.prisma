@@ -7,9 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Agentmodel Agent {
+model  Agent {
   id           String   @id @default(uuid())
-  firstName    String  ("first_name")
+  firstName    String  @map("first_name")
   lastName     String   @map("last_name")
   mobile       String   @unique
   agencyName   String?  @map("agency_name")
