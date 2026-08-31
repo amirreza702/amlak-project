@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/app.ts"
+    "dev": "tsx watch src/app.ts"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +25,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
-    "prisma": "^6.19.0",
+    "prisma": "^6.19.3",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }

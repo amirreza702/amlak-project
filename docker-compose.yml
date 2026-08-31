@@ -1,51 +1,23 @@
-version: '3.8'
-
 services:
-  # سرویس دیتابیس PostgreSQL
   db:
     image: postgres:15-alpine
-    container_name: amlak-db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: amlak_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "1234"
+      POSTGRES_DB: amlak
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
 
-  # سرویس بک‌اِند (اکسپرس)
   backend:
     build: ./backend
-    container_name: amlak-backend
+    command: sh -c "npx prisma generate && npx prisma db push && npx tsx watch src/app.ts"
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgresql://postgres:1234@db:5432/amlak
     ports:
       - "4000:4000"
     volumes:
-      - ./backend:/app
-      - /app/node_modules
-    environment:
-      - DB_HOST=db
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=amlak_db
-      - PORT=4000
+      - ./backend:/app                # اتصال مستقیم کدهای لوکال به کانتینر
+      - /app/node_modules  
     depends_on:
       - db
-    command: npx tsx watch src/app.ts
-
-  # سرویس فرانت‌اِند (نکست‌جی‌اس)
-  frontend:
-    build: ./frontend
-    container_name: amlak-frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:4000
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
