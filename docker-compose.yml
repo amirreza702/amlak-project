@@ -1,4 +1,5 @@
 services:
+
   db:
     image: postgres:15-alpine
     environment:
@@ -7,17 +8,38 @@ services:
       POSTGRES_DB: amlak
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   backend:
     build: ./backend
     command: sh -c "npx prisma generate && npx prisma db push && npx tsx watch src/app.ts"
     environment:
-      - PORT=4000
-      - DATABASE_URL=postgresql://postgres:1234@db:5432/amlak
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:1234@db:5432/amlak
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "4000:4000"
     volumes:
-      - ./backend:/app                # اتصال مستقیم کدهای لوکال به کانتینر
-      - /app/node_modules  
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       - db
+
+  frontend:
+    build: ./frontend
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
