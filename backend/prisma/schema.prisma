@@ -8,8 +8,47 @@ datasource db {
 }
 
 model Agent {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  firstName    String
+  lastName     String
+  mobile       String   @unique
+  agencyName   String?
+  address      String?
+  isActive     Boolean  @default(true)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  propertyAgents PropertyAgent[]
+
+  @@map("agents")
+}
+
+model Property {
+  id         String   @id @default(uuid())
+  postalCode String   @unique
+  address    String?
+  area       Float
+  rooms      Int
+  floor      Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  propertyAgents PropertyAgent[]
+
+  @@map("properties")
+}
+
+model PropertyAgent {
+  propertyId        String
+  agentId           String
+  registeredAt      DateTime @default(now())
+  isFirstRegistrant Boolean
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agent    Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, agentId])
+  @@map("property_agents")
 }

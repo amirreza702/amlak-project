@@ -7,6 +7,7 @@ export interface Agent {
   lastName: string;
   mobile: string;
   agencyName?: string | null;
+  address?: string | null;
   isActive: boolean;
   passwordHash: string;
   createdAt?: Date;

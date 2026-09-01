@@ -1,72 +1,30 @@
+import { prisma } from "../../../lib/prisma";
 import type { PropertyAgent } from "../types/propertyAgent";
 
-
-/*
- * شبیه‌سازی موقت جدول ارتباطی Database
- *
- * بعداً به PostgreSQL منتقل می‌شود.
- */
-const propertyAgents: PropertyAgent[] = [];
-
-
-/**
- * بررسی می‌کند آیا یک مشاور قبلاً
- * به یک ملک متصل شده است یا خیر.
- */
-export function findPropertyAgent(
+export const findPropertyAgent = async (
   propertyId: string,
   agentId: string
-): PropertyAgent | undefined {
+): Promise<PropertyAgent | null> => {
+  return prisma.propertyAgent.findUnique({
+    where: { propertyId_agentId: { propertyId, agentId } },
+  });
+};
 
-  return propertyAgents.find(
-    (item) =>
-      item.propertyId === propertyId &&
-      item.agentId === agentId
-  );
-}
+export const hasPropertyAgents = async (propertyId: string): Promise<boolean> => {
+  const count = await prisma.propertyAgent.count({ where: { propertyId } });
+  return count > 0;
+};
 
-
-/**
- * بررسی می‌کند آیا این ملک
- * حداقل یک مشاور دارد یا خیر.
- */
-export function hasPropertyAgents(
-  propertyId: string
-): boolean {
-
-  return propertyAgents.some(
-    (item) =>
-      item.propertyId === propertyId
-  );
-}
-
-
-/**
- * ایجاد ارتباط بین مشاور و ملک
- */
-export function createPropertyAgent(
+export const createPropertyAgent = async (
   propertyId: string,
   agentId: string
-): PropertyAgent {
-
-  const propertyAgent: PropertyAgent = {
-
-    propertyId,
-
-    agentId,
-
-    registeredAt:
-      new Date(),
-
-    isFirstRegistrant:
-      !hasPropertyAgents(propertyId),
-  };
-
-
-  propertyAgents.push(
-    propertyAgent
-  );
-
-
-  return propertyAgent;
-}
+): Promise<PropertyAgent> => {
+  const isFirstRegistrant = !(await hasPropertyAgents(propertyId));
+  return prisma.propertyAgent.create({
+    data: {
+      propertyId,
+      agentId,
+      isFirstRegistrant,
+    },
+  });
+};

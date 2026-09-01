@@ -1,81 +1,149 @@
+// ایمپورت تایپ‌های درخواست و پاسخ از فریم‌ورک اکسپرس
 import { Request, Response } from "express";
-import { findAgentByMobile } from "../repository/agentRepository";
-import { getAgentById, sanitizeAgent } from "../service/agentService";
-import { verifyPassword, signToken, verifyToken } from "../service/authService";
-import { AuthError, LoginPayload } from "../types/agent";
+// ایمپورت توابع سرویس برای ثبت‌نام، ورود و دریافت اطلاعات مشاور
+import {
+  registerAgentService,
+  loginAgentService,
+  getAgentById,
+  getCurrentAgentService
+} from "../service/agentService";
+// ایمپورت کلاینت Prisma — قبلاً جا افتاده بود و باعث ReferenceError می‌شد
+import { prisma } from "../../../lib/prisma";
 
-const COOKIE_NAME = "hashti_token";
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 روز
-
-export async function login(req: Request, res: Response): Promise<void> {
+// متد کنترلر برای ثبت‌نام مشاور جدید
+export async function register(
+  // آبجکت درخواست ورودی
+  req: Request,
+  // آبجکت پاسخ خروجی
+  res: Response
+) {
   try {
-    const { mobile, password } = req.body as LoginPayload;
+    // فراخوانی متد ثبت‌نام در لایه سرویس با داده‌های بدنه درخواست
+    const { agent, token } = await registerAgentService(req.body);
 
-    if (!mobile || !password) {
-      res.status(400).json({ error: "شماره موبایل و رمز عبور الزامی است." });
-      return;
-    }
-
-    const agent = await findAgentByMobile(mobile);
-    if (!agent) {
-      res.status(401).json({ error: "شماره موبایل یا رمز عبور اشتباه است." });
-      return;
-    }
-
-    if (!agent.isActive) {
-      res.status(403).json({ error: "حساب کاربری شما غیرفعال شده است." });
-      return;
-    }
-
-    const isMatch = await verifyPassword(password, agent.passwordHash);
-    if (!isMatch) {
-      res.status(401).json({ error: "شماره موبایل یا رمز عبور اشتباه است." });
-      return;
-    }
-
-    const token = signToken(agent.id);
-
-    res.cookie(COOKIE_NAME, token, {
+    // تنظیم کوکی حاوی توکن JWT در پاسخ به مرورگر
+    res.cookie("hashti_token", token, {
+      // فقط از طریق پروتکل HTTP قابل دسترسی باشد (امنیت در برابر XSS)
       httpOnly: true,
+      // در حالت پروداکشن فقط روی HTTPS ارسال شود
       secure: process.env.NODE_ENV === "production",
+      // سیاست SameSite برای جلوگیری از حملات CSRF
       sameSite: "lax",
-      maxAge: COOKIE_MAX_AGE,
-      path: "/",
+      // مدت اعتبار کوکی: ۷ روز بر حسب میلی‌ثانیه
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.status(200).json({
-      message: "ورود با موفقیت انجام شد.",
-      agent: sanitizeAgent(agent),
+    // ارسال پاسخ موفق همراه با اطلاعات عمومی مشاور
+    return res.status(201).json({
+      // پیام موفقیت به فارسی
+      message: "ثبت‌نام با موفقیت انجام شد.",
+      // آبجکت مشاور ایجاد شده
+      agent,
     });
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ error: "خطای سرور در فرآیند ورود." });
+  } catch (error: any) {
+    // ارسال پاسخ خطا با استاتوس 400 در صورت بروز مشکل
+    return res.status(400).json({
+      // پیام خطای دریافت شده از بیزینس لاجیک یا پیام پیش‌فرض
+      message: error.message || "خطا در ثبت‌نام مشاور",
+    });
   }
 }
 
-export async function me(req: Request, res: Response): Promise<void> {
+// متد کنترلر برای ورود مشاور به سیستم
+export async function login(
+  // آبجکت درخواست ورودی
+  req: Request,
+  // آبجکت پاسخ خروجی
+  res: Response
+) {
   try {
-    const token = req.cookies?.[COOKIE_NAME];
-    if (!token) {
-      res.status(401).json({ error: "لطفاً ابتدا وارد حساب کاربری خود شوید." });
-      return;
+    // دریافت شماره موبایل و رمز عبور از بدنه درخواست
+    const { mobile, password } = req.body;
+
+    // بررسی و احراز هویت مشاور در لایه سرویس
+    const { agent, token } = await loginAgentService(mobile, password);
+
+    // تنظیم کوکی احراز هویت در مرورگر
+    res.cookie("hashti_token", token, {
+      // غیرقابل دسترس برای کدهای جاوااسکریپت سمت کلاینت
+      httpOnly: true,
+      // فعال‌سازی امنیت SSL در محیط پروداکشن
+      secure: process.env.NODE_ENV === "production",
+      // حفاظت در برابر جعل درخواست میان‌سایتی
+      sameSite: "lax",
+      // انقضای کوکی بعد از ۷ روز
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // ارسال پاسخ موفقیت‌آمیز ورود
+    return res.status(200).json({
+      // پیام خوش‌آمدگویی و ورود موفق
+      message: "ورود با موفقیت انجام شد.",
+      // اطلاعات کاربر لاگین شده
+      agent,
+    });
+  } catch (error: any) {
+    // ارسال خطای عدم دسترسی یا اشتباه بودن مشخصات
+    return res.status(401).json({
+      // متن پیام خطای لاگین
+      message: error.message || "شماره موبایل یا رمز عبور اشتباه است.",
+    });
+  }
+}
+
+// متد کنترلر برای دریافت اطلاعات مشاور جاری (Me)
+export async function me(
+  // درخواست ورودی که شناسه مشاور در آن توسط میدل‌ور یا کوکی قرار می‌گیرد
+  req: any,
+  // آبجکت پاسخ
+  res: Response
+) {
+  try {
+    // خواندن شناسه مشاور از شیء درخواست
+    const agentId = req.agentId || req.cookies?.agentId;
+
+    // در صورت نبود شناسه، کاربر لاگین نیست
+    if (!agentId) {
+      // ارسال خطای 401 Unauthenticated
+      return res.status(401).json({ message: "کاربر وارد نشده است." });
     }
 
-    const agentId = verifyToken(token);
+    // دریافت اطلاعات مشاور از پایگاه داده
     const agent = await getAgentById(agentId);
 
-    res.status(200).json({ agent });
-  } catch (error) {
-    res.clearCookie(COOKIE_NAME, { path: "/" });
-    if (error instanceof AuthError) {
-      res.status(error.statusCode).json({ error: error.message });
-      return;
-    }
-    res.status(401).json({ error: "نشست نامعتبر است." });
+    // ارسال اطلاعات عمومی مشاور
+    return res.status(200).json(agent);
+  } catch (error: any) {
+    // ارسال پیام خطا در صورت عدم یافتن کاربر
+    return res.status(404).json({ message: error.message });
   }
 }
 
-export async function logout(_req: Request, res: Response): Promise<void> {
-  res.clearCookie(COOKIE_NAME, { path: "/" });
-  res.status(200).json({ message: "خروج با موفقیت انجام شد." });
+// متد کنترلر برای خروج مشاور از حساب کاربری
+export async function logout(
+  // درخواست اکسپرس
+  _req: Request,
+  // پاسخ اکسپرس
+  res: Response
+) {
+  // پاک کردن کوکی احراز هویت با خالی کردن مقدار آن
+  res.clearCookie("hashti_token");
+  // ارسال پاسخ موفقیت‌آمیز خروج
+  return res.status(200).json({ message: "خروج با موفقیت انجام شد." });
 }
+
+// کنترلر: خواندن کوکی hashti_token و برگرداندن پروفایل مشاور
+export async function getMeController(req: Request, res: Response) {
+  try {
+    // استخراج توکن از کوکی‌های درخواست
+    const token = req.cookies?.hashti_token;
+    // فراخوانی سرویس دریافت مشاور جاری
+    const agent = await getCurrentAgentService(token);
+    // پاسخ موفق با پروفایل مشاور
+    res.json(agent);
+  } catch (error) {
+    // در صورت نبود/نامعتبر بودن توکن، پاسخ 401
+    res.status(401).json({ message: error instanceof Error ? error.message : "دسترسی غیرمجاز" });
+  }
+}
+
