@@ -75,16 +75,4 @@ uploads/
 *.zip
 *.tar.gz
 *.iso
-# Docker
-**/Dockerfile
-**/Dockerfile.*
-**/docker-compose.yml
-**/docker-compose.yaml
-**/docker-compose.*.yml
-**/docker-compose.*.yaml
-**/.dockerignore
 
-# Docker local configuration
-**/docker/
-**/.docker/
-.gitignore
