@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import propertyRoutes from "./features/property/routes/propertyRoutes";
-import agentRoutes from "./features/agent/routes/agentRoutes";
+
 import authRoutes from "./features/auth/routes/authRoutes"; // ۱. ایمپورت روت جدید
 
 const app = express();
@@ -21,7 +21,7 @@ app.use(cookieParser());
 
 // ثبت روت‌های پروژه‌
 app.use(propertyRoutes);
-app.use("/api/agents", agentRoutes);
+
 app.use("/api/auth", authRoutes); // ۲. ثبت روت‌های احراز هویت در مسیر /api/auth
 
 const PORT = process.env.PORT || 4000;
