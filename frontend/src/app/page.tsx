@@ -1,41 +1,44 @@
-// فعال‌سازی رندر کلاینت در محیط Next.js
+// src/app/page.tsx
 "use client";
 
-// ایمپورت هوک استخراج وضعیت مشاور
-import { useCurrentAgent } from "@/features/agent/hooks/useCurrentAgent";
-// ایمپورت فرم ثبت اطلاعات ملک
+import { useCurrentAgent } from "@/features/auth/hooks/useCurrentAgent";
 import { PropertyForm } from "@/features/property/components/PropertyForm";
-// ایمپورت بنر تصویر و عنوان بالای صفحه
 import { PropertyPageHeader } from "@/features/property/components/layout/PropertyPageHeader";
-// ایمپورت هدر اصلی برنامه
 import { HashtiHeader } from "@/shared/layout/HashtiHeader";
 
-// کامپوننت صفحه اصلی
-export default function HomePage() {
-  // دریافت وضعیت احراز هویت مشاور
-  const { agent, isLoading, error } = useCurrentAgent();
+export default function Home() {
+  // دریافت وضعیت نشست کاربر و تابع بازخوانی
+  const { agent, isLoading, error, refetch } = useCurrentAgent();
 
   return (
-    // روت اصلی صفحه با رنگ پس‌زمینه سایت
-    <div className="min-h-screen bg-[#f8fafb]">
-      {/* هدر سایت حاوی برند و آیکون ورود به مدال */}
-      <HashtiHeader />
+    <main className="min-h-screen bg-gray-50 pb-12">
+      {/* اتصال مستقیم کال‌بک ورود به متد refetch */}
+      <HashtiHeader onAuthSuccess={refetch} />
 
-      {/* محتوای اصلی سایت */}
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
-        <div id="property" className="mx-auto max-w-5xl space-y-8">
-          {/* بنر معرفی و سربرگ صفحه ثبت ملک */}
-          <PropertyPageHeader
-            title="ثبت ملک در هشتی"
-            description="ملک خود را با اطلاعات دقیق و قابل اعتماد ثبت کنید."
-          />
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <PropertyPageHeader
+          title="ثبت ملک جدید"
+          description="اطلاعات ملک خود را جهت بررسی و انتشار در سامانه هوشمند هشتی وارد کنید."
+        />
 
-          {/* فرم ثبت ملک فقط در صورت تایید احراز هویت لود می‌شود و هیچ فرم ثبت‌نامی روی صفحه نیست */}
-          {!isLoading && !error && agent && (
+        {isLoading && (
+          <div className="mt-8 text-center text-gray-500">
+            در حال بررسی وضعیت نشست کاربری...
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-800">
+            <p className="font-medium">برای ثبت ملک، لطفاً ابتدا از منوی بالای صفحه وارد حساب کاربری خود شوید.</p>
+          </div>
+        )}
+
+        {!isLoading && !error && agent && (
+          <div className="mt-8">
             <PropertyForm agentId={agent.id} />
-          )}
-        </div>
-      </main>
-    </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
