@@ -1,23 +1,9 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: {
-    default: "هشتی | مسکن با اصالت و اعتماد",
-    template: "%s | هشتی",
-  },
-  description: "سامانه جستجو، مشاهده و ثبت آگهی ملک هشتی",
-  applicationName: "هشتی",
-  manifest: "/manifest.webmanifest",
-  icons: {
-    icon: "/icon.png",
-    apple: "/icons/hashti-browser-icon.png",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#062a5b",
-  colorScheme: "light",
+  title: "هشتی",
+  description: "پلتفرم هشتی",
 };
 
 export default function RootLayout({

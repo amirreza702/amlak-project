@@ -1,43 +1,22 @@
-// src/shared/layout/HashtiHeader.tsx
-"use client";
-
-import React, { useState } from "react";
-import Link from "next/link";
-import { User } from "lucide-react";
 import { HashtiBrand } from "../branding/components/HashtiBrand";
-import { AuthModal } from "@/features/auth/components/AuthModal";
 
-interface HashtiHeaderProps {
-  onAuthSuccess?: () => void;
-}
-
-export function HashtiHeader({ onAuthSuccess }: HashtiHeaderProps) {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-
+export function HashtiHeader() {
   return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <HashtiBrand variant="compact" />
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setIsAuthModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <User className="h-4 w-4 text-emerald-600" />
-            <span>ورود / حساب کاربری</span>
+    <header className="bg-white px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between">
+        <HashtiBrand />
+        <nav className="flex gap-6 text-sm font-medium text-slate-600">
+          <a href="#" className="hover:text-brand-navy">خانه</a>
+          <a href="#" className="hover:text-brand-navy">جستجوی ملک</a>
+          <a href="#" className="hover:text-brand-navy">ثبت‌نام مشاورین</a>
+        </nav>
+        <div className="flex gap-4">
+          <button className="text-sm font-semibold text-brand-navy">ورود</button>
+          <button className="rounded-lg bg-brand-navy px-5 py-2 text-sm text-white hover:bg-brand-navy-dark">
+            ثبت‌نام
           </button>
         </div>
-      </header>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={onAuthSuccess}
-      />
-    </>
+      </div>
+    </header>
   );
 }

@@ -1,145 +1,49 @@
-/* فونت فارسی محلی؛ بدون وابستگی به CDN */
+@import "tailwindcss";
 @import "@fontsource-variable/vazirmatn";
 
-/* Tailwind CSS v4 */
-@import "tailwindcss";
-
-/*
-  ================================================================
-  HASHTI DESIGN SYSTEM — v1
-  الهام‌گرفته از لوگوی هشتی:
-  - سرمه‌ای: اصالت، اعتماد و عمق
-  - فیروزه‌ای: کاشی‌کاری ایرانی، تازگی و تعامل
-  - کرم سنگی: معماری سنتی و گرما
-  - طلایی: جزئیات ارزشمند و تأکید محدود
-  ================================================================
-*/
-
 @theme {
-  /*
-    با این تعریف، در صورت نیاز می‌توان از font-vazirmatn
-    در کلاس‌های Tailwind استفاده کرد.
-  */
-  --font-vazirmatn: "Vazirmatn Variable", Tahoma, Arial, sans-serif;
-
-  /* رنگ‌های برند هشتی */
   --color-brand-navy: #062a5b;
-  --color-brand-navy-deep: #031b3d;
-
-  --color-brand-turquoise: #0796a8;
-  --color-brand-turquoise-light: #dff6f5;
-
-  --color-brand-stone: #ead9b6;
-  --color-brand-stone-light: #faf5eb;
-
   --color-brand-gold: #b89650;
-
-  /* رنگ‌های عمومی رابط */
-  --color-surface: #ffffff;
-  --color-surface-muted: #f7f8fa;
-  --color-surface-warm: #fdfbf7;
-
-  --color-ink: #10233f;
-  --color-ink-muted: #64748b;
-  --color-line: #e2e8f0;
-
-  /* رنگ‌های وضعیت */
-  --color-success: #15803d;
-  --color-warning: #c57612;
-  --color-danger: #c2413b;
-
-  /* شعاع گوشه‌ها */
-  --radius-xs: 0.375rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-
-  /* سایه‌ها */
-  --shadow-card: 0 4px 16px rgb(6 42 91 / 8%);
-  --shadow-card-hover: 0 12px 28px rgb(6 42 91 / 14%);
-  --shadow-float: 0 16px 40px rgb(3 27 61 / 18%);
+  --color-brand-gold-light: #d9b77c;
+  --color-brand-gold-dark: #8d7138;
+  --color-brand-cream: #f7f4ef;
+  --color-brand-slate: #5a6270;
+  --color-brand-ivory: #fcfaf7;
 }
 
-/*
-  توکن‌های سازگار با shadcn/ui.
-  در مرحلهٔ بعد، Button، Input و Card از همین رنگ‌ها استفاده می‌کنند.
-*/
 :root {
-  --background: #fdfbf7;
-  --foreground: #10233f;
-
-  --card: #ffffff;
-  --card-foreground: #10233f;
-
-  --popover: #ffffff;
-  --popover-foreground: #10233f;
-
-  --primary: #062a5b;
-  --primary-foreground: #ffffff;
-
-  --secondary: #dff6f5;
-  --secondary-foreground: #062a5b;
-
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-
-  --accent: #0796a8;
-  --accent-foreground: #ffffff;
-
-  --destructive: #c2413b;
-  --destructive-foreground: #ffffff;
-
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #0796a8;
-
-  --radius: 0.75rem;
-}
-
-/* پایه‌های عمومی */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+  --background: #ffffff;
+  --foreground: #0f172a;
 }
 
 html {
-  min-height: 100%;
   direction: rtl;
   scroll-behavior: smooth;
-  -webkit-tap-highlight-color: transparent;
+  min-height: 100%;
 }
 
 body {
-  min-height: 100vh;
   margin: 0;
-  background-color: var(--background);
+  min-height: 100%;
+  background: var(--background);
   color: var(--foreground);
-
-  /*
-    فونت اصلی کل پروژه:
-    وزن‌های 100 تا 900 در Vazirmatn Variable در دسترس‌اند.
-  */
-  font-family: "Vazirmatn Variable", Tahoma, Arial, sans-serif;
-
-  text-rendering: optimizeLegibility;
+  font-family: "Vazirmatn Variable", sans-serif;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+* {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
 }
 
 button {
   cursor: pointer;
-}
-
-img {
-  display: block;
-  max-width: 100%;
 }
 
 a {
@@ -147,14 +51,11 @@ a {
   text-decoration: none;
 }
 
-/* دسترس‌پذیری برای استفاده با کیبورد */
 :focus-visible {
-  outline: 3px solid rgb(7 150 168 / 35%);
+  outline: 2px solid var(--color-brand-gold);
   outline-offset: 2px;
 }
 
-/* رنگ انتخاب متن */
 ::selection {
-  background: rgb(7 150 168 / 22%);
-  color: #031b3d;
+  background: rgba(184, 150, 80, 0.22);
 }
