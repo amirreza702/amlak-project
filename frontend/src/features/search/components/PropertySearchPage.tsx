@@ -1,7 +1,7 @@
 "use client";
 
 import { PropertySearchPanel } from "./PropertySearchPanel";
-import { usePropertySearch } from "../../hooks/usePropertySearch";
+import { usePropertySearch } from "../hooks/usePropertySearch";
 
 export function PropertySearchPage() {
   const {

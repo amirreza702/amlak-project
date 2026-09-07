@@ -11,7 +11,7 @@ import {
   PropertySearchState,
   PropertyType,
   TransactionType,
-} from "../../hooks/usePropertySearch";
+} from "../hooks/usePropertySearch";
 
 interface PropertySearchPanelProps {
   filters: PropertySearchState;
