@@ -1,18 +1,5 @@
 "use client";
 
-/**
- * ============================================================
- * Application Entry Point
- * ============================================================
- *
- * app فقط یک page دارد.
- *
- * Home مستقیماً در همین فایل قرار دارد.
- *
- * Featureهای Business در features قرار دارند.
- * ============================================================
- */
-
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
@@ -20,33 +7,7 @@ import { HomeRoleCards } from "@/shared/components/HomeRoleCards";
 import { HomeTrustMessage } from "@/shared/components/HomeTrustMessage";
 import { MockMap } from "@/shared/components/MockMap";
 
-import { useAppRoute } from "@/shared/hooks/useAppRoute";
-
-import SearchPage from "@/features/search/page";
-
 export default function Page() {
-  /**
-   * Route فعلی را از URL می‌گیریم.
-   *
-   * اینجا useState نداریم.
-   */
-  const { route } = useAppRoute();
-
-  /**
-   * ==========================================================
-   * Search Feature
-   * ==========================================================
-   */
-  if (route === "search") {
-    return <SearchPage />;
-  }
-
-  /**
-   * ==========================================================
-   * Home
-   * ==========================================================
-   */
-
   return (
     <div
       dir="rtl"
@@ -58,7 +19,10 @@ export default function Page() {
         bg-slate-100
       "
     >
-      {/* نقشه پس‌زمینه */}
+      {/* ======================================================
+          نقشه پس‌زمینه
+          ====================================================== */}
+
       <div
         className="
           pointer-events-none
@@ -70,6 +34,7 @@ export default function Page() {
       >
         <MockMap />
 
+        {/* لایه سفید شفاف روی نقشه */}
         <div
           className="
             absolute
@@ -80,7 +45,10 @@ export default function Page() {
         />
       </div>
 
-      {/* محتوای اصلی */}
+      {/* ======================================================
+          محتوای اصلی Home
+          ====================================================== */}
+
       <div
         className="
           relative
@@ -92,8 +60,10 @@ export default function Page() {
           overflow-visible
         "
       >
+        {/* Header */}
         <HomeHeader />
 
+        {/* Main */}
         <main
           className="
             flex
@@ -117,6 +87,10 @@ export default function Page() {
               lg:max-w-5xl
             "
           >
+            {/* =================================================
+                عنوان Home
+                ================================================= */}
+
             <div
               className="
                 mb-6
@@ -150,6 +124,10 @@ export default function Page() {
               </h2>
             </div>
 
+            {/* =================================================
+                پنل اصلی
+                ================================================= */}
+
             <div
               className="
                 rounded-2xl
@@ -164,14 +142,20 @@ export default function Page() {
               "
             >
               <div className="space-y-3 sm:space-y-4">
+
+                {/* ورود به Search */}
                 <HomeSearchButton />
 
+                {/* ورود به Request */}
                 <HomeRequestButton />
 
+                {/* نقش‌های کاربر */}
                 <HomeRoleCards />
+
               </div>
             </div>
 
+            {/* پیام اعتماد */}
             <div className="mt-4 pb-12">
               <HomeTrustMessage />
             </div>
