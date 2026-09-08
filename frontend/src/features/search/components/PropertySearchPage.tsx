@@ -1,76 +1,55 @@
 "use client";
 
-/**
- * ============================================================
- * PropertySearchPage
- * ------------------------------------------------------------
- * صفحه اصلی جستجوی ملک
- *
- * ساختار:
- *
- *                 نقشه تمام صفحه
- *
- *          ┌─────────────────────────┐
- *          │      نوار جستجو         │
- *          └─────────────────────────┘
- *
- *       خرید | آپارتمان | فیلترها | هوشمند
- *
- *              ┌─────────────────┐
- *              │ پنل فعال        │
- *              └─────────────────┘
- *
- * نقشه در تمام صفحه باقی می‌ماند.
- * ============================================================
- */
+// ---------------------------------------------------------
+// صفحه اصلی جستجوی ملک
+// ---------------------------------------------------------
 
 import { useState } from "react";
 
 import { usePropertySearch } from "../hooks/usePropertySearch";
 
+import { PropertyFiltersPanel } from "./PropertyFiltersPanel";
 import { SearchBar } from "./SearchBar";
 import { SearchMap } from "./SearchMap";
 import { SearchTabs } from "./SearchTabs";
 import { SmartSearchPanel } from "./SmartSearchPanel";
-import { PropertyFiltersPanel } from "./PropertyFiltersPanel";
 
+// ---------------------------------------------------------
+// کامپوننت صفحه جستجو
+// ---------------------------------------------------------
 export function PropertySearchPage() {
-  /**
-   * ==========================================================
-   * منطق جستجوی فعلی
-   * ==========================================================
-   */
+  // -------------------------------------------------------
+  // تمام State جستجو از Hook گرفته می‌شود.
+  // -------------------------------------------------------
   const {
     filters,
     setFilter,
+    resetFilters,
+    getActiveFilterCount,
     search,
     isSearching,
   } = usePropertySearch();
 
-  /**
-   * ==========================================================
-   * پنل باز فعلی
-   *
-   * فقط یکی از این دو پنل می‌تواند باز باشد:
-   *
-   * filters
-   * smart
-   * null
-   * ==========================================================
-   */
-  const [activePanel, setActivePanel] = useState<
-    "filters" | "smart" | null
-  >(null);
+  // -------------------------------------------------------
+  // مشخص می‌کند کدام پنل باز باشد:
+  //
+  // filters → فیلترهای ساختاری
+  // smart   → جستجوی هوشمند
+  // null    → هیچ پنلی باز نیست
+  // -------------------------------------------------------
+  const [activePanel, setActivePanel] =
+    useState<"filters" | "smart" | null>(null);
 
-  /**
-   * ==========================================================
-   * خروج از پنل
-   * ==========================================================
-   */
+  // -------------------------------------------------------
+  // بستن پنل
+  // -------------------------------------------------------
   const closePanel = () => {
     setActivePanel(null);
   };
 
+  // -------------------------------------------------------
+  // خروجی
+  // -------------------------------------------------------
   return (
     <main
       dir="rtl"
@@ -82,14 +61,14 @@ export function PropertySearchPage() {
         bg-slate-100
       "
     >
-      {/* =====================================================
+      {/* -------------------------------------------------
           نقشه
-          ===================================================== */}
+      -------------------------------------------------- */}
       <SearchMap />
 
-      {/* =====================================================
-          لایه بالایی
-          ===================================================== */}
+      {/* -------------------------------------------------
+          لایه کنترل‌های جستجو
+      -------------------------------------------------- */}
       <div
         className="
           pointer-events-none
@@ -105,11 +84,16 @@ export function PropertySearchPage() {
           sm:pt-5
         "
       >
-        <div className="pointer-events-auto w-full max-w-4xl">
-
-          {/* =================================================
-              نوار اصلی جستجو
-              ================================================= */}
+        <div
+          className="
+            pointer-events-auto
+            w-full
+            max-w-4xl
+          "
+        >
+          {/* ------------------------------------------------
+              Search Bar
+          ------------------------------------------------- */}
           <SearchBar
             district={filters.district}
             setDistrict={(value) =>
@@ -117,9 +101,9 @@ export function PropertySearchPage() {
             }
           />
 
-          {/* =================================================
-              تب‌ها
-              ================================================= */}
+          {/* ------------------------------------------------
+              Tabs
+          ------------------------------------------------- */}
           <SearchTabs
             filters={filters}
             setFilter={setFilter}
@@ -127,17 +111,25 @@ export function PropertySearchPage() {
             setActivePanel={setActivePanel}
           />
 
-          {/* =================================================
-              پنل فیلترهای دقیق
-              ================================================= */}
+          {/* ------------------------------------------------
+              پنل فیلترهای ساختاری
+          ------------------------------------------------- */}
           <PropertyFiltersPanel
             isOpen={activePanel === "filters"}
             onClose={closePanel}
+            filters={filters}
+            setFilter={setFilter}
+            resetFilters={resetFilters}
+            getActiveFilterCount={
+              getActiveFilterCount
+            }
+            search={search}
+            isSearching={isSearching}
           />
 
-          {/* =================================================
-              پنل جستجوی هوشمند
-              ================================================= */}
+          {/* ------------------------------------------------
+              جستجوی هوشمند
+          ------------------------------------------------- */}
           <SmartSearchPanel
             isOpen={activePanel === "smart"}
             onClose={closePanel}
@@ -147,9 +139,9 @@ export function PropertySearchPage() {
         </div>
       </div>
 
-      {/* =====================================================
+      {/* ---------------------------------------------------
           کنترل‌های نقشه
-          ===================================================== */}
+      --------------------------------------------------- */}
       <div
         className="
           absolute
@@ -159,11 +151,9 @@ export function PropertySearchPage() {
           flex
           flex-col
           gap-2
-          sm:bottom-6
-          sm:left-6
         "
       >
-        {/* بزرگنمایی */}
+        {/* Zoom In */}
         <button
           type="button"
           className="
@@ -173,23 +163,19 @@ export function PropertySearchPage() {
             items-center
             justify-center
             rounded-xl
-            border
-            border-white/80
-            bg-white/90
+            bg-white
             text-xl
-            font-semibold
+            font-bold
             text-slate-700
             shadow-lg
-            backdrop-blur
             transition
-            hover:bg-white
+            hover:bg-slate-50
           "
-          aria-label="بزرگنمایی"
         >
           +
         </button>
 
-        {/* کوچکنمایی */}
+        {/* Zoom Out */}
         <button
           type="button"
           className="
@@ -199,43 +185,35 @@ export function PropertySearchPage() {
             items-center
             justify-center
             rounded-xl
-            border
-            border-white/80
-            bg-white/90
+            bg-white
             text-xl
-            font-semibold
+            font-bold
             text-slate-700
             shadow-lg
-            backdrop-blur
             transition
-            hover:bg-white
+            hover:bg-slate-50
           "
-          aria-label="کوچکنمایی"
         >
           −
         </button>
 
-        {/* موقعیت فعلی */}
+        {/* Location */}
         <button
           type="button"
           className="
-            mt-1
             flex
             h-10
             w-10
             items-center
             justify-center
             rounded-xl
-            border
-            border-white/80
-            bg-white/90
+            bg-white
+            text-lg
             text-slate-700
             shadow-lg
-            backdrop-blur
             transition
-            hover:bg-white
+            hover:bg-slate-50
           "
-          aria-label="موقعیت فعلی"
         >
           ◎
         </button>

@@ -1,522 +1,797 @@
 "use client";
 
-/**
- * ============================================================
- * PropertyFiltersPanel
- * ------------------------------------------------------------
- * پنل فیلترهای دقیق جستجوی ملک
- *
- * این پنل برای اطلاعات ساختاریافته است.
- *
- * مثال:
- * - تعداد اتاق
- * - قیمت
- * - متراژ
- * - پارکینگ
- * - حمام
- * - سن بنا
- * - طبقه
- * - امکانات
- * - وضعیت سند
- *
- * جستجوی طبیعی و توصیفی در اینجا قرار ندارد.
- * آن بخش در SmartSearchPanel است.
- * ============================================================
- */
+// ---------------------------------------------------------
+// پنل فیلترهای پیشرفته جستجوی ملک
+// ---------------------------------------------------------
+// این کامپوننت فقط UI است.
+// State اصلی در usePropertySearch قرار دارد.
+// ---------------------------------------------------------
+
+import { X } from "lucide-react";
 
 import {
-  Car,
-  Check,
-  DoorOpen,
-  FileCheck2,
-  Home,
-  ParkingSquare,
-  Ruler,
-  Sparkles,
-  Warehouse,
-} from "lucide-react";
+  PropertySearchState,
+} from "../hooks/usePropertySearch";
 
+// ---------------------------------------------------------
+// Props
+// ---------------------------------------------------------
 interface PropertyFiltersPanelProps {
+  // آیا پنل باز است؟
   isOpen: boolean;
 
+  // بستن پنل
   onClose: () => void;
+
+  // State فیلترها
+  filters: PropertySearchState;
+
+  // تغییر فیلتر
+  setFilter: <K extends keyof PropertySearchState>(
+    key: K,
+    value: PropertySearchState[K]
+  ) => void;
+
+  // پاک کردن فیلترها
+  resetFilters: () => void;
+
+  // تعداد فیلترهای فعال
+  getActiveFilterCount: () => number;
+
+  // اجرای جستجو
+  search: () => Promise<void>;
+
+  // وضعیت جستجو
+  isSearching: boolean;
 }
 
-/**
- * گزینه‌های تعداد اتاق
- */
+// ---------------------------------------------------------
+// گزینه‌های تعداد اتاق
+// ---------------------------------------------------------
 const roomOptions = [
-  "مهم نیست",
-  "بدون اتاق",
-  "۱ اتاق",
-  "۲ اتاق",
-  "۳ اتاق",
-  "۴ اتاق",
-  "۵ اتاق و بیشتر",
+  { value: "", label: "مهم نیست" },
+  { value: "0", label: "بدون اتاق" },
+  { value: "1", label: "۱ اتاق" },
+  { value: "2", label: "۲ اتاق" },
+  { value: "3", label: "۳ اتاق" },
+  { value: "4", label: "۴ اتاق" },
+  { value: "5+", label: "۵ اتاق و بیشتر" },
 ];
 
-/**
- * گزینه‌های تعداد پارکینگ
- */
-const parkingOptions = [
-  "مهم نیست",
-  "بدون پارکینگ",
-  "۱",
-  "۲",
-  "۳ و بیشتر",
-];
-
-/**
- * گزینه‌های حمام
- */
+// ---------------------------------------------------------
+// گزینه‌های حمام
+// ---------------------------------------------------------
 const bathroomOptions = [
-  "مهم نیست",
-  "۱",
-  "۲",
-  "۳ و بیشتر",
+  { value: "", label: "مهم نیست" },
+  { value: "1", label: "۱" },
+  { value: "2", label: "۲" },
+  { value: "3+", label: "۳ و بیشتر" },
 ];
 
-/**
- * گزینه‌های سن بنا
- */
+// ---------------------------------------------------------
+// گزینه‌های سن بنا
+// ---------------------------------------------------------
 const ageOptions = [
-  "مهم نیست",
-  "نوساز",
-  "۱ تا ۵ سال",
-  "۶ تا ۱۰ سال",
-  "۱۱ تا ۲۰ سال",
-  "بیش از ۲۰ سال",
+  { value: "", label: "مهم نیست" },
+  { value: "0", label: "نوساز" },
+  { value: "1-5", label: "۱ تا ۵ سال" },
+  { value: "6-10", label: "۶ تا ۱۰ سال" },
+  { value: "11-20", label: "۱۱ تا ۲۰ سال" },
+  { value: "20+", label: "بیش از ۲۰ سال" },
 ];
 
+// ---------------------------------------------------------
+// گزینه‌های آخرین بروزرسانی
+// ---------------------------------------------------------
+const updateOptions = [
+  { value: "", label: "مهم نیست" },
+  { value: "1", label: "امروز" },
+  { value: "3", label: "۳ روز اخیر" },
+  { value: "7", label: "۷ روز اخیر" },
+  { value: "30", label: "۳۰ روز اخیر" },
+];
+
+// ---------------------------------------------------------
+// کامپوننت اصلی
+// ---------------------------------------------------------
 export function PropertyFiltersPanel({
   isOpen,
   onClose,
+  filters,
+  setFilter,
+  resetFilters,
+  getActiveFilterCount,
+  search,
+  isSearching,
 }: PropertyFiltersPanelProps) {
+  // -------------------------------------------------------
+  // اگر پنل بسته است چیزی نمایش نده
+  // -------------------------------------------------------
   if (!isOpen) {
     return null;
   }
 
+  // -------------------------------------------------------
+  // کلاس مشترک Input
+  // -------------------------------------------------------
+  const inputClassName = `
+    h-11
+    w-full
+    rounded-xl
+    border
+    border-slate-200
+    bg-white
+    px-3
+    text-sm
+    text-slate-800
+    outline-none
+    transition
+    focus:border-slate-400
+    focus:ring-2
+    focus:ring-slate-200
+  `;
+
+  // -------------------------------------------------------
+  // کلاس مشترک Select
+  // -------------------------------------------------------
+  const selectClassName = `
+    h-11
+    w-full
+    rounded-xl
+    border
+    border-slate-200
+    bg-white
+    px-3
+    text-sm
+    text-slate-800
+    outline-none
+    focus:border-slate-400
+    focus:ring-2
+    focus:ring-slate-200
+  `;
+
+  // -------------------------------------------------------
+  // Checkbox
+  // -------------------------------------------------------
+  const Checkbox = ({
+    checked,
+    label,
+    onChange,
+  }: {
+    checked: boolean;
+    label: string;
+    onChange: (checked: boolean) => void;
+  }) => {
+    return (
+      <label
+        className="
+          flex
+          cursor-pointer
+          items-center
+          gap-3
+          rounded-xl
+          border
+          border-slate-200
+          bg-white
+          px-3
+          py-3
+          text-sm
+          transition
+          hover:border-slate-300
+        "
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) =>
+            onChange(event.target.checked)
+          }
+          className="
+            h-4
+            w-4
+            accent-slate-900
+          "
+        />
+
+        <span className="text-slate-700">
+          {label}
+        </span>
+      </label>
+    );
+  };
+
+  // -------------------------------------------------------
+  // خروجی
+  // -------------------------------------------------------
   return (
     <div
       className="
-        mt-2
+        mt-3
         max-h-[calc(100dvh-150px)]
         overflow-y-auto
         rounded-2xl
         border
-        border-white/80
+        border-white/70
         bg-white/95
+        p-4
         shadow-2xl
-        backdrop-blur-2xl
+        backdrop-blur-xl
+        sm:p-5
       "
     >
-      {/* =====================================================
+      {/* -------------------------------------------------
           Header
-          ===================================================== */}
+      -------------------------------------------------- */}
       <div
         className="
-          sticky
-          top-0
-          z-10
+          mb-5
           flex
           items-center
           justify-between
           border-b
           border-slate-100
-          bg-white/95
-          px-4
-          py-3
-          backdrop-blur-xl
+          pb-4
         "
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-xl
-              bg-slate-900
-              text-white
-            "
-          >
-            <Sparkles size={17} />
-          </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-900">
+            فیلترهای جستجو
+          </h2>
 
-          <div>
-            <div className="text-sm font-bold text-slate-900">
-              فیلترهای ملک
-            </div>
-
-            <div className="text-[11px] text-slate-500">
-              مشخصات دقیق ملک را انتخاب کنید
-            </div>
-          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            {getActiveFilterCount() === 0
+              ? "هنوز فیلتری انتخاب نشده"
+              : `${getActiveFilterCount()} فیلتر فعال`}
+          </p>
         </div>
 
         <button
           type="button"
           onClick={onClose}
           className="
-            rounded-lg
-            px-3
-            py-1.5
-            text-xs
-            font-semibold
-            text-slate-500
-            hover:bg-slate-100
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+            rounded-full
+            bg-slate-100
+            text-slate-600
+            transition
+            hover:bg-slate-200
           "
         >
-          بستن
+          <X size={18} />
         </button>
       </div>
 
-      <div className="space-y-6 p-4">
+      {/* -------------------------------------------------
+          نوع معامله و ملک
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          نوع معامله و ملک
+        </h3>
 
-        {/* ===================================================
-            تعداد اتاق
-            =================================================== */}
-        <FilterSection
-          icon={<DoorOpen size={17} />}
-          title="تعداد اتاق"
-        >
-          <div className="flex flex-wrap gap-2">
-            {roomOptions.map((item, index) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={index === 0}
-              />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <select
+            value={filters.transactionType}
+            onChange={(event) =>
+              setFilter(
+                "transactionType",
+                event.target.value as PropertySearchState["transactionType"]
+              )
+            }
+            className={selectClassName}
+          >
+            <option value="">نوع معامله</option>
+            <option value="خرید">خرید</option>
+            <option value="رهن">رهن</option>
+            <option value="اجاره">اجاره</option>
+            <option value="رهن و اجاره">
+              رهن و اجاره
+            </option>
+          </select>
+
+          <select
+            value={filters.propertyType}
+            onChange={(event) =>
+              setFilter(
+                "propertyType",
+                event.target.value as PropertySearchState["propertyType"]
+              )
+            }
+            className={selectClassName}
+          >
+            <option value="">نوع ملک</option>
+            <option value="آپارتمان">آپارتمان</option>
+            <option value="خانه">خانه</option>
+            <option value="ویلا">ویلا</option>
+            <option value="زمین">زمین</option>
+            <option value="مغازه">مغازه</option>
+            <option value="اداری">اداری</option>
+            <option value="باغ">باغ</option>
+          </select>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          قیمت
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          محدوده قیمت
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={filters.minPrice}
+            onChange={(event) =>
+              setFilter(
+                "minPrice",
+                event.target.value
+              )
+            }
+            placeholder="حداقل قیمت"
+            className={inputClassName}
+          />
+
+          <input
+            type="text"
+            inputMode="numeric"
+            value={filters.maxPrice}
+            onChange={(event) =>
+              setFilter(
+                "maxPrice",
+                event.target.value
+              )
+            }
+            placeholder="حداکثر قیمت"
+            className={inputClassName}
+          />
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          متراژ
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          متراژ
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={filters.minArea}
+            onChange={(event) =>
+              setFilter(
+                "minArea",
+                event.target.value
+              )
+            }
+            placeholder="حداقل متراژ"
+            className={inputClassName}
+          />
+
+          <input
+            type="text"
+            inputMode="numeric"
+            value={filters.maxArea}
+            onChange={(event) =>
+              setFilter(
+                "maxArea",
+                event.target.value
+              )
+            }
+            placeholder="حداکثر متراژ"
+            className={inputClassName}
+          />
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          اتاق و حمام
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          مشخصات ملک
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3">
+          <select
+            value={filters.rooms}
+            onChange={(event) =>
+              setFilter(
+                "rooms",
+                event.target.value
+              )
+            }
+            className={selectClassName}
+          >
+            <option value="">تعداد اتاق</option>
+
+            {roomOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </option>
             ))}
-          </div>
-        </FilterSection>
+          </select>
 
-        {/* ===================================================
-            قیمت
-            =================================================== */}
-        <FilterSection
-          icon={<Home size={17} />}
-          title="قیمت"
-        >
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="حداقل قیمت"
-              className="
-                h-11
-                rounded-xl
-                border
-                border-slate-200
-                bg-slate-50
-                px-3
-                text-sm
-                outline-none
-                focus:border-slate-400
-                focus:bg-white
-              "
-            />
+          <select
+            value={filters.bathrooms}
+            onChange={(event) =>
+              setFilter(
+                "bathrooms",
+                event.target.value
+              )
+            }
+            className={selectClassName}
+          >
+            <option value="">تعداد حمام</option>
 
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="حداکثر قیمت"
-              className="
-                h-11
-                rounded-xl
-                border
-                border-slate-200
-                bg-slate-50
-                px-3
-                text-sm
-                outline-none
-                focus:border-slate-400
-                focus:bg-white
-              "
-            />
-          </div>
-        </FilterSection>
-
-        {/* ===================================================
-            متراژ
-            =================================================== */}
-        <FilterSection
-          icon={<Ruler size={17} />}
-          title="متراژ"
-        >
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="number"
-              placeholder="حداقل متر"
-              className="
-                h-11
-                rounded-xl
-                border
-                border-slate-200
-                bg-slate-50
-                px-3
-                text-sm
-                outline-none
-                focus:border-slate-400
-                focus:bg-white
-              "
-            />
-
-            <input
-              type="number"
-              placeholder="حداکثر متر"
-              className="
-                h-11
-                rounded-xl
-                border
-                border-slate-200
-                bg-slate-50
-                px-3
-                text-sm
-                outline-none
-                focus:border-slate-400
-                focus:bg-white
-              "
-            />
-          </div>
-        </FilterSection>
-
-        {/* ===================================================
-            پارکینگ
-            =================================================== */}
-        <FilterSection
-          icon={<ParkingSquare size={17} />}
-          title="پارکینگ"
-        >
-          <div className="flex flex-wrap gap-2">
-            {parkingOptions.map((item, index) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={index === 0}
-              />
+            {bathroomOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </option>
             ))}
-          </div>
-        </FilterSection>
+          </select>
+        </div>
+      </section>
 
-        {/* ===================================================
-            حمام
-            =================================================== */}
-        <FilterSection
-          icon={<Warehouse size={17} />}
-          title="تعداد حمام"
+      {/* -------------------------------------------------
+          سن بنا
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          سن بنا
+        </h3>
+
+        <select
+          value={
+            filters.minYearBuilt &&
+            filters.maxYearBuilt
+              ? `${filters.minYearBuilt}-${filters.maxYearBuilt}`
+              : filters.minYearBuilt === "0"
+                ? "0"
+                : ""
+          }
+          onChange={(event) => {
+            const value = event.target.value;
+
+            if (value === "") {
+              setFilter("minYearBuilt", "");
+              setFilter("maxYearBuilt", "");
+              return;
+            }
+
+            if (value === "0") {
+              setFilter("minYearBuilt", "0");
+              setFilter("maxYearBuilt", "0");
+              return;
+            }
+
+            if (value.includes("-")) {
+              const [min, max] = value.split("-");
+
+              setFilter("minYearBuilt", min);
+              setFilter("maxYearBuilt", max);
+              return;
+            }
+
+            if (value === "20+") {
+              setFilter("minYearBuilt", "20");
+              setFilter("maxYearBuilt", "");
+            }
+          }}
+          className={selectClassName}
         >
-          <div className="flex flex-wrap gap-2">
-            {bathroomOptions.map((item, index) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={index === 0}
-              />
-            ))}
-          </div>
-        </FilterSection>
+          {ageOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </section>
 
-        {/* ===================================================
-            سن بنا
-            =================================================== */}
-        <FilterSection
-          icon={<Home size={17} />}
-          title="سن بنا"
+      {/* -------------------------------------------------
+          طبقه
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          طبقه
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="number"
+            value={filters.minFloor}
+            onChange={(event) =>
+              setFilter(
+                "minFloor",
+                event.target.value
+              )
+            }
+            placeholder="از طبقه"
+            className={inputClassName}
+          />
+
+          <input
+            type="number"
+            value={filters.maxFloor}
+            onChange={(event) =>
+              setFilter(
+                "maxFloor",
+                event.target.value
+              )
+            }
+            placeholder="تا طبقه"
+            className={inputClassName}
+          />
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          امکانات
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          امکانات
+        </h3>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Checkbox
+            checked={filters.hasParking}
+            label="پارکینگ"
+            onChange={(value) =>
+              setFilter("hasParking", value)
+            }
+          />
+
+          <Checkbox
+            checked={filters.hasElevator}
+            label="آسانسور"
+            onChange={(value) =>
+              setFilter("hasElevator", value)
+            }
+          />
+
+          <Checkbox
+            checked={filters.hasStorage}
+            label="انباری"
+            onChange={(value) =>
+              setFilter("hasStorage", value)
+            }
+          />
+
+          <Checkbox
+            checked={filters.hasBalcony}
+            label="بالکن"
+            onChange={(value) =>
+              setFilter("hasBalcony", value)
+            }
+          />
+
+          <Checkbox
+            checked={filters.hasYard}
+            label="حیاط"
+            onChange={(value) =>
+              setFilter("hasYard", value)
+            }
+          />
+
+          <Checkbox
+            checked={filters.hasPool}
+            label="استخر"
+            onChange={(value) =>
+              setFilter("hasPool", value)
+            }
+          />
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          وضعیت حقوقی
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          وضعیت حقوقی و اعتبار
+        </h3>
+
+        <div className="grid grid-cols-1 gap-2">
+          <Checkbox
+            checked={filters.singlePageDeed}
+            label="سند تک‌برگ"
+            onChange={(value) =>
+              setFilter(
+                "singlePageDeed",
+                value
+              )
+            }
+          />
+
+          <Checkbox
+            checked={filters.documentsVerified}
+            label="اعتبار مدارک تأیید شده"
+            onChange={(value) =>
+              setFilter(
+                "documentsVerified",
+                value
+              )
+            }
+          />
+
+          <Checkbox
+            checked={filters.transactionAllowed}
+            label="قابل معامله"
+            onChange={(value) =>
+              setFilter(
+                "transactionAllowed",
+                value
+              )
+            }
+          />
+
+          <Checkbox
+            checked={filters.ownerVerified}
+            label="مالک احراز هویت شده"
+            onChange={(value) =>
+              setFilter(
+                "ownerVerified",
+                value
+              )
+            }
+          />
+
+          <Checkbox
+            checked={filters.propertyInfoVerified}
+            label="اطلاعات ملک تأیید شده"
+            onChange={(value) =>
+              setFilter(
+                "propertyInfoVerified",
+                value
+              )
+            }
+          />
+
+          <Checkbox
+            checked={filters.locationVerified}
+            label="موقعیت ملک تأیید شده"
+            onChange={(value) =>
+              setFilter(
+                "locationVerified",
+                value
+              )
+            }
+          />
+        </div>
+      </section>
+
+      {/* -------------------------------------------------
+          آخرین بروزرسانی
+      -------------------------------------------------- */}
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          تازگی آگهی
+        </h3>
+
+        <select
+          value={filters.updatedWithinDays}
+          onChange={(event) =>
+            setFilter(
+              "updatedWithinDays",
+              event.target.value
+            )
+          }
+          className={selectClassName}
         >
-          <div className="flex flex-wrap gap-2">
-            {ageOptions.map((item, index) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={index === 0}
-              />
-            ))}
-          </div>
-        </FilterSection>
+          {updateOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </section>
 
-        {/* ===================================================
-            امکانات
-            =================================================== */}
-        <FilterSection
-          icon={<Car size={17} />}
-          title="امکانات"
-        >
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <CheckOption label="آسانسور" />
-            <CheckOption label="پارکینگ" />
-            <CheckOption label="انباری" />
-            <CheckOption label="بالکن" />
-            <CheckOption label="حیاط" />
-            <CheckOption label="استخر" />
-          </div>
-        </FilterSection>
+      {/* -------------------------------------------------
+          فقط آگهی‌های فعال
+      -------------------------------------------------- */}
+      <section className="mb-5">
+        <Checkbox
+          checked={filters.onlyActive}
+          label="فقط آگهی‌های فعال"
+          onChange={(value) =>
+            setFilter("onlyActive", value)
+          }
+        />
+      </section>
 
-        {/* ===================================================
-            وضعیت سند
-            =================================================== */}
-        <FilterSection
-          icon={<FileCheck2 size={17} />}
-          title="وضعیت سند و مدارک"
-        >
-          <div className="grid gap-2">
-            <CheckOption label="سند تک‌برگ" />
-            <CheckOption label="اعتبار مدارک تأیید شده" />
-            <CheckOption label="قابل معامله" />
-          </div>
-        </FilterSection>
-
-        {/* ===================================================
-            دکمه اعمال
-            =================================================== */}
-        <div
+      {/* -------------------------------------------------
+          دکمه‌های پایین پنل
+      -------------------------------------------------- */}
+      <div
+        className="
+          sticky
+          bottom-0
+          flex
+          gap-2
+          border-t
+          border-slate-100
+          bg-white/95
+          pt-4
+          backdrop-blur
+        "
+      >
+        {/* پاک کردن */}
+        <button
+          type="button"
+          onClick={resetFilters}
           className="
-            sticky
-            bottom-0
-            -mx-4
-            -mb-4
-            border-t
-            border-slate-100
-            bg-white/95
-            p-4
-            backdrop-blur-xl
+            h-12
+            rounded-xl
+            border
+            border-slate-200
+            px-4
+            text-sm
+            font-semibold
+            text-slate-700
+            transition
+            hover:bg-slate-50
           "
         >
-          <button
-            type="button"
-            className="
-              flex
-              w-full
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-slate-900
-              px-4
-              py-3
-              text-sm
-              font-bold
-              text-white
-              shadow-lg
-              transition
-              hover:bg-slate-800
-            "
-          >
-            <Check size={17} />
-            اعمال فیلترها
-          </button>
-        </div>
+          پاک کردن
+        </button>
+
+        {/* جستجو */}
+        <button
+          type="button"
+          onClick={async () => {
+            await search();
+            onClose();
+          }}
+          disabled={isSearching}
+          className="
+            flex
+            h-12
+            flex-1
+            items-center
+            justify-center
+            rounded-xl
+            bg-slate-900
+            px-4
+            text-sm
+            font-bold
+            text-white
+            transition
+            hover:bg-slate-800
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
+        >
+          {isSearching
+            ? "در حال جستجو..."
+            : `نمایش نتایج${
+                getActiveFilterCount() > 0
+                  ? ` (${getActiveFilterCount()})`
+                  : ""
+              }`}
+        </button>
       </div>
     </div>
-  );
-}
-
-/* ============================================================
-   بخش فیلتر
-   ============================================================ */
-
-function FilterSection({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-slate-500">
-          {icon}
-        </span>
-
-        <h3 className="text-sm font-bold text-slate-800">
-          {title}
-        </h3>
-      </div>
-
-      {children}
-    </section>
-  );
-}
-
-/* ============================================================
-   دکمه انتخابی
-   ============================================================ */
-
-function FilterChip({
-  label,
-  active = false,
-}: {
-  label: string;
-  active?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      className={`
-        rounded-xl
-        border
-        px-3
-        py-2
-        text-xs
-        font-medium
-        transition
-
-        ${
-          active
-            ? "border-slate-900 bg-slate-900 text-white"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-        }
-      `}
-    >
-      {label}
-    </button>
-  );
-}
-
-/* ============================================================
-   گزینه تیک‌دار
-   ============================================================ */
-
-function CheckOption({
-  label,
-}: {
-  label: string;
-}) {
-  return (
-    <label
-      className="
-        flex
-        cursor-pointer
-        items-center
-        gap-2
-        rounded-xl
-        border
-        border-slate-200
-        bg-white
-        px-3
-        py-3
-        text-xs
-        text-slate-700
-        transition
-        hover:bg-slate-50
-      "
-    >
-      <input
-        type="checkbox"
-        className="
-          h-4
-          w-4
-          rounded
-          border-slate-300
-        "
-      />
-
-      <span>{label}</span>
-    </label>
   );
 }
