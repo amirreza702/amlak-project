@@ -1,17 +1,115 @@
+"use client";
 
 import { Building2 } from "lucide-react";
-
-import { MapPropertyMarker } from "./MapPropertyMarker";
 
 /*
   ================================================================
   MockMap
   ================================================================
 
-  نقشه Prototype است.
+  این کامپوننت فقط برای Prototype / ظاهر اولیه سایت است.
 
-  هیچ شهر یا مکان خاصی در آن hard-code نشده است.
+  نکته مهم:
+  - این نقشه واقعی نیست.
+  - برای نمایش ظاهر صفحه Home استفاده می‌شود.
+  - به MapPropertyMarker واقعی وابسته نیست.
+  - Markerهای قیمت‌دار مخصوص همین Prototype هستند.
+  - بنابراین تغییرات MapPropertyMarker.tsx روی این نقشه
+    تأثیری ندارد.
+  ================================================================
 */
+
+
+/*
+  ================================================================
+  MockPriceMarker
+  ================================================================
+
+  Marker ساده مخصوص نقشه Prototype.
+
+  ورودی‌ها:
+  - price : قیمت نمایشی ملک
+  - top   : موقعیت عمودی
+  - left  : موقعیت افقی
+
+  این کامپوننت عمداً داخل MockMap قرار گرفته تا
+  با MapPropertyMarker واقعی قاطی نشود.
+  ================================================================
+*/
+
+interface MockPriceMarkerProps {
+  price: string;
+  top: string;
+  left: string;
+}
+
+function MockPriceMarker({
+  price,
+  top,
+  left,
+}: MockPriceMarkerProps) {
+  return (
+    <div
+      className="
+        absolute
+        z-20
+        -translate-x-1/2
+        -translate-y-1/2
+      "
+      style={{
+        top,
+        left,
+      }}
+    >
+      {/* بدنه مارکر قیمت */}
+      <div
+        className="
+          whitespace-nowrap
+          rounded-full
+          border
+          border-white
+          bg-slate-900
+          px-3
+          py-1.5
+          text-xs
+          font-bold
+          text-white
+          shadow-lg
+          transition-all
+          duration-200
+          hover:scale-105
+          hover:bg-slate-800
+        "
+        dir="rtl"
+      >
+        {price}
+      </div>
+
+      {/* نوک کوچک مارکر */}
+      <div
+        className="
+          absolute
+          left-1/2
+          top-full
+          h-2
+          w-2
+          -translate-x-1/2
+          -translate-y-1/2
+          rotate-45
+          bg-slate-900
+        "
+      />
+    </div>
+  );
+}
+
+
+/*
+  ================================================================
+  MockMap
+  ================================================================
+*/
+
 export function MockMap() {
   return (
     <div
@@ -24,7 +122,10 @@ export function MockMap() {
       "
     >
 
-      {/* فضای سبز */}
+      {/* =========================================================
+          فضای سبز
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -37,7 +138,11 @@ export function MockMap() {
         "
       />
 
-      {/* خیابان افقی اول */}
+
+      {/* =========================================================
+          خیابان افقی اول
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -50,7 +155,11 @@ export function MockMap() {
         "
       />
 
-      {/* خیابان افقی دوم */}
+
+      {/* =========================================================
+          خیابان افقی دوم
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -63,7 +172,11 @@ export function MockMap() {
         "
       />
 
-      {/* خیابان عمودی اول */}
+
+      {/* =========================================================
+          خیابان عمودی اول
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -76,7 +189,11 @@ export function MockMap() {
         "
       />
 
-      {/* خیابان عمودی دوم */}
+
+      {/* =========================================================
+          خیابان عمودی دوم
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -89,7 +206,11 @@ export function MockMap() {
         "
       />
 
-      {/* محدوده مرکزی نمونه */}
+
+      {/* =========================================================
+          محدوده مرکزی نمونه
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -104,7 +225,11 @@ export function MockMap() {
         "
       />
 
-      {/* نقطه مرکزی نمونه */}
+
+      {/* =========================================================
+          نقطه مرکزی نمونه
+          ========================================================= */}
+
       <div
         className="
           absolute
@@ -114,15 +239,21 @@ export function MockMap() {
           -translate-y-1/2
         "
       >
+
+        {/* هاله اطراف نقطه مرکزی */}
+
         <div
           className="
             absolute
             -inset-8
             rounded-full
-            border border-brand-turquoise/20
+            border
+            border-brand-turquoise/20
             bg-brand-turquoise/5
           "
         />
+
+        {/* نقطه مرکزی */}
 
         <div
           className="
@@ -139,55 +270,95 @@ export function MockMap() {
             shadow-lg
           "
         >
-          <div className="h-2 w-2 rounded-full bg-white" />
+          <div
+            className="
+              h-2
+              w-2
+              rounded-full
+              bg-white
+            "
+          />
         </div>
+
       </div>
 
-      {/* Markerهای نمونه ملک */}
-      <MapPropertyMarker
-        price="۸.۲ میلیارد"
+
+      {/* =========================================================
+          Markerهای نمونه ملک
+          
+          این ۵ مورد عمداً حفظ شده‌اند.
+          ========================================================= */}
+
+      <MockPriceMarker
+        price="8.2 میلیارد"
         top="31%"
         left="22%"
       />
 
-      <MapPropertyMarker
-        price="۱۲ میلیارد"
+      <MockPriceMarker
+        price="12 میلیارد"
         top="24%"
         left="68%"
       />
 
-      <MapPropertyMarker
+      <MockPriceMarker
         price="۶.۵ میلیارد"
         top="58%"
         left="34%"
       />
 
-      <MapPropertyMarker
-        price="۹.۸ میلیارد"
+      <MockPriceMarker
+        price="۹٫۸ میلیارد"
         top="63%"
         left="73%"
       />
 
-      <MapPropertyMarker
-        price="۴.۹ میلیارد"
+      <MockPriceMarker
+        price="۴٫۹ میلیارد"
         top="43%"
         left="52%"
       />
 
-      {/* ساختمان‌های نمونه */}
-      <div className="absolute left-[12%] top-[50%] text-slate-400/30">
+
+      {/* =========================================================
+          ساختمان‌های نمونه
+          ========================================================= */}
+
+      <div
+        className="
+          absolute
+          left-[12%]
+          top-[50%]
+          text-slate-400/30
+        "
+      >
         <Building2 className="h-10 w-10" />
       </div>
 
-      <div className="absolute right-[12%] top-[40%] text-slate-400/30">
+
+      <div
+        className="
+          absolute
+          right-[12%]
+          top-[40%]
+          text-slate-400/30
+        "
+      >
         <Building2 className="h-12 w-12" />
       </div>
 
-      <div className="absolute left-[45%] top-[78%] text-slate-400/25">
+
+      <div
+        className="
+          absolute
+          left-[45%]
+          top-[78%]
+          text-slate-400/25
+        "
+      >
         <Building2 className="h-9 w-9" />
       </div>
 
     </div>
   );
 }
-
