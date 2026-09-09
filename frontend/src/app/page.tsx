@@ -5,7 +5,25 @@ import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
 import { HomeRoleCards } from "@/shared/components/HomeRoleCards";
 import { HomeTrustMessage } from "@/shared/components/HomeTrustMessage";
-import { MockMap } from "@/shared/components/MockMap";
+
+import dynamic from "next/dynamic";
+
+/**
+ * نقشه فقط در مرورگر لود می‌شود.
+ *
+ * دلیل:
+ * Leaflet به window و document نیاز دارد
+ * و نباید هنگام prerender سمت سرور اجرا شود.
+ */
+const RealMap = dynamic(
+  () =>
+    import("@/shared/components/map/RealMap").then(
+      (module) => module.RealMap
+    ),
+  {
+    ssr: false,
+  }
+);
 
 export default function Page() {
   return (
@@ -23,27 +41,45 @@ export default function Page() {
           نقشه پس‌زمینه
           ====================================================== */}
 
-      <div
-        className="
-          pointer-events-none
-          fixed
-          inset-0
-          z-0
-          select-none
-        "
-      >
-        <MockMap />
+      {/* ======================================================
+    نقشه پس‌زمینه Home
+    ======================================================
+    نقشه عمداً خاکستری، کم‌رنگ و غیرفعال است.
+    هدف این است که کاربر متوجه شود نقشه پس‌زمینه
+    است و تعامل اصلی باید با پنل Home انجام شود.
+====================================================== */}
 
-        {/* لایه سفید شفاف روی نقشه */}
-        <div
-          className="
-            absolute
-            inset-0
-            bg-white/65
-            backdrop-blur-[2px]
-          "
-        />
-      </div>
+<div
+  className="
+    pointer-events-none
+    fixed
+    inset-0
+    z-0
+    select-none
+  "
+>
+  {/* خود نقشه */}
+  <div
+    className="
+      absolute
+      inset-0
+      grayscale
+      opacity-40
+    "
+  >
+    <RealMap />
+  </div>
+
+  {/* لایه سفید برای کم‌رنگ‌تر کردن نقشه */}
+  <div
+    className="
+      pointer-events-none
+      absolute
+      inset-0
+      bg-white/45
+    "
+  />
+</div>
 
       {/* ======================================================
           محتوای اصلی Home
