@@ -1,4 +1,3 @@
-
 "use client";
 
 /**
@@ -6,18 +5,15 @@
  * RealMap
  * =========================================================
  *
- * نقشه واقعی پروژه با استفاده از:
+ * نقشه واقعی پروژه هشتی
  *
- * - Leaflet
- * - React Leaflet
- * - OpenStreetMap
- *
- * وظایف:
- *
- * 1. نمایش نقشه
- * 2. نمایش Markerهای ملک
- * 3. نمایش کنترل‌های نقشه
- * 4. گزارش محدوده فعلی نقشه
+ * مسئولیت‌ها:
+ * 1. ساخت نقشه Leaflet
+ * 2. نمایش OpenStreetMap
+ * 3. نمایش Markerهای ملک
+ * 4. دریافت Bounds نقشه
+ * 5. فیلتر کردن ملک‌ها بر اساس Bounds
+ * 6. نمایش کنترل‌های نقشه
  *
  * =========================================================
  */
@@ -30,7 +26,6 @@ import {
 import "leaflet/dist/leaflet.css";
 
 import { MapPropertyMarker } from "../MapPropertyMarker";
-
 import { MapControls } from "./MapControls";
 
 import {
@@ -38,74 +33,71 @@ import {
   type MapBounds,
 } from "./MapViewport";
 
-/**
+
+/*
  * =========================================================
- * نوع اطلاعات ملک روی نقشه
+ * مدل ملک
  * =========================================================
  */
 
 export interface MapProperty {
   id: string;
-
   title: string;
-
   location: string;
-
   area: number;
-
   rooms: number;
-
   price: string;
-
   latitude: number;
-
   longitude: number;
 }
 
-/**
+
+/*
  * =========================================================
- * Props نقشه
+ * Props
  * =========================================================
  */
 
 interface RealMapProps {
-  /**
-   * زمانی که محدوده نقشه تغییر کند،
-   * این callback اجرا می‌شود.
-   *
-   * SearchMap این اطلاعات را دریافت می‌کند
-   * و در مراحل بعد به Search API خواهد داد.
+
+  /*
+   * Bounds فعلی که SearchMap نگهداری می‌کند.
+   */
+  bounds?: MapBounds | null;
+
+  /*
+   * وقتی Bounds نقشه تغییر کرد،
+   * آن را به SearchMap اعلام می‌کنیم.
    */
   onBoundsChange?: (
     bounds: MapBounds
   ) => void;
 }
 
-/**
+
+/*
  * =========================================================
- * مرکز پیش‌فرض نقشه
- *
- * شاهرود - میدان امام خمینی
+ * مرکز اولیه شاهرود
  * =========================================================
  */
 
-const SHAHRUD_CENTER: [number, number] = [
+const SHAHRUD_CENTER: [
+  number,
+  number
+] = [
   36.4182,
   54.9763,
 ];
 
-/**
+
+/*
  * =========================================================
- * داده Mock
- *
- * فعلاً اطلاعات واقعی Backend نداریم.
- *
- * در مرحله Backend این قسمت حذف می‌شود و
- * داده از Search API دریافت خواهد شد.
+ * داده آزمایشی ملک‌ها
  * =========================================================
  */
 
 const MOCK_PROPERTIES: MapProperty[] = [
+
   {
     id: "property-1",
     title: "آپارتمان دو خوابه",
@@ -160,17 +152,89 @@ const MOCK_PROPERTIES: MapProperty[] = [
     latitude: 36.4145,
     longitude: 54.9925,
   },
+
 ];
 
-/**
+
+/*
  * =========================================================
- * RealMap Component
+ * RealMap
  * =========================================================
  */
 
 export function RealMap({
+  bounds,
   onBoundsChange,
 }: RealMapProps) {
+
+
+  /*
+   * =======================================================
+   * فیلتر ملک‌ها
+   * =======================================================
+   *
+   * اگر هنوز Bounds دریافت نشده:
+   *
+   * همه ملک‌ها را نمایش می‌دهیم.
+   *
+   * بعد از دریافت Bounds:
+   *
+   * فقط ملک‌هایی که داخل محدوده هستند
+   * باقی می‌مانند.
+   */
+
+  const visibleProperties =
+    bounds === null || bounds === undefined
+      ? MOCK_PROPERTIES
+      : MOCK_PROPERTIES.filter(
+          (property) => {
+
+            /*
+             * محدوده شمالی
+             */
+            const insideNorth =
+              property.latitude <= bounds.north;
+
+            /*
+             * محدوده جنوبی
+             */
+            const insideSouth =
+              property.latitude >= bounds.south;
+
+            /*
+             * محدوده شرقی
+             */
+            const insideEast =
+              property.longitude <= bounds.east;
+
+            /*
+             * محدوده غربی
+             */
+            const insideWest =
+              property.longitude >= bounds.west;
+
+
+            /*
+             * ملک زمانی داخل محدوده است که
+             * هر چهار شرط برقرار باشند.
+             */
+
+            return (
+              insideNorth &&
+              insideSouth &&
+              insideEast &&
+              insideWest
+            );
+          }
+        );
+
+
+  /*
+   * =======================================================
+   * Map
+   * =======================================================
+   */
+
   return (
     <div
       className="
@@ -181,6 +245,7 @@ export function RealMap({
         overflow-hidden
       "
     >
+
       <MapContainer
         center={SHAHRUD_CENTER}
         zoom={13}
@@ -188,62 +253,54 @@ export function RealMap({
         zoomControl={false}
         className="h-full w-full"
       >
+
         {/* =================================================
-            OpenStreetMap
-           ================================================= */}
+            Tileهای OpenStreetMap
+            ================================================= */}
 
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* =================================================
-            محدوده فعلی نقشه
-           =================================================
-           
-           این کامپوننت UI ندارد.
 
-           فقط محدوده نقشه را بعد از:
-           - حرکت
-           - Zoom
-           - نمایش اولیه
-           
-           به SearchMap گزارش می‌کند.
-           ================================================= */}
+        {/* =================================================
+            مدیریت Bounds نقشه
+            ================================================= */}
 
         <MapViewport
           onBoundsChange={onBoundsChange}
         />
 
-        {/* =================================================
-            Markerهای املاک
-           ================================================= */}
-
-        {MOCK_PROPERTIES.map((property) => (
-          <MapPropertyMarker
-            key={property.id}
-            property={property}
-          />
-        ))}
 
         {/* =================================================
-            کنترل‌های اختصاصی نقشه
-           
-            این بخش را دست نزده‌ایم.
+            Markerهای قابل مشاهده
+            =================================================
             
-            بنابراین:
-            + Zoom In
-            - Zoom Out
-            GPS
-           
-            همچنان فعال هستند.
-           ================================================= */}
+            فقط propertyهایی که داخل Bounds هستند
+            Render می‌شوند.
+            ================================================= */}
+
+        {visibleProperties.map(
+          (property) => (
+            <MapPropertyMarker
+              key={property.id}
+              property={property}
+            />
+          )
+        )}
+
+
+        {/* =================================================
+            کنترل‌های نقشه
+            ================================================= */}
 
         <MapControls
-          properties={MOCK_PROPERTIES}
+          properties={visibleProperties}
         />
+
       </MapContainer>
+
     </div>
   );
 }
-
