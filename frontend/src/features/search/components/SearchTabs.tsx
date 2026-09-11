@@ -1,42 +1,26 @@
 "use client";
 
-/**
- * ============================================================
- * SearchTabs
- * ------------------------------------------------------------
- * تب‌ها و فیلترهای بالای نقشه
- *
- * شامل:
- * 1. نوع معامله
- * 2. نوع ملک
- * 3. فیلترهای دقیق
- * 4. جستجوی هوشمند
- *
- * فیلترهای دقیق و هوشمند کاملاً از هم جدا هستند.
- * ============================================================
- */
-
 import {
   ChevronDown,
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 
-import {
+import type {
   PropertySearchState,
   PropertyType,
   TransactionType,
 } from "../hooks/usePropertySearch";
 
-/**
- * ============================================================
- * Props
- * ============================================================
- */
 interface SearchTabsProps {
   filters: PropertySearchState;
 
   setFilter: <K extends keyof PropertySearchState>(
+    key: K,
+    value: PropertySearchState[K]
+  ) => void;
+
+  setQuickFilter: <K extends keyof PropertySearchState>(
     key: K,
     value: PropertySearchState[K]
   ) => void;
@@ -48,11 +32,6 @@ interface SearchTabsProps {
   ) => void;
 }
 
-/**
- * ============================================================
- * انواع معامله
- * ============================================================
- */
 const transactionTypes: TransactionType[] = [
   "خرید",
   "رهن",
@@ -60,11 +39,6 @@ const transactionTypes: TransactionType[] = [
   "رهن و اجاره",
 ];
 
-/**
- * ============================================================
- * انواع ملک
- * ============================================================
- */
 const propertyTypes: PropertyType[] = [
   "آپارتمان",
   "خانه",
@@ -75,37 +49,27 @@ const propertyTypes: PropertyType[] = [
   "باغ",
 ];
 
-/**
- * ============================================================
- * Component
- * ============================================================
- */
 export function SearchTabs({
   filters,
   setFilter,
+  setQuickFilter,
   activePanel,
   setActivePanel,
 }: SearchTabsProps) {
-  /**
-   * باز / بسته کردن فیلترهای دقیق
-   */
   const handleFiltersClick = () => {
-    if (activePanel === "filters") {
-      setActivePanel(null);
-    } else {
-      setActivePanel("filters");
-    }
+    setActivePanel(
+      activePanel === "filters"
+        ? null
+        : "filters"
+    );
   };
 
-  /**
-   * باز / بسته کردن جستجوی هوشمند
-   */
   const handleSmartClick = () => {
-    if (activePanel === "smart") {
-      setActivePanel(null);
-    } else {
-      setActivePanel("smart");
-    }
+    setActivePanel(
+      activePanel === "smart"
+        ? null
+        : "smart"
+    );
   };
 
   return (
@@ -121,20 +85,22 @@ export function SearchTabs({
     >
       {/* =====================================================
           نوع معامله
-          ===================================================== */}
+         ===================================================== */}
       <div className="relative shrink-0">
         <select
           value={filters.transactionType}
           onChange={(event) => {
-            setFilter(
+            setQuickFilter(
               "transactionType",
-              event.target.value as TransactionType
+              event.target.value as TransactionType | ""
             );
           }}
+          aria-label="نوع معامله"
           className="
             h-10
+            min-w-[120px]
             appearance-none
-            rounded-xl
+            rounded-lg
             border
             border-white/80
             bg-white/95
@@ -148,6 +114,10 @@ export function SearchTabs({
             backdrop-blur-xl
           "
         >
+          <option value="">
+            نوع معامله
+          </option>
+
           {transactionTypes.map((type) => (
             <option
               key={type}
@@ -159,34 +129,36 @@ export function SearchTabs({
         </select>
 
         <ChevronDown
-          size={15}
+          size={16}
           className="
             pointer-events-none
             absolute
             left-3
             top-1/2
             -translate-y-1/2
-            text-slate-400
+            text-slate-500
           "
         />
       </div>
 
       {/* =====================================================
           نوع ملک
-          ===================================================== */}
+         ===================================================== */}
       <div className="relative shrink-0">
         <select
           value={filters.propertyType}
           onChange={(event) => {
-            setFilter(
+            setQuickFilter(
               "propertyType",
-              event.target.value as PropertyType
+              event.target.value as PropertyType | ""
             );
           }}
+          aria-label="نوع ملک"
           className="
             h-10
+            min-w-[120px]
             appearance-none
-            rounded-xl
+            rounded-lg
             border
             border-white/80
             bg-white/95
@@ -200,6 +172,10 @@ export function SearchTabs({
             backdrop-blur-xl
           "
         >
+          <option value="">
+            نوع ملک
+          </option>
+
           {propertyTypes.map((type) => (
             <option
               key={type}
@@ -211,45 +187,42 @@ export function SearchTabs({
         </select>
 
         <ChevronDown
-          size={15}
+          size={16}
           className="
             pointer-events-none
             absolute
             left-3
             top-1/2
             -translate-y-1/2
-            text-slate-400
+            text-slate-500
           "
         />
       </div>
 
       {/* =====================================================
-          فیلترهای دقیق
-          ===================================================== */}
+          فیلترهای پیشرفته
+         ===================================================== */}
       <button
         type="button"
         onClick={handleFiltersClick}
-        className={`
+        aria-expanded={activePanel === "filters"}
+        className="
           flex
           h-10
           shrink-0
           items-center
           gap-2
-          rounded-xl
+          rounded-lg
           border
+          border-white/80
+          bg-white/95
           px-4
           text-sm
           font-semibold
+          text-slate-700
           shadow-lg
           backdrop-blur-xl
-          transition
-
-          ${
-            activePanel === "filters"
-              ? "border-slate-900 bg-slate-900 text-white"
-              : "border-white/80 bg-white/95 text-slate-700 hover:bg-white"
-          }
-        `}
+        "
       >
         <SlidersHorizontal size={16} />
 
@@ -260,36 +233,33 @@ export function SearchTabs({
 
       {/* =====================================================
           جستجوی هوشمند
-          ===================================================== */}
+         ===================================================== */}
       <button
         type="button"
         onClick={handleSmartClick}
-        className={`
+        aria-expanded={activePanel === "smart"}
+        className="
           flex
           h-10
           shrink-0
           items-center
           gap-2
-          rounded-xl
+          rounded-lg
           border
+          border-white/80
+          bg-white/95
           px-4
           text-sm
           font-semibold
+          text-slate-700
           shadow-lg
           backdrop-blur-xl
-          transition
-
-          ${
-            activePanel === "smart"
-              ? "border-slate-900 bg-slate-900 text-white"
-              : "border-white/80 bg-white/95 text-slate-700 hover:bg-white"
-          }
-        `}
+        "
       >
         <Sparkles size={16} />
 
         <span>
-          هوشمند
+          جستجوی هوشمند
         </span>
       </button>
     </div>

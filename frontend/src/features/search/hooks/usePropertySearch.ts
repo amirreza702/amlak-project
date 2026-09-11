@@ -1,27 +1,19 @@
 "use client";
 
-// ---------------------------------------------------------
-// Hook اختصاصی جستجوی ملک
-// ---------------------------------------------------------
-// تمام State و منطق جستجو در این فایل قرار دارد.
-// کامپوننت‌های UI فقط مقدارها را نمایش می‌دهند
-// و تغییرات را از طریق setFilter به این Hook می‌فرستند.
-// ---------------------------------------------------------
-
 import { useState } from "react";
 
-// ---------------------------------------------------------
-// نوع معاملات
-// ---------------------------------------------------------
+/**
+ * ============================================================
+ * انواع فیلترهای جستجو
+ * ============================================================
+ */
+
 export type TransactionType =
   | "خرید"
   | "رهن"
   | "اجاره"
   | "رهن و اجاره";
 
-// ---------------------------------------------------------
-// نوع ملک
-// ---------------------------------------------------------
 export type PropertyType =
   | "آپارتمان"
   | "خانه"
@@ -31,43 +23,34 @@ export type PropertyType =
   | "اداری"
   | "باغ";
 
-// ---------------------------------------------------------
-// State اصلی جستجو
-// ---------------------------------------------------------
-export interface PropertySearchState {
-  // معامله
-  transactionType: TransactionType | "";
+/**
+ * ============================================================
+ * وضعیت کامل جستجو
+ * ============================================================
+ */
 
-  // نوع ملک
+export interface PropertySearchState {
+  transactionType: TransactionType | "";
   propertyType: PropertyType | "";
 
-  // موقعیت
   city: string;
   district: string;
 
-  // قیمت
   minPrice: string;
   maxPrice: string;
 
-  // متراژ
   minArea: string;
   maxArea: string;
 
-  // اتاق
   rooms: string;
-
-  // حمام
   bathrooms: string;
 
-  // سن بنا
   minYearBuilt: string;
   maxYearBuilt: string;
 
-  // طبقه
   minFloor: string;
   maxFloor: string;
 
-  // امکانات
   hasParking: boolean;
   hasElevator: boolean;
   hasStorage: boolean;
@@ -75,26 +58,24 @@ export interface PropertySearchState {
   hasYard: boolean;
   hasPool: boolean;
 
-  // وضعیت حقوقی
   singlePageDeed: boolean;
   documentsVerified: boolean;
   transactionAllowed: boolean;
-
-  // وضعیت تأیید اطلاعات
   ownerVerified: boolean;
   propertyInfoVerified: boolean;
   locationVerified: boolean;
 
-  // تازگی آگهی
   updatedWithinDays: string;
 
-  // فقط ملک‌های فعال
   onlyActive: boolean;
 }
 
-// ---------------------------------------------------------
-// مقدار اولیه State
-// ---------------------------------------------------------
+/**
+ * ============================================================
+ * مقدار اولیه فیلترها
+ * ============================================================
+ */
+
 const INITIAL_SEARCH_STATE: PropertySearchState = {
   transactionType: "",
   propertyType: "",
@@ -127,39 +108,71 @@ const INITIAL_SEARCH_STATE: PropertySearchState = {
   singlePageDeed: false,
   documentsVerified: false,
   transactionAllowed: false,
-
   ownerVerified: false,
   propertyInfoVerified: false,
   locationVerified: false,
 
   updatedWithinDays: "",
 
-  // به صورت پیش‌فرض فقط آگهی‌های فعال نمایش داده می‌شوند.
   onlyActive: true,
 };
 
-// ---------------------------------------------------------
-// Hook
-// ---------------------------------------------------------
-export function usePropertySearch() {
-  // -------------------------------------------------------
-  // State فیلترها
-  // -------------------------------------------------------
-  const [filters, setFilters] =
-    useState<PropertySearchState>(INITIAL_SEARCH_STATE);
+/**
+ * ============================================================
+ * Hook جستجوی ملک
+ * ============================================================
+ */
 
-  // -------------------------------------------------------
-  // وضعیت جستجو
-  // -------------------------------------------------------
+export function usePropertySearch() {
+  /**
+   * ----------------------------------------------------------
+   * filters
+   * ----------------------------------------------------------
+   *
+   * فیلترهایی که کاربر در حال تغییر آنهاست.
+   *
+   * مثلاً:
+   *
+   * کاربر «آپارتمان» را انتخاب می‌کند.
+   * این مقدار ابتدا در filters قرار می‌گیرد.
+   */
+  const [filters, setFilters] =
+    useState<PropertySearchState>(
+      INITIAL_SEARCH_STATE
+    );
+
+  /**
+   * ----------------------------------------------------------
+   * appliedFilters
+   * ----------------------------------------------------------
+   *
+   * فیلترهایی که واقعاً روی نتایج و نقشه اعمال شده‌اند.
+   */
+  const [appliedFilters, setAppliedFilters] =
+    useState<PropertySearchState>(
+      INITIAL_SEARCH_STATE
+    );
+
+  /**
+   * ----------------------------------------------------------
+   * وضعیت جستجو
+   * ----------------------------------------------------------
+   */
   const [isSearching, setIsSearching] =
     useState(false);
 
-  // -------------------------------------------------------
-  // تغییر یک فیلتر
-  // -------------------------------------------------------
-  // این تابع Generic است تا TypeScript مطمئن شود
-  // مقدار ارسال‌شده با نوع همان فیلد سازگار است.
-  // -------------------------------------------------------
+  /**
+   * ----------------------------------------------------------
+   * setFilter
+   * ----------------------------------------------------------
+   *
+   * برای فیلترهای داخل پنل پیشرفته.
+   *
+   * فقط فرم را تغییر می‌دهد.
+   *
+   * اعمال روی نقشه زمانی انجام می‌شود که
+   * search() اجرا شود.
+   */
   function setFilter<K extends keyof PropertySearchState>(
     key: K,
     value: PropertySearchState[K]
@@ -170,18 +183,60 @@ export function usePropertySearch() {
     }));
   }
 
-  // -------------------------------------------------------
-  // بازگرداندن همه فیلترها به حالت اولیه
-  // -------------------------------------------------------
-  function resetFilters() {
-    setFilters({
-      ...INITIAL_SEARCH_STATE,
+  /**
+   * ----------------------------------------------------------
+   * setQuickFilter
+   * ----------------------------------------------------------
+   *
+   * مخصوص فیلترهای سریع بالای نقشه:
+   *
+   * - نوع معامله
+   * - نوع ملک
+   *
+   * این فیلترها باید همان لحظه روی نقشه اعمال شوند.
+   */
+  function setQuickFilter<K extends keyof PropertySearchState>(
+    key: K,
+    value: PropertySearchState[K]
+  ) {
+    setFilters((previous) => {
+      const nextFilters: PropertySearchState = {
+        ...previous,
+        [key]: value,
+      };
+
+      /**
+       * اعمال فوری فیلتر روی نقشه
+       */
+      setAppliedFilters(nextFilters);
+
+      return nextFilters;
     });
   }
 
-  // -------------------------------------------------------
-  // محاسبه تعداد فیلترهای فعال
-  // -------------------------------------------------------
+  /**
+   * ----------------------------------------------------------
+   * resetFilters
+   * ----------------------------------------------------------
+   *
+   * بازگرداندن همه فیلترها به حالت اولیه.
+   */
+  function resetFilters() {
+    const initialState: PropertySearchState = {
+      ...INITIAL_SEARCH_STATE,
+    };
+
+    setFilters(initialState);
+    setAppliedFilters(initialState);
+  }
+
+  /**
+   * ----------------------------------------------------------
+   * getActiveFilterCount
+   * ----------------------------------------------------------
+   *
+   * تعداد فیلترهای فعال را محاسبه می‌کند.
+   */
   function getActiveFilterCount() {
     let count = 0;
 
@@ -214,7 +269,6 @@ export function usePropertySearch() {
     if (filters.singlePageDeed) count++;
     if (filters.documentsVerified) count++;
     if (filters.transactionAllowed) count++;
-
     if (filters.ownerVerified) count++;
     if (filters.propertyInfoVerified) count++;
     if (filters.locationVerified) count++;
@@ -224,34 +278,65 @@ export function usePropertySearch() {
     return count;
   }
 
-  // -------------------------------------------------------
-  // اجرای جستجو
-  // -------------------------------------------------------
-  // فعلاً API واقعی نداریم.
-  // بنابراین فقط برای تست، نیم ثانیه تأخیر ایجاد می‌کنیم.
-  // در مرحله بعد این قسمت به Backend وصل می‌شود.
-  // -------------------------------------------------------
+  /**
+   * ----------------------------------------------------------
+   * search
+   * ----------------------------------------------------------
+   *
+   * جستجوی کامل.
+   *
+   * در آینده این تابع به API واقعی Backend متصل خواهد شد.
+   *
+   * فعلاً فقط filters را به appliedFilters منتقل می‌کند.
+   */
   async function search() {
     setIsSearching(true);
 
+    /**
+     * این تأخیر فعلاً فقط برای شبیه‌سازی عملیات جستجو است.
+     *
+     * در مرحله اتصال Backend حذف خواهد شد.
+     */
     await new Promise((resolve) =>
       setTimeout(resolve, 500)
     );
 
-    // برای تست State فعلی در Console نمایش داده می‌شود.
-    console.log("Search filters:", filters);
+    /**
+     * اعمال فیلترهای فعلی روی نقشه
+     */
+    setAppliedFilters({
+      ...filters,
+    });
+
+    console.log(
+      "Applied search filters:",
+      filters
+    );
 
     setIsSearching(false);
   }
 
-  // -------------------------------------------------------
-  // خروجی Hook
-  // -------------------------------------------------------
+  /**
+   * ==========================================================
+   * خروجی Hook
+   * ==========================================================
+   *
+   * این قسمت در فایل فعلی تو وجود نداشت.
+   *
+   * به همین دلیل PropertySearchPage نمی‌توانست
+   * filters / search / setQuickFilter و ... را دریافت کند.
+   */
   return {
     filters,
+    appliedFilters,
+
     setFilter,
+    setQuickFilter,
+
     resetFilters,
+
     getActiveFilterCount,
+
     search,
     isSearching,
   };

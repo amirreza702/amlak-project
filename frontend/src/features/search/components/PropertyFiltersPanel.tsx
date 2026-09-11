@@ -1,56 +1,96 @@
 "use client";
 
-// ---------------------------------------------------------
-// پنل فیلترهای پیشرفته جستجوی ملک
-// ---------------------------------------------------------
-// این کامپوننت فقط UI است.
-// State اصلی در usePropertySearch قرار دارد.
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * PropertyFiltersPanel
+ * =========================================================
+ *
+ * پنل فیلترهای پیشرفته جستجوی ملک
+ *
+ * نکته معماری:
+ *
+ * این کامپوننت فقط مسئول UI است.
+ *
+ * State و منطق اصلی جستجو در:
+ *
+ * usePropertySearch
+ *
+ * قرار دارد.
+ *
+ * بنابراین این فایل:
+ *
+ * - مقدار فیلترها را نمایش می‌دهد
+ * - تغییر فیلتر را به Hook ارسال می‌کند
+ * - عملیات Reset را اجرا می‌کند
+ * - عملیات Search را اجرا می‌کند
+ *
+ * =========================================================
+ */
 
 import { X } from "lucide-react";
 
-import {
+import type {
   PropertySearchState,
 } from "../hooks/usePropertySearch";
 
-// ---------------------------------------------------------
-// Props
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * Props
+ * =========================================================
+ */
+
 interface PropertyFiltersPanelProps {
-  // آیا پنل باز است؟
+  /**
+   * آیا پنل نمایش داده شود؟
+   */
   isOpen: boolean;
 
-  // بستن پنل
+  /**
+   * بستن پنل
+   */
   onClose: () => void;
 
-  // State فیلترها
+  /**
+   * State فعلی فیلترها
+   */
   filters: PropertySearchState;
 
-  // تغییر فیلتر
+  /**
+   * تغییر یک فیلتر
+   */
   setFilter: <K extends keyof PropertySearchState>(
     key: K,
     value: PropertySearchState[K]
   ) => void;
 
-  // پاک کردن فیلترها
+  /**
+   * بازگرداندن فیلترها به مقدار اولیه
+   */
   resetFilters: () => void;
 
-  // تعداد فیلترهای فعال
+  /**
+   * تعداد فیلترهای فعال
+   */
   getActiveFilterCount: () => number;
 
-  // اجرای جستجو
+  /**
+   * اجرای جستجو
+   */
   search: () => Promise<void>;
 
-  // وضعیت جستجو
+  /**
+   * آیا جستجو در حال اجراست؟
+   */
   isSearching: boolean;
 }
 
-// ---------------------------------------------------------
-// گزینه‌های تعداد اتاق
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * گزینه‌های تعداد اتاق
+ * =========================================================
+ */
+
 const roomOptions = [
-  { value: "", label: "مهم نیست" },
-  { value: "0", label: "بدون اتاق" },
   { value: "1", label: "۱ اتاق" },
   { value: "2", label: "۲ اتاق" },
   { value: "3", label: "۳ اتاق" },
@@ -58,19 +98,36 @@ const roomOptions = [
   { value: "5+", label: "۵ اتاق و بیشتر" },
 ];
 
-// ---------------------------------------------------------
-// گزینه‌های حمام
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * گزینه‌های تعداد حمام
+ * =========================================================
+ */
+
 const bathroomOptions = [
-  { value: "", label: "مهم نیست" },
-  { value: "1", label: "۱" },
-  { value: "2", label: "۲" },
-  { value: "3+", label: "۳ و بیشتر" },
+  { value: "1", label: "۱ حمام" },
+  { value: "2", label: "۲ حمام" },
+  { value: "3+", label: "۳ حمام و بیشتر" },
 ];
 
-// ---------------------------------------------------------
-// گزینه‌های سن بنا
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * گزینه‌های سن بنا
+ * =========================================================
+ *
+ * مقدار value برای نگهداری در State استفاده می‌شود.
+ *
+ * مثال:
+ *
+ * 0       → نوساز
+ * 1-5     → یک تا پنج سال
+ * 6-10    → شش تا ده سال
+ * 11-20   → یازده تا بیست سال
+ * 20+     → بیشتر از بیست سال
+ *
+ * =========================================================
+ */
+
 const ageOptions = [
   { value: "", label: "مهم نیست" },
   { value: "0", label: "نوساز" },
@@ -80,9 +137,12 @@ const ageOptions = [
   { value: "20+", label: "بیش از ۲۰ سال" },
 ];
 
-// ---------------------------------------------------------
-// گزینه‌های آخرین بروزرسانی
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * گزینه‌های تازگی آگهی
+ * =========================================================
+ */
+
 const updateOptions = [
   { value: "", label: "مهم نیست" },
   { value: "1", label: "امروز" },
@@ -91,9 +151,12 @@ const updateOptions = [
   { value: "30", label: "۳۰ روز اخیر" },
 ];
 
-// ---------------------------------------------------------
-// کامپوننت اصلی
-// ---------------------------------------------------------
+/**
+ * =========================================================
+ * PropertyFiltersPanel
+ * =========================================================
+ */
+
 export function PropertyFiltersPanel({
   isOpen,
   onClose,
@@ -104,20 +167,47 @@ export function PropertyFiltersPanel({
   search,
   isSearching,
 }: PropertyFiltersPanelProps) {
-  // -------------------------------------------------------
-  // اگر پنل بسته است چیزی نمایش نده
-  // -------------------------------------------------------
+  /**
+   * اگر پنل بسته است، هیچ چیزی نمایش نده.
+   */
   if (!isOpen) {
     return null;
   }
 
-  // -------------------------------------------------------
-  // کلاس مشترک Input
-  // -------------------------------------------------------
+  /**
+   * =======================================================
+   * کلاس مشترک Input
+   * =======================================================
+   */
+
   const inputClassName = `
     h-11
     w-full
-    rounded-xl
+    rounded-lg
+    border
+    border-slate-200
+    bg-white
+    px-3
+    text-sm
+    text-slate-800
+    outline-none
+    transition
+    placeholder:text-slate-400
+    focus:border-slate-400
+    focus:ring-2
+    focus:ring-slate-200
+  `;
+
+  /**
+   * =======================================================
+   * کلاس مشترک Select
+   * =======================================================
+   */
+
+  const selectClassName = `
+    h-11
+    w-full
+    rounded-lg
     border
     border-slate-200
     bg-white
@@ -131,28 +221,14 @@ export function PropertyFiltersPanel({
     focus:ring-slate-200
   `;
 
-  // -------------------------------------------------------
-  // کلاس مشترک Select
-  // -------------------------------------------------------
-  const selectClassName = `
-    h-11
-    w-full
-    rounded-xl
-    border
-    border-slate-200
-    bg-white
-    px-3
-    text-sm
-    text-slate-800
-    outline-none
-    focus:border-slate-400
-    focus:ring-2
-    focus:ring-slate-200
-  `;
+  /**
+   * =======================================================
+   * Checkbox
+   * =======================================================
+   *
+   * برای فیلترهای Boolean استفاده می‌شود.
+   */
 
-  // -------------------------------------------------------
-  // Checkbox
-  // -------------------------------------------------------
   const Checkbox = ({
     checked,
     label,
@@ -169,7 +245,7 @@ export function PropertyFiltersPanel({
           cursor-pointer
           items-center
           gap-3
-          rounded-xl
+          rounded-lg
           border
           border-slate-200
           bg-white
@@ -178,6 +254,7 @@ export function PropertyFiltersPanel({
           text-sm
           transition
           hover:border-slate-300
+          hover:bg-slate-50
         "
       >
         <input
@@ -200,16 +277,30 @@ export function PropertyFiltersPanel({
     );
   };
 
-  // -------------------------------------------------------
-  // خروجی
-  // -------------------------------------------------------
+  /**
+   * =======================================================
+   * اجرای جستجو
+   * =======================================================
+   */
+
+  const handleSearch = async () => {
+    await search();
+    onClose();
+  };
+
+  /**
+   * =======================================================
+   * خروجی
+   * =======================================================
+   */
+
   return (
     <div
       className="
         mt-3
         max-h-[calc(100dvh-150px)]
         overflow-y-auto
-        rounded-2xl
+        rounded-xl
         border
         border-white/70
         bg-white/95
@@ -219,9 +310,10 @@ export function PropertyFiltersPanel({
         sm:p-5
       "
     >
-      {/* -------------------------------------------------
+      {/* ===================================================
           Header
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <div
         className="
           mb-5
@@ -248,13 +340,14 @@ export function PropertyFiltersPanel({
         <button
           type="button"
           onClick={onClose}
+          aria-label="بستن فیلترها"
           className="
             flex
             h-9
             w-9
             items-center
             justify-center
-            rounded-full
+            rounded-lg
             bg-slate-100
             text-slate-600
             transition
@@ -265,9 +358,10 @@ export function PropertyFiltersPanel({
         </button>
       </div>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           نوع معامله و ملک
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           نوع معامله و ملک
@@ -315,9 +409,40 @@ export function PropertyFiltersPanel({
         </div>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
+          موقعیت
+         =================================================== */}
+
+      <section className="mb-6">
+        <h3 className="mb-3 text-sm font-bold text-slate-800">
+          موقعیت
+        </h3>
+
+        <input
+          type="text"
+          value={filters.city}
+          onChange={(event) =>
+            setFilter("city", event.target.value)
+          }
+          placeholder="شهر"
+          className={inputClassName}
+        />
+
+        <input
+          type="text"
+          value={filters.district}
+          onChange={(event) =>
+            setFilter("district", event.target.value)
+          }
+          placeholder="محله یا منطقه"
+          className={`${inputClassName} mt-3`}
+        />
+      </section>
+
+      {/* ===================================================
           قیمت
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           محدوده قیمت
@@ -352,11 +477,16 @@ export function PropertyFiltersPanel({
             className={inputClassName}
           />
         </div>
+
+        <p className="mt-2 text-xs text-slate-400">
+          مبلغ را به واحد مناسب ملک وارد کنید.
+        </p>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           متراژ
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           متراژ
@@ -391,11 +521,16 @@ export function PropertyFiltersPanel({
             className={inputClassName}
           />
         </div>
+
+        <p className="mt-2 text-xs text-slate-400">
+          واحد: مترمربع
+        </p>
       </section>
 
-      {/* -------------------------------------------------
-          اتاق و حمام
-      -------------------------------------------------- */}
+      {/* ===================================================
+          مشخصات ملک
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           مشخصات ملک
@@ -412,7 +547,9 @@ export function PropertyFiltersPanel({
             }
             className={selectClassName}
           >
-            <option value="">تعداد اتاق</option>
+            <option value="">
+              تعداد اتاق
+            </option>
 
             {roomOptions.map((option) => (
               <option
@@ -434,7 +571,9 @@ export function PropertyFiltersPanel({
             }
             className={selectClassName}
           >
-            <option value="">تعداد حمام</option>
+            <option value="">
+              تعداد حمام
+            </option>
 
             {bathroomOptions.map((option) => (
               <option
@@ -448,9 +587,10 @@ export function PropertyFiltersPanel({
         </div>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           سن بنا
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           سن بنا
@@ -458,39 +598,71 @@ export function PropertyFiltersPanel({
 
         <select
           value={
-            filters.minYearBuilt &&
-            filters.maxYearBuilt
-              ? `${filters.minYearBuilt}-${filters.maxYearBuilt}`
-              : filters.minYearBuilt === "0"
-                ? "0"
-                : ""
+            filters.minYearBuilt === "20" &&
+            filters.maxYearBuilt === ""
+              ? "20+"
+              : filters.minYearBuilt &&
+                  filters.maxYearBuilt
+                ? `${filters.minYearBuilt}-${filters.maxYearBuilt}`
+                : filters.minYearBuilt === "0" &&
+                    filters.maxYearBuilt === "0"
+                  ? "0"
+                  : ""
           }
           onChange={(event) => {
             const value = event.target.value;
 
+            /**
+             * بدون محدودیت
+             */
             if (value === "") {
               setFilter("minYearBuilt", "");
               setFilter("maxYearBuilt", "");
               return;
             }
 
+            /**
+             * نوساز
+             */
             if (value === "0") {
               setFilter("minYearBuilt", "0");
               setFilter("maxYearBuilt", "0");
               return;
             }
 
+            /**
+             * بازه سنی
+             */
             if (value.includes("-")) {
-              const [min, max] = value.split("-");
+              const [min, max] =
+                value.split("-");
 
-              setFilter("minYearBuilt", min);
-              setFilter("maxYearBuilt", max);
+              setFilter(
+                "minYearBuilt",
+                min
+              );
+
+              setFilter(
+                "maxYearBuilt",
+                max
+              );
+
               return;
             }
 
+            /**
+             * بیشتر از ۲۰ سال
+             */
             if (value === "20+") {
-              setFilter("minYearBuilt", "20");
-              setFilter("maxYearBuilt", "");
+              setFilter(
+                "minYearBuilt",
+                "20"
+              );
+
+              setFilter(
+                "maxYearBuilt",
+                ""
+              );
             }
           }}
           className={selectClassName}
@@ -506,9 +678,10 @@ export function PropertyFiltersPanel({
         </select>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           طبقه
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           طبقه
@@ -517,6 +690,7 @@ export function PropertyFiltersPanel({
         <div className="grid grid-cols-2 gap-3">
           <input
             type="number"
+            min="0"
             value={filters.minFloor}
             onChange={(event) =>
               setFilter(
@@ -530,6 +704,7 @@ export function PropertyFiltersPanel({
 
           <input
             type="number"
+            min="0"
             value={filters.maxFloor}
             onChange={(event) =>
               setFilter(
@@ -543,9 +718,10 @@ export function PropertyFiltersPanel({
         </div>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           امکانات
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           امکانات
@@ -556,7 +732,10 @@ export function PropertyFiltersPanel({
             checked={filters.hasParking}
             label="پارکینگ"
             onChange={(value) =>
-              setFilter("hasParking", value)
+              setFilter(
+                "hasParking",
+                value
+              )
             }
           />
 
@@ -564,7 +743,10 @@ export function PropertyFiltersPanel({
             checked={filters.hasElevator}
             label="آسانسور"
             onChange={(value) =>
-              setFilter("hasElevator", value)
+              setFilter(
+                "hasElevator",
+                value
+              )
             }
           />
 
@@ -572,7 +754,10 @@ export function PropertyFiltersPanel({
             checked={filters.hasStorage}
             label="انباری"
             onChange={(value) =>
-              setFilter("hasStorage", value)
+              setFilter(
+                "hasStorage",
+                value
+              )
             }
           />
 
@@ -580,7 +765,10 @@ export function PropertyFiltersPanel({
             checked={filters.hasBalcony}
             label="بالکن"
             onChange={(value) =>
-              setFilter("hasBalcony", value)
+              setFilter(
+                "hasBalcony",
+                value
+              )
             }
           />
 
@@ -588,7 +776,10 @@ export function PropertyFiltersPanel({
             checked={filters.hasYard}
             label="حیاط"
             onChange={(value) =>
-              setFilter("hasYard", value)
+              setFilter(
+                "hasYard",
+                value
+              )
             }
           />
 
@@ -596,19 +787,29 @@ export function PropertyFiltersPanel({
             checked={filters.hasPool}
             label="استخر"
             onChange={(value) =>
-              setFilter("hasPool", value)
+              setFilter(
+                "hasPool",
+                value
+              )
             }
           />
         </div>
       </section>
 
-      {/* -------------------------------------------------
-          وضعیت حقوقی
-      -------------------------------------------------- */}
+      {/* ===================================================
+          اعتبار و وضعیت حقوقی
+         =================================================== */}
+
       <section className="mb-6">
-        <h3 className="mb-3 text-sm font-bold text-slate-800">
-          وضعیت حقوقی و اعتبار
-        </h3>
+        <div className="mb-3">
+          <h3 className="text-sm font-bold text-slate-800">
+            اعتبار و وضعیت حقوقی
+          </h3>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            اطلاعاتی که توسط هشتی بررسی و تأیید شده‌اند.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 gap-2">
           <Checkbox
@@ -624,7 +825,7 @@ export function PropertyFiltersPanel({
 
           <Checkbox
             checked={filters.documentsVerified}
-            label="اعتبار مدارک تأیید شده"
+            label="مدارک تأیید شده"
             onChange={(value) =>
               setFilter(
                 "documentsVerified",
@@ -656,7 +857,9 @@ export function PropertyFiltersPanel({
           />
 
           <Checkbox
-            checked={filters.propertyInfoVerified}
+            checked={
+              filters.propertyInfoVerified
+            }
             label="اطلاعات ملک تأیید شده"
             onChange={(value) =>
               setFilter(
@@ -667,7 +870,9 @@ export function PropertyFiltersPanel({
           />
 
           <Checkbox
-            checked={filters.locationVerified}
+            checked={
+              filters.locationVerified
+            }
             label="موقعیت ملک تأیید شده"
             onChange={(value) =>
               setFilter(
@@ -679,9 +884,10 @@ export function PropertyFiltersPanel({
         </div>
       </section>
 
-      {/* -------------------------------------------------
-          آخرین بروزرسانی
-      -------------------------------------------------- */}
+      {/* ===================================================
+          تازگی آگهی
+         =================================================== */}
+
       <section className="mb-6">
         <h3 className="mb-3 text-sm font-bold text-slate-800">
           تازگی آگهی
@@ -708,22 +914,27 @@ export function PropertyFiltersPanel({
         </select>
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           فقط آگهی‌های فعال
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <section className="mb-5">
         <Checkbox
           checked={filters.onlyActive}
           label="فقط آگهی‌های فعال"
           onChange={(value) =>
-            setFilter("onlyActive", value)
+            setFilter(
+              "onlyActive",
+              value
+            )
           }
         />
       </section>
 
-      {/* -------------------------------------------------
+      {/* ===================================================
           دکمه‌های پایین پنل
-      -------------------------------------------------- */}
+         =================================================== */}
+
       <div
         className="
           sticky
@@ -737,13 +948,16 @@ export function PropertyFiltersPanel({
           backdrop-blur
         "
       >
-        {/* پاک کردن */}
+        {/* -----------------------------------------------
+            پاک کردن
+           ----------------------------------------------- */}
+
         <button
           type="button"
           onClick={resetFilters}
           className="
             h-12
-            rounded-xl
+            rounded-lg
             border
             border-slate-200
             px-4
@@ -757,13 +971,13 @@ export function PropertyFiltersPanel({
           پاک کردن
         </button>
 
-        {/* جستجو */}
+        {/* -----------------------------------------------
+            نمایش نتایج
+           ----------------------------------------------- */}
+
         <button
           type="button"
-          onClick={async () => {
-            await search();
-            onClose();
-          }}
+          onClick={handleSearch}
           disabled={isSearching}
           className="
             flex
@@ -771,7 +985,7 @@ export function PropertyFiltersPanel({
             flex-1
             items-center
             justify-center
-            rounded-xl
+            rounded-lg
             bg-slate-900
             px-4
             text-sm

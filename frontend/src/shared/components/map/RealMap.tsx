@@ -1,103 +1,96 @@
 "use client";
 
 /**
- * =========================================================
+ * ============================================================
  * RealMap
- * =========================================================
+ * ============================================================
  *
- * نقشه واقعی پروژه هشتی
+ * نقشه واقعی جستجوی ملک
  *
- * مسئولیت‌ها:
- * 1. ساخت نقشه Leaflet
- * 2. نمایش OpenStreetMap
- * 3. نمایش Markerهای ملک
- * 4. دریافت Bounds نقشه
- * 5. فیلتر کردن ملک‌ها بر اساس Bounds
- * 6. نمایش کنترل‌های نقشه
+ * وظایف:
  *
- * =========================================================
+ * 1. نمایش نقشه Leaflet
+ * 2. نمایش محدوده فعلی نقشه
+ * 3. نمایش ملک‌ها روی نقشه
+ * 4. دریافت فیلترهای اعمال‌شده
+ * 5. حذف ملک‌های نامنطبق با فیلترها
+ *
+ * ============================================================
  */
+
+import "leaflet/dist/leaflet.css";
 
 import {
   MapContainer,
   TileLayer,
 } from "react-leaflet";
 
-import "leaflet/dist/leaflet.css";
+import type { PropertySearchState } from "@/features/search/hooks/usePropertySearch";
 
 import { MapPropertyMarker } from "../MapPropertyMarker";
 import { MapControls } from "./MapControls";
-
 import {
   MapViewport,
   type MapBounds,
 } from "./MapViewport";
 
-
-/*
- * =========================================================
- * مدل ملک
- * =========================================================
+/**
+ * ============================================================
+ * نوع ملک روی نقشه
+ * ============================================================
  */
-
 export interface MapProperty {
   id: string;
+
   title: string;
+
   location: string;
+
   area: number;
+
   rooms: number;
+
   price: string;
+
   latitude: number;
+
   longitude: number;
+
+  /**
+   * اطلاعاتی که در مراحل بعد برای فیلترهای تخصصی
+   * استفاده خواهند شد.
+   */
+  transactionType?: string;
+
+  propertyType?: string;
+
+  priceValue?: number;
+
+  bathrooms?: number;
 }
 
-
-/*
- * =========================================================
- * Props
- * =========================================================
+/**
+ * ============================================================
+ * مرکز اولیه نقشه
+ * ============================================================
  */
-
-interface RealMapProps {
-
-  /*
-   * Bounds فعلی که SearchMap نگهداری می‌کند.
-   */
-  bounds?: MapBounds | null;
-
-  /*
-   * وقتی Bounds نقشه تغییر کرد،
-   * آن را به SearchMap اعلام می‌کنیم.
-   */
-  onBoundsChange?: (
-    bounds: MapBounds
-  ) => void;
-}
-
-
-/*
- * =========================================================
- * مرکز اولیه شاهرود
- * =========================================================
- */
-
-const SHAHRUD_CENTER: [
-  number,
-  number
-] = [
+const SHAHRUD_CENTER: [number, number] = [
   36.4182,
   54.9763,
 ];
 
-
-/*
- * =========================================================
- * داده آزمایشی ملک‌ها
- * =========================================================
+/**
+ * ============================================================
+ * ملک‌های آزمایشی
+ * ============================================================
+ *
+ * فعلاً داده واقعی از Backend نداریم.
+ *
+ * بنابراین این داده‌ها برای تست رفتار Search استفاده می‌شوند.
+ * بعداً همین ساختار از API دریافت خواهد شد.
+ * ============================================================
  */
-
 const MOCK_PROPERTIES: MapProperty[] = [
-
   {
     id: "property-1",
     title: "آپارتمان دو خوابه",
@@ -105,8 +98,11 @@ const MOCK_PROPERTIES: MapProperty[] = [
     area: 120,
     rooms: 2,
     price: "۴٫۸ میلیارد",
+    priceValue: 4.8,
     latitude: 36.4182,
     longitude: 54.9763,
+    transactionType: "خرید",
+    propertyType: "آپارتمان",
   },
 
   {
@@ -116,8 +112,11 @@ const MOCK_PROPERTIES: MapProperty[] = [
     area: 150,
     rooms: 3,
     price: "۶٫۲ میلیارد",
+    priceValue: 6.2,
     latitude: 36.4218,
     longitude: 54.9855,
+    transactionType: "خرید",
+    propertyType: "آپارتمان",
   },
 
   {
@@ -127,8 +126,11 @@ const MOCK_PROPERTIES: MapProperty[] = [
     area: 220,
     rooms: 3,
     price: "۷٫۵ میلیارد",
+    priceValue: 7.5,
     latitude: 36.4108,
     longitude: 54.9682,
+    transactionType: "خرید",
+    propertyType: "خانه",
   },
 
   {
@@ -138,8 +140,11 @@ const MOCK_PROPERTIES: MapProperty[] = [
     area: 85,
     rooms: 1,
     price: "۳٫۱ میلیارد",
+    priceValue: 3.1,
     latitude: 36.4262,
     longitude: 54.9718,
+    transactionType: "خرید",
+    propertyType: "آپارتمان",
   },
 
   {
@@ -149,158 +154,232 @@ const MOCK_PROPERTIES: MapProperty[] = [
     area: 130,
     rooms: 2,
     price: "۵٫۴ میلیارد",
+    priceValue: 5.4,
     latitude: 36.4145,
     longitude: 54.9925,
+    transactionType: "خرید",
+    propertyType: "آپارتمان",
   },
-
 ];
 
-
-/*
- * =========================================================
- * RealMap
- * =========================================================
+/**
+ * ============================================================
+ * Props
+ * ============================================================
  */
+interface RealMapProps {
+  /**
+   * محدوده فعلی نقشه
+   */
+  bounds?: MapBounds | null;
 
+  /**
+   * فیلترهایی که کاربر با «نمایش نتایج» اعمال کرده است.
+   */
+  appliedFilters?: PropertySearchState;
+
+  /**
+   * اطلاع دادن محدوده جدید نقشه به SearchMap
+   */
+  onBoundsChange?: (bounds: MapBounds) => void;
+}
+
+/**
+ * ============================================================
+ * RealMap
+ * ============================================================
+ */
 export function RealMap({
   bounds,
+  appliedFilters,
   onBoundsChange,
 }: RealMapProps) {
-
-
-  /*
-   * =======================================================
-   * فیلتر ملک‌ها
-   * =======================================================
-   *
-   * اگر هنوز Bounds دریافت نشده:
-   *
-   * همه ملک‌ها را نمایش می‌دهیم.
-   *
-   * بعد از دریافت Bounds:
-   *
-   * فقط ملک‌هایی که داخل محدوده هستند
-   * باقی می‌مانند.
+  /**
+   * ----------------------------------------------------------
+   * فیلتر کردن ملک‌ها
+   * ----------------------------------------------------------
    */
+  const filteredProperties = MOCK_PROPERTIES.filter(
+    (property) => {
+      /**
+       * -----------------------------------------------
+       * نوع معامله
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.transactionType &&
+        property.transactionType !==
+          appliedFilters.transactionType
+      ) {
+        return false;
+      }
 
-  const visibleProperties =
-    bounds === null || bounds === undefined
-      ? MOCK_PROPERTIES
-      : MOCK_PROPERTIES.filter(
-          (property) => {
+      /**
+       * -----------------------------------------------
+       * نوع ملک
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.propertyType &&
+        property.propertyType !==
+          appliedFilters.propertyType
+      ) {
+        return false;
+      }
 
-            /*
-             * محدوده شمالی
-             */
-            const insideNorth =
-              property.latitude <= bounds.north;
+      /**
+       * -----------------------------------------------
+       * حداقل متراژ
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.minArea &&
+        property.area <
+          Number(appliedFilters.minArea)
+      ) {
+        return false;
+      }
 
-            /*
-             * محدوده جنوبی
-             */
-            const insideSouth =
-              property.latitude >= bounds.south;
+      /**
+       * -----------------------------------------------
+       * حداکثر متراژ
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.maxArea &&
+        property.area >
+          Number(appliedFilters.maxArea)
+      ) {
+        return false;
+      }
 
-            /*
-             * محدوده شرقی
-             */
-            const insideEast =
-              property.longitude <= bounds.east;
+      /**
+       * -----------------------------------------------
+       * تعداد اتاق
+       * -----------------------------------------------
+       *
+       * اگر کاربر مثلاً 3+ انتخاب کند،
+       * ملک‌های سه اتاقه و بیشتر نمایش داده می‌شوند.
+       */
+      if (appliedFilters?.rooms) {
+        const roomsFilter =
+          appliedFilters.rooms;
 
-            /*
-             * محدوده غربی
-             */
-            const insideWest =
-              property.longitude >= bounds.west;
+        if (
+          roomsFilter.endsWith("+")
+        ) {
+          const minimumRooms = Number(
+            roomsFilter.replace("+", "")
+          );
 
-
-            /*
-             * ملک زمانی داخل محدوده است که
-             * هر چهار شرط برقرار باشند.
-             */
-
-            return (
-              insideNorth &&
-              insideSouth &&
-              insideEast &&
-              insideWest
-            );
+          if (property.rooms < minimumRooms) {
+            return false;
           }
-        );
+        } else {
+          if (
+            property.rooms !==
+            Number(roomsFilter)
+          ) {
+            return false;
+          }
+        }
+      }
 
+      /**
+       * -----------------------------------------------
+       * حداقل قیمت
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.minPrice &&
+        property.priceValue !== undefined &&
+        property.priceValue <
+          Number(appliedFilters.minPrice)
+      ) {
+        return false;
+      }
 
-  /*
-   * =======================================================
-   * Map
-   * =======================================================
+      /**
+       * -----------------------------------------------
+       * حداکثر قیمت
+       * -----------------------------------------------
+       */
+      if (
+        appliedFilters?.maxPrice &&
+        property.priceValue !== undefined &&
+        property.priceValue >
+          Number(appliedFilters.maxPrice)
+      ) {
+        return false;
+      }
+
+      /**
+       * اگر هیچ‌کدام از فیلترها ملک را حذف نکردند،
+       * این ملک معتبر است.
+       */
+      return true;
+    }
+  );
+
+  /**
+   * ----------------------------------------------------------
+   * فیلتر محدوده نقشه
+   * ----------------------------------------------------------
+   *
+   * بعد از فیلترهای Search، فقط ملک‌هایی که در محدوده
+   * فعلی نقشه هستند نمایش داده می‌شوند.
    */
+  const visibleProperties =
+    bounds
+      ? filteredProperties.filter((property) => {
+          return (
+            property.latitude >= bounds.south &&
+            property.latitude <= bounds.north &&
+            property.longitude >= bounds.west &&
+            property.longitude <= bounds.east
+          );
+        })
+      : filteredProperties;
 
   return (
-    <div
-      className="
-        absolute
-        inset-0
-        h-full
-        w-full
-        overflow-hidden
-      "
+    <MapContainer
+      center={SHAHRUD_CENTER}
+      zoom={13}
+      scrollWheelZoom={true}
+      zoomControl={false}
+      className="h-full w-full"
     >
+      {/* نقشه OpenStreetMap */}
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
-      <MapContainer
-        center={SHAHRUD_CENTER}
-        zoom={13}
-        scrollWheelZoom={true}
-        zoomControl={false}
-        className="h-full w-full"
-      >
+      {/* محدوده فعلی نقشه */}
+      <MapViewport
+        onBoundsChange={onBoundsChange}
+      />
 
-        {/* =================================================
-            Tileهای OpenStreetMap
-            ================================================= */}
+      {/* کنترل‌های نقشه */}
+      <MapControls
+        properties={visibleProperties}
+      />
 
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      {/* ======================================================
+          مارکرهای ملک
+
+          فقط ملک‌هایی که هم:
+          1. فیلترهای Search را پاس کرده‌اند
+          2. داخل محدوده فعلی نقشه هستند
+
+          نمایش داده می‌شوند.
+          ====================================================== */}
+      {visibleProperties.map((property) => (
+        <MapPropertyMarker
+          key={property.id}
+          property={property}
         />
-
-
-        {/* =================================================
-            مدیریت Bounds نقشه
-            ================================================= */}
-
-        <MapViewport
-          onBoundsChange={onBoundsChange}
-        />
-
-
-        {/* =================================================
-            Markerهای قابل مشاهده
-            =================================================
-            
-            فقط propertyهایی که داخل Bounds هستند
-            Render می‌شوند.
-            ================================================= */}
-
-        {visibleProperties.map(
-          (property) => (
-            <MapPropertyMarker
-              key={property.id}
-              property={property}
-            />
-          )
-        )}
-
-
-        {/* =================================================
-            کنترل‌های نقشه
-            ================================================= */}
-
-        <MapControls
-          properties={visibleProperties}
-        />
-
-      </MapContainer>
-
-    </div>
+      ))}
+    </MapContainer>
   );
 }
