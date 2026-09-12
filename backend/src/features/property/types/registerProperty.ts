@@ -1,13 +1,53 @@
 /**
- * اطلاعات موردنیاز برای Use Case ثبت ملک
+ * ============================================================
+ * Register Property Input
+ * ============================================================
  *
- * این Type با Property متفاوت است.
+ * Type ورودی Use Case ثبت ملک توسط مشاور.
+ *
+ * این فایل نباید مستقیماً به Prisma وابسته باشد.
+ * ============================================================
+ */
+
+export type PropertyType =
+  | "APARTMENT"
+  | "HOUSE"
+  | "VILLA"
+  | "LAND"
+  | "SHOP"
+  | "OFFICE"
+  | "GARDEN";
+
+/**
+ * اطلاعات موردنیاز برای ثبت ملک توسط مشاور
  */
 export interface RegisterPropertyInput {
-  postalCode: string;
-  address?: string | null;
-  area: number;
-  rooms: number;
-  floor: number;
+  /**
+   * نوع ملک
+   */
+  propertyType: PropertyType;
+
+  /**
+   * اطلاعات مکانی
+   */
+  city: string;
+  district: string;
+  address: string;
+
+  /**
+   * کد پستی اختیاری است.
+   */
+  postalCode?: string | null;
+
+  /**
+   * مشخصات ملک
+   */
+  area?: number | null;
+  rooms?: number | null;
+  floor?: number | null;
+
+  /**
+   * شناسه مشاور
+   */
   agentId: string;
 }
