@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,12 @@ export function PropertySearchPage() {
   const {
     filters,
     appliedFilters,
+
+    /**
+     * نتایج واقعی دریافت‌شده از Backend
+     */
+    results,
+
     setFilter,
     setQuickFilter,
     resetFilters,
@@ -40,22 +47,16 @@ export function PropertySearchPage() {
         bg-slate-100
       "
     >
-      {/* =====================================================
-          نقشه
 
-          نکته مهم:
-          نقشه با appliedFilters کار می‌کند.
+      <div className="absolute bottom-4 left-4 z-[1000] bg-white p-3 text-black">
+       نتایج: {results.length}
+      </div>
 
-          بنابراین فیلتر سریع باید appliedFilters را
-          نیز تغییر دهد.
-         ===================================================== */}
       <SearchMap
         appliedFilters={appliedFilters}
+        results={results}
       />
 
-      {/* =====================================================
-          لایه بالای نقشه
-         ===================================================== */}
       <div
         className="
           pointer-events-none
@@ -78,9 +79,6 @@ export function PropertySearchPage() {
             max-w-4xl
           "
         >
-          {/* =================================================
-              جستجوی محله
-             ================================================= */}
           <SearchBar
             district={filters.district}
             setDistrict={(value) =>
@@ -90,9 +88,6 @@ export function PropertySearchPage() {
             isSearching={isSearching}
           />
 
-          {/* =================================================
-              فیلترهای سریع
-             ================================================= */}
           <SearchTabs
             filters={filters}
             setFilter={setFilter}
@@ -101,9 +96,6 @@ export function PropertySearchPage() {
             setActivePanel={setActivePanel}
           />
 
-          {/* =================================================
-              فیلتر پیشرفته
-             ================================================= */}
           <PropertyFiltersPanel
             isOpen={activePanel === "filters"}
             onClose={closePanel}
@@ -115,9 +107,6 @@ export function PropertySearchPage() {
             isSearching={isSearching}
           />
 
-          {/* =================================================
-              جستجوی هوشمند
-             ================================================= */}
           <SmartSearchPanel
             isOpen={activePanel === "smart"}
             onClose={closePanel}

@@ -1,21 +1,37 @@
 import { prisma } from "../../../lib/prisma";
-import {
-  ListingStatus,
-  PropertyType,
-  TransactionType,
-} from "@prisma/client";
 
 /**
  * ============================================================
- * Search Property Repository
+ * انواع دامنه‌ای Search
  * ============================================================
  *
- * این لایه فقط مسئول ارتباط Search با Prisma است.
+ * این Typeها عمداً مستقل از Prisma هستند.
  *
- * نکته مهم:
- * - فقط آگهی‌های منتشرشده جستجو می‌شوند.
- * - ملک باید هنوز در بازه تأیید یک‌ماهه باشد.
- * - مختصات عمومی برگردانده می‌شود، نه مختصات دقیق.
+ * دلیل:
+ * Repository نباید برای Typeهای ورودی Search
+ * به فایل تولیدشده Prisma وابسته باشد.
+ */
+
+export type PropertyType =
+  | "APARTMENT"
+  | "HOUSE"
+  | "VILLA"
+  | "LAND"
+  | "SHOP"
+  | "OFFICE"
+  | "GARDEN";
+
+export type TransactionType =
+  | "SALE"
+  | "FULL_DEPOSIT"
+  | "RENT";
+
+export type ListingStatus = "PUBLISHED";
+
+/**
+ * ============================================================
+ * فیلترهای جستجوی ملک
+ * ============================================================
  */
 
 export interface PropertySearchFilters {
@@ -37,14 +53,23 @@ export interface PropertySearchFilters {
   yearTo?: number;
 }
 
+/**
+ * ============================================================
+ * Search
+ * ============================================================
+ */
+
 export async function searchProperties(
   filters: PropertySearchFilters
 ) {
   const now = new Date();
 
   /**
-   * فیلترهای مربوط به خود Property
+   * ----------------------------------------------------------
+   * فیلتر Property
+   * ----------------------------------------------------------
    */
+
   const propertyWhere: any = {};
 
   if (filters.propertyType) {
@@ -65,7 +90,10 @@ export async function searchProperties(
     };
   }
 
-  if (filters.minArea !== undefined || filters.maxArea !== undefined) {
+  if (
+    filters.minArea !== undefined ||
+    filters.maxArea !== undefined
+  ) {
     propertyWhere.area = {};
 
     if (filters.minArea !== undefined) {
@@ -81,7 +109,10 @@ export async function searchProperties(
     propertyWhere.rooms = filters.rooms;
   }
 
-  if (filters.yearFrom !== undefined || filters.yearTo !== undefined) {
+  if (
+    filters.yearFrom !== undefined ||
+    filters.yearTo !== undefined
+  ) {
     propertyWhere.yearBuilt = {};
 
     if (filters.yearFrom !== undefined) {
@@ -94,10 +125,20 @@ export async function searchProperties(
   }
 
   /**
-   * فیلترهای مربوط به Listing
+   * فقط ملک‌هایی که تأیید یک‌ماهه آنها هنوز معتبر است.
    */
+  propertyWhere.confirmUntil = {
+    gte: now,
+  };
+
+  /**
+   * ----------------------------------------------------------
+   * فیلتر Listing
+   * ----------------------------------------------------------
+   */
+
   const listingWhere: any = {
-    status: ListingStatus.PUBLISHED,
+    status: "PUBLISHED" satisfies ListingStatus,
   };
 
   if (filters.transactionType) {
@@ -105,19 +146,11 @@ export async function searchProperties(
   }
 
   /**
+   * ----------------------------------------------------------
    * فیلتر قیمت
-   *
-   * قیمت بسته به نوع معامله در فیلد متفاوتی ذخیره می‌شود:
-   *
-   * SALE
-   *   → salePrice
-   *
-   * FULL_DEPOSIT
-   *   → depositAmount
-   *
-   * RENT
-   *   → depositAmount + rentAmount
+   * ----------------------------------------------------------
    */
+
   if (
     filters.minPrice !== undefined ||
     filters.maxPrice !== undefined
@@ -141,33 +174,47 @@ export async function searchProperties(
     };
 
     /**
-     * اگر نوع معامله مشخص شده باشد،
-     * فقط همان نوع قیمت بررسی می‌شود.
+     * خرید
      */
-    if (filters.transactionType === TransactionType.SALE) {
-      priceConditions.push(createRange("salePrice"));
-    }
-
-    if (filters.transactionType === TransactionType.FULL_DEPOSIT) {
-      priceConditions.push(createRange("depositAmount"));
+    if (filters.transactionType === "SALE") {
+      priceConditions.push(
+        createRange("salePrice")
+      );
     }
 
     /**
-     * برای RENT فعلاً بر اساس depositAmount جستجو می‌کنیم.
-     *
-     * rentAmount نیز در آینده می‌تواند فیلتر مستقل داشته باشد.
+     * رهن کامل
      */
-    if (filters.transactionType === TransactionType.RENT) {
-      priceConditions.push(createRange("depositAmount"));
+    if (filters.transactionType === "FULL_DEPOSIT") {
+      priceConditions.push(
+        createRange("depositAmount")
+      );
+    }
+
+    /**
+     * اجاره
+     *
+     * فعلاً فیلتر قیمت را بر اساس ودیعه انجام می‌دهیم.
+     * فیلتر مستقل rentAmount را بعداً اضافه می‌کنیم.
+     */
+    if (filters.transactionType === "RENT") {
+      priceConditions.push(
+        createRange("depositAmount")
+      );
     }
 
     /**
      * اگر نوع معامله مشخص نشده باشد،
-     * هر سه نوع معامله قابل جستجو هستند.
+     * قیمت می‌تواند در salePrice یا depositAmount باشد.
      */
     if (!filters.transactionType) {
-      priceConditions.push(createRange("salePrice"));
-      priceConditions.push(createRange("depositAmount"));
+      priceConditions.push(
+        createRange("salePrice")
+      );
+
+      priceConditions.push(
+        createRange("depositAmount")
+      );
     }
 
     if (priceConditions.length > 0) {
@@ -176,50 +223,52 @@ export async function searchProperties(
   }
 
   /**
-   * confirmUntil برای کنترل اعتبار یک‌ماهه آگهی است.
-   *
-   * فقط ملک‌هایی که هنوز تأییدشان معتبر است نمایش داده می‌شوند.
+   * ----------------------------------------------------------
+   * Query
+   * ----------------------------------------------------------
    */
-  propertyWhere.confirmUntil = {
-    gte: now,
-  };
 
-  const properties = await prisma.property.findMany({
-    where: {
-      ...propertyWhere,
+  const properties =
+    await prisma.property.findMany({
+      where: {
+        ...propertyWhere,
+        listing: listingWhere,
+      },
 
-      listing: listingWhere,
-    },
+      include: {
+        listing: true,
 
-    include: {
-      listing: true,
-      media: {
-        where: {
-          isActive: true,
-        },
-        orderBy: {
-          sortOrder: "asc",
+        media: {
+          where: {
+            isActive: true,
+          },
+
+          orderBy: {
+            sortOrder: "asc",
+          },
         },
       },
-    },
 
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
 
   /**
-   * خروجی Search عمداً فقط اطلاعات عمومی را برمی‌گرداند.
+   * ----------------------------------------------------------
+   * خروجی عمومی Search
+   * ----------------------------------------------------------
    *
-   * latitudeExact / longitudeExact
-   * هرگز از این Repository خارج نمی‌شوند.
+   * مختصات دقیق عمداً خارج از خروجی هستند.
    */
+
   return properties.map((property) => ({
     id: property.id,
 
     propertyType: property.propertyType,
 
-    transactionType: property.listing?.transactionType ?? null,
+    transactionType:
+      property.listing?.transactionType ?? null,
 
     city: property.city,
     district: property.district,
@@ -229,12 +278,20 @@ export async function searchProperties(
     yearBuilt: property.yearBuilt,
     floor: property.floor,
 
-    latitudePublic: property.latitudePublic,
-    longitudePublic: property.longitudePublic,
+    latitudePublic:
+      property.latitudePublic,
 
-    salePrice: property.listing?.salePrice ?? null,
-    depositAmount: property.listing?.depositAmount ?? null,
-    rentAmount: property.listing?.rentAmount ?? null,
+    longitudePublic:
+      property.longitudePublic,
+
+    salePrice:
+      property.listing?.salePrice ?? null,
+
+    depositAmount:
+      property.listing?.depositAmount ?? null,
+
+    rentAmount:
+      property.listing?.rentAmount ?? null,
 
     mainImage:
       property.media.find(

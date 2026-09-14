@@ -1,3 +1,4 @@
+
 "use client";
 
 /**
@@ -7,14 +8,9 @@
  *
  * نقشه واقعی جستجوی ملک
  *
- * وظایف:
+ * داده ملک‌ها مستقیماً از Backend دریافت می‌شوند.
  *
- * 1. نمایش نقشه Leaflet
- * 2. نمایش محدوده فعلی نقشه
- * 3. نمایش ملک‌ها روی نقشه
- * 4. دریافت فیلترهای اعمال‌شده
- * 5. حذف ملک‌های نامنطبق با فیلترها
- *
+ * دیگر هیچ MOCK_PROPERTY در این فایل وجود ندارد.
  * ============================================================
  */
 
@@ -25,10 +21,15 @@ import {
   TileLayer,
 } from "react-leaflet";
 
-import type { PropertySearchState } from "@/features/search/hooks/usePropertySearch";
+import type {
+  PropertySearchResult,
+  PropertySearchState,
+} from "@/features/search/hooks/usePropertySearch";
 
 import { MapPropertyMarker } from "../MapPropertyMarker";
+
 import { MapControls } from "./MapControls";
+
 import {
   MapViewport,
   type MapBounds,
@@ -56,10 +57,6 @@ export interface MapProperty {
 
   longitude: number;
 
-  /**
-   * اطلاعاتی که در مراحل بعد برای فیلترهای تخصصی
-   * استفاده خواهند شد.
-   */
   transactionType?: string;
 
   propertyType?: string;
@@ -81,86 +78,171 @@ const SHAHRUD_CENTER: [number, number] = [
 
 /**
  * ============================================================
- * ملک‌های آزمایشی
- * ============================================================
- *
- * فعلاً داده واقعی از Backend نداریم.
- *
- * بنابراین این داده‌ها برای تست رفتار Search استفاده می‌شوند.
- * بعداً همین ساختار از API دریافت خواهد شد.
+ * تبدیل نوع معامله Backend به فارسی
  * ============================================================
  */
-const MOCK_PROPERTIES: MapProperty[] = [
-  {
-    id: "property-1",
-    title: "آپارتمان دو خوابه",
-    location: "میدان امام خمینی",
-    area: 120,
-    rooms: 2,
-    price: "۴٫۸ میلیارد",
-    priceValue: 4.8,
-    latitude: 36.4182,
-    longitude: 54.9763,
-    transactionType: "خرید",
-    propertyType: "آپارتمان",
-  },
+function getTransactionLabel(
+  transactionType: string | null
+): string {
+  switch (transactionType) {
+    case "SALE":
+      return "خرید";
 
-  {
-    id: "property-2",
-    title: "آپارتمان سه خوابه",
-    location: "بلوار آزادی",
-    area: 150,
-    rooms: 3,
-    price: "۶٫۲ میلیارد",
-    priceValue: 6.2,
-    latitude: 36.4218,
-    longitude: 54.9855,
-    transactionType: "خرید",
-    propertyType: "آپارتمان",
-  },
+    case "FULL_DEPOSIT":
+      return "رهن";
 
-  {
-    id: "property-3",
-    title: "خانه ویلایی",
-    location: "خیابان مدرس",
-    area: 220,
-    rooms: 3,
-    price: "۷٫۵ میلیارد",
-    priceValue: 7.5,
-    latitude: 36.4108,
-    longitude: 54.9682,
-    transactionType: "خرید",
-    propertyType: "خانه",
-  },
+    case "RENT":
+      return "اجاره";
 
-  {
-    id: "property-4",
-    title: "آپارتمان یک خوابه",
-    location: "بلوار امام رضا",
-    area: 85,
-    rooms: 1,
-    price: "۳٫۱ میلیارد",
-    priceValue: 3.1,
-    latitude: 36.4262,
-    longitude: 54.9718,
-    transactionType: "خرید",
-    propertyType: "آپارتمان",
-  },
+    default:
+      return "";
+  }
+}
 
-  {
-    id: "property-5",
-    title: "آپارتمان دو خوابه",
-    location: "خیابان دانشگاه",
-    area: 130,
-    rooms: 2,
-    price: "۵٫۴ میلیارد",
-    priceValue: 5.4,
-    latitude: 36.4145,
-    longitude: 54.9925,
-    transactionType: "خرید",
-    propertyType: "آپارتمان",
-  },
-];
+/**
+ * ============================================================
+ * تبدیل نوع ملک Backend به فارسی
+ * ============================================================
+ */
+function getPropertyTypeLabel(
+  propertyType: string
+): string {
+  switch (propertyType) {
+    case "APARTMENT":
+      return "آپارتمان";
+
+    case "HOUSE":
+      return "خانه";
+
+    case "VILLA":
+      return "ویلا";
+
+    case "LAND":
+      return "زمین";
+
+    case "SHOP":
+      return "مغازه";
+
+    case "OFFICE":
+      return "اداری";
+
+    case "GARDEN":
+      return "باغ";
+
+    default:
+      return propertyType;
+  }
+}
+
+/**
+ * ============================================================
+ * تبدیل قیمت Backend به متن قابل نمایش
+ * ============================================================
+ */
+function formatPrice(
+  property: PropertySearchResult
+): string {
+  if (property.transactionType === "SALE") {
+    if (property.salePrice) {
+      return `${Number(
+        property.salePrice
+      ).toLocaleString("fa-IR")} تومان`;
+    }
+  }
+
+  if (property.transactionType === "FULL_DEPOSIT") {
+    if (property.depositAmount) {
+      return `رهن ${Number(
+        property.depositAmount
+      ).toLocaleString("fa-IR")} تومان`;
+    }
+  }
+
+  if (property.transactionType === "RENT") {
+    const deposit = property.depositAmount
+      ? `رهن ${Number(
+          property.depositAmount
+        ).toLocaleString("fa-IR")}`
+      : "";
+
+    const rent = property.rentAmount
+      ? `اجاره ${Number(
+          property.rentAmount
+        ).toLocaleString("fa-IR")}`
+      : "";
+
+    return [deposit, rent]
+      .filter(Boolean)
+      .join(" / ");
+  }
+
+  return "قیمت نامشخص";
+}
+
+/**
+ * ============================================================
+ * تبدیل نتیجه Backend به ساختار MapProperty
+ * ============================================================
+ */
+function mapApiPropertyToMapProperty(
+  property: PropertySearchResult
+): MapProperty | null {
+  /**
+   * برای نمایش Marker، مختصات عمومی الزامی است.
+   */
+  if (
+    property.latitudePublic === null ||
+    property.longitudePublic === null
+  ) {
+    return null;
+  }
+
+  return {
+    id: property.id,
+
+    title: getPropertyTypeLabel(
+      property.propertyType
+    ),
+
+    location: [
+      property.city,
+      property.district,
+    ]
+      .filter(Boolean)
+      .join("، "),
+
+    area: property.area ?? 0,
+
+    rooms: property.rooms ?? 0,
+
+    price: formatPrice(property),
+
+    latitude: property.latitudePublic,
+
+    longitude: property.longitudePublic,
+
+    transactionType:
+      getTransactionLabel(
+        property.transactionType
+      ),
+
+    propertyType:
+      getPropertyTypeLabel(
+        property.propertyType
+      ),
+
+    /**
+     * فعلاً مقدار واقعی قیمت را نگه می‌داریم.
+     *
+     * این مقدار برای فیلتر قیمت استفاده می‌شود.
+     */
+    priceValue: property.salePrice
+      ? Number(property.salePrice)
+      : property.depositAmount
+        ? Number(property.depositAmount)
+        : undefined,
+  };
+}
 
 /**
  * ============================================================
@@ -174,14 +256,21 @@ interface RealMapProps {
   bounds?: MapBounds | null;
 
   /**
-   * فیلترهایی که کاربر با «نمایش نتایج» اعمال کرده است.
+   * فیلترهایی که کاربر اعمال کرده است.
    */
   appliedFilters?: PropertySearchState;
 
   /**
-   * اطلاع دادن محدوده جدید نقشه به SearchMap
+   * نتایج واقعی Backend
    */
-  onBoundsChange?: (bounds: MapBounds) => void;
+  results?: PropertySearchResult[];
+
+  /**
+   * اطلاع دادن محدوده جدید نقشه
+   */
+  onBoundsChange?: (
+    bounds: MapBounds
+  ) => void;
 }
 
 /**
@@ -192,28 +281,37 @@ interface RealMapProps {
 export function RealMap({
   bounds,
   appliedFilters,
+  results = [],
   onBoundsChange,
 }: RealMapProps) {
   /**
    * ----------------------------------------------------------
-   * فیلتر کردن ملک‌ها
+   * تبدیل نتایج Backend به داده مورد نیاز نقشه
    * ----------------------------------------------------------
    */
-  const filteredProperties = MOCK_PROPERTIES.filter(
-    (property) => {
+  const properties = results
+    .map(mapApiPropertyToMapProperty)
+    .filter(
+      (
+        property
+      ): property is MapProperty =>
+        property !== null
+    );
+
+  /**
+   * ----------------------------------------------------------
+   * فیلتر کردن ملک‌ها
+   * ----------------------------------------------------------
+   *
+   * Backend قبلاً فیلترهای اصلی را اعمال کرده است.
+   *
+   * اینجا فقط فیلترهای مربوط به نمایش فعلی نقشه
+   * را کنترل می‌کنیم.
+   */
+  const filteredProperties =
+    properties.filter((property) => {
       /**
-       * -----------------------------------------------
-       * جستجوی محله / آدرس
-       * -----------------------------------------------
-       *
-       * مقدار واردشده در نوار جستجو در district قرار می‌گیرد.
-       *
-       * اگر district خالی باشد:
-       *   هیچ فیلتری اعمال نمی‌شود.
-       *
-       * اگر district مقدار داشته باشد:
-       *   فقط ملک‌هایی نمایش داده می‌شوند که location
-       *   شامل عبارت جستجو باشد.
+       * محله
        */
       if (
         appliedFilters?.district?.trim() &&
@@ -225,9 +323,7 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
        * نوع معامله
-       * -----------------------------------------------
        */
       if (
         appliedFilters?.transactionType &&
@@ -238,9 +334,7 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
        * نوع ملک
-       * -----------------------------------------------
        */
       if (
         appliedFilters?.propertyType &&
@@ -251,9 +345,7 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
        * حداقل متراژ
-       * -----------------------------------------------
        */
       if (
         appliedFilters?.minArea &&
@@ -264,9 +356,7 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
        * حداکثر متراژ
-       * -----------------------------------------------
        */
       if (
         appliedFilters?.maxArea &&
@@ -277,25 +367,21 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
        * تعداد اتاق
-       * -----------------------------------------------
-       *
-       * اگر کاربر مثلاً 3+ انتخاب کند،
-       * ملک‌های سه اتاقه و بیشتر نمایش داده می‌شوند.
        */
       if (appliedFilters?.rooms) {
         const roomsFilter =
           appliedFilters.rooms;
 
-        if (
-          roomsFilter.endsWith("+")
-        ) {
+        if (roomsFilter.endsWith("+")) {
           const minimumRooms = Number(
             roomsFilter.replace("+", "")
           );
 
-          if (property.rooms < minimumRooms) {
+          if (
+            property.rooms <
+            minimumRooms
+          ) {
             return false;
           }
         } else {
@@ -309,60 +395,36 @@ export function RealMap({
       }
 
       /**
-       * -----------------------------------------------
-       * حداقل قیمت
-       * -----------------------------------------------
+       * نکته:
+       *
+       * فیلتر قیمت در Backend انجام شده است.
+       * بنابراین اینجا دوباره قیمت را فیلتر نمی‌کنیم.
        */
-      if (
-        appliedFilters?.minPrice &&
-        property.priceValue !== undefined &&
-        property.priceValue <
-          Number(appliedFilters.minPrice)
-      ) {
-        return false;
-      }
 
-      /**
-       * -----------------------------------------------
-       * حداکثر قیمت
-       * -----------------------------------------------
-       */
-      if (
-        appliedFilters?.maxPrice &&
-        property.priceValue !== undefined &&
-        property.priceValue >
-          Number(appliedFilters.maxPrice)
-      ) {
-        return false;
-      }
-
-      /**
-       * اگر هیچ‌کدام از فیلترها ملک را حذف نکردند،
-       * این ملک معتبر است.
-       */
       return true;
-    }
-  );
+    });
 
   /**
    * ----------------------------------------------------------
    * فیلتر محدوده نقشه
    * ----------------------------------------------------------
-   *
-   * بعد از فیلترهای Search، فقط ملک‌هایی که در محدوده
-   * فعلی نقشه هستند نمایش داده می‌شوند.
    */
-  const visibleProperties =
-    bounds
-      ? filteredProperties.filter((property) => {
+  const visibleProperties = bounds
+    ? filteredProperties.filter(
+        (property) => {
           return (
-            property.latitude >= bounds.south &&
-            property.latitude <= bounds.north &&
-            property.longitude >= bounds.west &&
-            property.longitude <= bounds.east
+            property.latitude >=
+              bounds.south &&
+            property.latitude <=
+              bounds.north &&
+            property.longitude >=
+              bounds.west &&
+            property.longitude <=
+              bounds.east
           );
-        })
-      : filteredProperties;
+        }
+      )
+    : filteredProperties;
 
   return (
     <MapContainer
@@ -389,13 +451,7 @@ export function RealMap({
       />
 
       {/* ======================================================
-          مارکرهای ملک
-
-          فقط ملک‌هایی که هم:
-          1. فیلترهای Search را پاس کرده‌اند
-          2. داخل محدوده فعلی نقشه هستند
-
-          نمایش داده می‌شوند.
+          Markerهای ملک‌های واقعی Backend
           ====================================================== */}
       {visibleProperties.map((property) => (
         <MapPropertyMarker
