@@ -75,12 +75,7 @@ export function SearchTabs({
   return (
     <div
       className="
-        mt-2
-        flex
-        gap-2
-        overflow-x-auto
-        pb-1
-        scrollbar-none
+        mt-2 flex flex-wrap gap-2 pb-1
       "
     >
       {/* =====================================================
@@ -209,7 +204,7 @@ export function SearchTabs({
         className="
           flex
           h-10
-          shrink-0
+          
           items-center
           gap-2
           rounded-lg
@@ -241,7 +236,7 @@ export function SearchTabs({
         className="
           flex
           h-10
-          shrink-0
+          
           items-center
           gap-2
           rounded-lg
