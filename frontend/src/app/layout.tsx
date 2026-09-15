@@ -1,8 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata,Viewport } from "next";
 
 import "./globals.css";
 
 import { PwaRegistrar } from "@/lib/PwaRegistrar";
+
+export const viewport: Viewport = {
+  themeColor: "#062a5b",
+};
 
 /**
  * Metadata اصلی برنامه هشتی
@@ -14,7 +18,7 @@ export const metadata: Metadata = {
   /**
    * مشخصات مربوط به ظاهر مرورگر/PWA
    */
-  themeColor: "#062a5b",
+  
 
   /**
    * لینک Manifest

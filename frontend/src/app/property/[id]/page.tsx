@@ -1,4 +1,3 @@
-
 /**
  * ============================================================
  * صفحه جزئیات ملک
@@ -8,44 +7,14 @@
  *
  * /property/[id]
  *
- * مثال:
+ * اطلاعات ملک از Backend دریافت می‌شود.
  *
- * /property/property-1
- * /property/property-2
- *
- * [id] یک Dynamic Route است.
- *
- * چون پروژه با:
+ * چون پروژه از:
  *
  * output: "export"
  *
- * اجرا می‌شود، Next.js باید در زمان Build بداند
- * چه id هایی برای این Dynamic Route وجود دارند.
- *
- * به همین دلیل از generateStaticParams استفاده می‌کنیم.
- *
- * ------------------------------------------------------------
- *
- * جریان:
- *
- * /search
- *    ↓
- * کلیک روی نشانگر ملک
- *    ↓
- * Popup
- *    ↓
- * مشاهده جزئیات ملک
- *    ↓
- * /property/property-1
- *    ↓
- * دریافت id = property-1
- *    ↓
- * نمایش اطلاعات همان ملک
- *
- * ------------------------------------------------------------
- *
- * فعلاً اطلاعات ملک‌ها Mock هستند.
- * در مرحله اتصال Backend، همین قسمت به API متصل خواهد شد.
+ * استفاده می‌کند، شناسه ملک‌ها در زمان Build
+ * از Backend دریافت شده و مسیرهای استاتیک ساخته می‌شوند.
  * ============================================================
  */
 
@@ -53,120 +22,171 @@ import Link from "next/link";
 
 /**
  * ============================================================
- * اطلاعات موقت ملک‌ها
+ * نوع اطلاعات ملک
  * ============================================================
  *
- * فعلاً این اطلاعات با ملک‌های موجود در RealMap هماهنگ هستند.
+ * این ساختار مطابق پاسخ فعلی:
  *
- * بعداً این داده‌ها از Backend و Prisma دریافت خواهند شد.
+ * GET /properties/:id
+ *
+ * است.
  */
-const MOCK_PROPERTIES = [
-  {
-    id: "property-1",
-    title: "آپارتمان دو خوابه",
-    location: "میدان امام خمینی",
-    area: 120,
-    rooms: 2,
-    price: "۴٫۸ میلیارد",
-    transaction: "فروش",
-    propertyType: "آپارتمان",
-    description:
-      "آپارتمان دو خوابه با موقعیت مناسب و دسترسی خوب به مراکز شهری.",
-  },
+interface Property {
+  id: string;
+  propertyType: string;
+  registrationSource: string;
+  city: string;
+  district: string;
+  address: string;
+  postalCode?: string | null;
+  area?: number | null;
+  rooms?: number | null;
+  yearBuilt?: number | null;
+  floor?: number | null;
+  description?: string | null;
+  latitudePublic?: number | null;
+  longitudePublic?: number | null;
+  isActive: boolean;
+}
 
-  {
-    id: "property-2",
-    title: "آپارتمان سه خوابه",
-    location: "بلوار آزادی",
-    area: 150,
-    rooms: 3,
-    price: "۶٫۲ میلیارد",
-    transaction: "فروش",
-    propertyType: "آپارتمان",
-    description:
-      "آپارتمان سه خوابه با فضای مناسب برای خانواده و دسترسی مناسب.",
-  },
+/**
+ * ============================================================
+ * آدرس Backend
+ * ============================================================
+ *
+ * در Docker:
+ *
+ * BACKEND_INTERNAL_URL
+ *    ↓
+ * http://backend:4000
+ *
+ * در اجرای عادی روی سیستم:
+ *
+ * NEXT_PUBLIC_API_URL
+ *    ↓
+ * http://localhost:4000
+ *
+ * ============================================================
+ */
+function getBackendUrl() {
+  return (
+    process.env.BACKEND_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:4000"
+  );
+}
 
-  {
-    id: "property-3",
-    title: "خانه ویلایی",
-    location: "خیابان مدرس",
-    area: 220,
-    rooms: 3,
-    price: "۷٫۵ میلیارد",
-    transaction: "فروش",
-    propertyType: "خانه ویلایی",
-    description:
-      "خانه ویلایی با متراژ مناسب و فضای مستقل در یکی از مناطق شهری.",
-  },
+/**
+ * ============================================================
+ * دریافت فهرست ملک‌ها
+ * ============================================================
+ *
+ * برای generateStaticParams استفاده می‌شود.
+ */
+interface PropertySearchResponse {
+  count: number;
+  items: Property[];
+}
 
-  {
-    id: "property-4",
-    title: "آپارتمان یک خوابه",
-    location: "بلوار امام رضا",
-    area: 85,
-    rooms: 1,
-    price: "۳٫۱ میلیارد",
-    transaction: "فروش",
-    propertyType: "آپارتمان",
-    description:
-      "آپارتمان یک خوابه مناسب برای سکونت یا سرمایه‌گذاری.",
-  },
+async function getProperties(): Promise<Property[]> {
+  const response = await fetch(
+    `${getBackendUrl()}/properties/search`,
+    { cache: "no-store" }
+  );
 
-  {
-    id: "property-5",
-    title: "آپارتمان دو خوابه",
-    location: "خیابان دانشگاه",
-    area: 130,
-    rooms: 2,
-    price: "۵٫۴ میلیارد",
-    transaction: "فروش",
-    propertyType: "آپارتمان",
-    description:
-      "آپارتمان دو خوابه با موقعیت مناسب در محدوده خیابان دانشگاه.",
-  },
-];
+  if (!response.ok) {
+    throw new Error(
+      `خطا در دریافت فهرست ملک‌ها: ${response.status}`
+    );
+  }
+
+  const data: PropertySearchResponse = await response.json();
+
+  return data.items;
+}
+
+/**
+ * ============================================================
+ * دریافت یک ملک
+ * ============================================================
+ */
+async function getPropertyById(
+  id: string
+): Promise<Property | null> {
+  const response = await fetch(
+  `${getBackendUrl()}/properties/${encodeURIComponent(id)}`
+);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `خطا در دریافت ملک: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * ============================================================
+ * تبدیل نوع ملک به فارسی
+ * ============================================================
+ */
+function getPropertyTypeLabel(
+  propertyType: string
+): string {
+  const labels: Record<string, string> = {
+    APARTMENT: "آپارتمان",
+    HOUSE: "خانه",
+    VILLA: "ویلا",
+    LAND: "زمین",
+    SHOP: "مغازه",
+    OFFICE: "اداری",
+    GARDEN: "باغ",
+  };
+
+  return labels[propertyType] || propertyType;
+}
+
+/**
+ * ============================================================
+ * نمایش قیمت
+ * ============================================================
+ *
+ * Endpoint فعلی جزئیات ملک هنوز اطلاعات
+ * PropertyListing را برنمی‌گرداند.
+ *
+ * بنابراین قیمت فعلاً از API موجود قابل نمایش نیست.
+ * بعداً با اتصال PropertyListing تکمیل می‌شود.
+ * ============================================================
+ */
+function getPriceLabel() {
+  return "اطلاعات قیمت در مرحله بعد تکمیل می‌شود";
+}
 
 /**
  * ============================================================
  * generateStaticParams
  * ============================================================
  *
- * بسیار مهم:
+ * Static Export به این اطلاعات نیاز دارد.
  *
- * پروژه ما از Static Export استفاده می‌کند.
+ * مثلاً اگر Backend این ملک‌ها را داشته باشد:
  *
- * بنابراین Next.js در زمان Build باید بداند
- * چه Dynamic Route هایی باید ساخته شوند.
+ * test-map-001
  *
- * خروجی این تابع:
+ * مسیر زیر هنگام Build ساخته می‌شود:
  *
- * [
- *   { id: "property-1" },
- *   { id: "property-2" },
- *   { id: "property-3" },
- *   { id: "property-4" },
- *   { id: "property-5" }
- * ]
- *
- * در نتیجه مسیرهای زیر ساخته می‌شوند:
- *
- * /property/property-1
- * /property/property-2
- * /property/property-3
- * /property/property-4
- * /property/property-5
- *
- * ------------------------------------------------------------
- *
- * در آینده:
- *
- * وقتی اطلاعات واقعی ملک‌ها از Backend بیاید،
- * این قسمت را بر اساس معماری جدید پروژه تغییر می‌دهیم.
+ * /property/test-map-001
  * ============================================================
  */
-export function generateStaticParams() {
-  return MOCK_PROPERTIES.map((property) => ({
+export async function generateStaticParams() {
+  const properties = await getProperties();
+
+  return properties.map((property) => ({
     id: property.id,
   }));
 }
@@ -175,8 +195,6 @@ export function generateStaticParams() {
  * ============================================================
  * نوع Props صفحه
  * ============================================================
- *
- * در Next.js 16، params به صورت Promise دریافت می‌شود.
  */
 interface PropertyPageProps {
   params: Promise<{
@@ -193,37 +211,17 @@ export default async function PropertyPage({
   params,
 }: PropertyPageProps) {
   /**
-   * ----------------------------------------------------------
    * دریافت id از URL
-   * ----------------------------------------------------------
-   *
-   * اگر URL این باشد:
-   *
-   * /property/property-1
-   *
-   * مقدار id خواهد بود:
-   *
-   * property-1
    */
   const { id } = await params;
 
   /**
-   * ----------------------------------------------------------
-   * پیدا کردن ملک
-   * ----------------------------------------------------------
-   *
-   * فعلاً از داده‌های Mock استفاده می‌کنیم.
-   *
-   * بعداً این قسمت با Backend جایگزین خواهد شد.
+   * دریافت اطلاعات واقعی ملک از Backend
    */
-  const property = MOCK_PROPERTIES.find(
-    (item) => item.id === id
-  );
+  const property = await getPropertyById(id);
 
   /**
-   * ----------------------------------------------------------
    * اگر ملک پیدا نشد
-   * ----------------------------------------------------------
    */
   if (!property) {
     return (
@@ -289,6 +287,24 @@ export default async function PropertyPage({
 
   /**
    * ==========================================================
+   * داده‌های نمایشی
+   * ==========================================================
+   */
+
+  const propertyType =
+    getPropertyTypeLabel(property.propertyType);
+
+  const location = [
+    property.city,
+    property.district,
+  ]
+    .filter(Boolean)
+    .join("، ");
+
+  const price = getPriceLabel();
+
+  /**
+   * ==========================================================
    * صفحه اصلی جزئیات ملک
    * ==========================================================
    */
@@ -348,13 +364,7 @@ export default async function PropertyPage({
         >
           {/* ==================================================
               بخش تصویر
-             ==================================================
-
-              فعلاً سیستم تصاویر ملک ساخته نشده است.
-
-              بنابراین فقط فضای تصویر را نگه می‌داریم.
-              بعداً این قسمت به Gallery واقعی تبدیل می‌شود.
-          */}
+             ================================================== */}
           <div
             className="
               flex
@@ -385,9 +395,44 @@ export default async function PropertyPage({
               sm:p-7
             "
           >
-            {/* عنوان ملک */}
+            {/* نوع ملک + شناسه */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="
+                  border
+                  border-slate-200
+                  px-3
+                  py-1
+                  text-xs
+                  font-bold
+                  text-slate-600
+                "
+              >
+                {propertyType}
+              </span>
+
+              {property.isActive && (
+                <span
+                  className="
+                    border
+                    border-emerald-200
+                    bg-emerald-50
+                    px-3
+                    py-1
+                    text-xs
+                    font-bold
+                    text-emerald-700
+                  "
+                >
+                  فعال
+                </span>
+              )}
+            </div>
+
+            {/* عنوان */}
             <h1
               className="
+                mt-4
                 text-2xl
                 font-bold
                 tracking-tight
@@ -395,7 +440,7 @@ export default async function PropertyPage({
                 sm:text-3xl
               "
             >
-              {property.title}
+              {propertyType}
             </h1>
 
             {/* موقعیت */}
@@ -406,7 +451,18 @@ export default async function PropertyPage({
                 text-slate-500
               "
             >
-              {property.location}
+              {location}
+            </p>
+
+            {/* آدرس */}
+            <p
+              className="
+                mt-1
+                text-sm
+                text-slate-500
+              "
+            >
+              {property.address}
             </p>
 
             {/* ==================================================
@@ -432,12 +488,12 @@ export default async function PropertyPage({
               <div
                 className="
                   mt-1
-                  text-2xl
+                  text-lg
                   font-bold
                   text-slate-900
                 "
               >
-                {property.price}
+                {price}
               </div>
             </div>
 
@@ -453,30 +509,6 @@ export default async function PropertyPage({
                 sm:grid-cols-4
               "
             >
-              {/* نوع معامله */}
-              <div
-                className="
-                  border
-                  border-slate-200
-                  p-4
-                "
-              >
-                <div className="text-xs text-slate-500">
-                  نوع معامله
-                </div>
-
-                <div
-                  className="
-                    mt-1
-                    text-sm
-                    font-bold
-                    text-slate-900
-                  "
-                >
-                  {property.transaction}
-                </div>
-              </div>
-
               {/* نوع ملک */}
               <div
                 className="
@@ -497,7 +529,7 @@ export default async function PropertyPage({
                     text-slate-900
                   "
                 >
-                  {property.propertyType}
+                  {propertyType}
                 </div>
               </div>
 
@@ -521,7 +553,9 @@ export default async function PropertyPage({
                     text-slate-900
                   "
                 >
-                  {property.area} متر
+                  {property.area != null
+                    ? `${property.area} متر`
+                    : "ثبت نشده"}
                 </div>
               </div>
 
@@ -545,7 +579,33 @@ export default async function PropertyPage({
                     text-slate-900
                   "
                 >
-                  {property.rooms} خواب
+                  {property.rooms != null
+                    ? `${property.rooms} خواب`
+                    : "ثبت نشده"}
+                </div>
+              </div>
+
+              {/* سال ساخت */}
+              <div
+                className="
+                  border
+                  border-slate-200
+                  p-4
+                "
+              >
+                <div className="text-xs text-slate-500">
+                  سال ساخت
+                </div>
+
+                <div
+                  className="
+                    mt-1
+                    text-sm
+                    font-bold
+                    text-slate-900
+                  "
+                >
+                  {property.yearBuilt ?? "ثبت نشده"}
                 </div>
               </div>
             </div>
@@ -572,24 +632,14 @@ export default async function PropertyPage({
                   text-slate-600
                 "
               >
-                {property.description}
+                {property.description ||
+                  "توضیحی برای این ملک ثبت نشده است."}
               </p>
             </div>
 
             {/* ==================================================
                 دکمه‌های اقدام
-               ==================================================
-
-                فعلاً فقط ظاهر اولیه هستند.
-
-                در مراحل بعد:
-                - علاقه‌مندی
-                - تماس
-                - درخواست بازدید
-                - اشتراک‌گذاری
-
-                را به صورت واقعی پیاده می‌کنیم.
-            */}
+               ================================================== */}
             <div
               className="
                 mt-8

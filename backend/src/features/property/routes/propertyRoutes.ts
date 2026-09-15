@@ -1,8 +1,11 @@
 import { Router } from "express";
 
 import {
+  getPropertyByIdController,
   registerPropertyController,
 } from "../controller/propertyController";
+
+
 
 import {
   searchPropertyController,
@@ -20,6 +23,11 @@ const router = Router();
 router.get(
   "/properties/search",
   searchPropertyController
+);
+
+router.get(
+  "/properties/:id",
+  getPropertyByIdController
 );
 
 /**

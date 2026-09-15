@@ -31,6 +31,7 @@ import { getAgentById } from "../../agent/service/agentService";
 import {
   createProperty,
   findPropertyByPostalCode,
+  findPropertyById,
 } from "../repository/propertyRepository";
 
 import {
@@ -175,4 +176,16 @@ export async function registerProperty(
     propertyAgent,
     isNewProperty,
   };
+}
+export async function getPropertyById(
+  id: string
+): Promise<Property> {
+
+  const property = await findPropertyById(id);
+
+  if (!property) {
+    throw new Error("ملک مورد نظر پیدا نشد.");
+  }
+
+  return property;
 }

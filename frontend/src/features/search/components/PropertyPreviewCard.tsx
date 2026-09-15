@@ -1,3 +1,4 @@
+
 "use client";
 
 /**
@@ -8,19 +9,12 @@
  * کارت خلاصه ملک که بعد از انتخاب Marker روی نقشه نمایش داده
  * می‌شود.
  *
- * فعلاً اطلاعات از Mock Property دریافت می‌شود.
- *
- * بعداً همین کامپوننت می‌تواند:
- * - عکس واقعی ملک
- * - قیمت واقعی
- * - وضعیت تأیید
- * - دکمه علاقه‌مندی
- * - مشاهده جزئیات
- *
- * را نمایش دهد.
+ * اطلاعات ملک از Search API دریافت شده و از طریق MapProperty
+ * به این کامپوننت می‌رسد.
  * =========================================================
  */
 
+import { useRouter } from "next/navigation";
 import type { MapProperty } from "@/shared/components/map/RealMap";
 
 /**
@@ -48,6 +42,22 @@ export function PropertyPreviewCard({
   property,
   onClose,
 }: PropertyPreviewCardProps) {
+  const router = useRouter();
+
+  /**
+   * -------------------------------------------------------
+   * مشاهده جزئیات ملک
+   * -------------------------------------------------------
+   *
+   * شناسه واقعی ملک از Backend در property.id قرار دارد.
+   *
+   * مثال:
+   * /property/test-map-001
+   */
+  const handleViewDetails = () => {
+    router.push(`/property/${property.id}`);
+  };
+
   return (
     <div
       dir="rtl"
@@ -225,6 +235,7 @@ export function PropertyPreviewCard({
 
         <button
           type="button"
+          onClick={handleViewDetails}
           className="
             w-full
             rounded-xl

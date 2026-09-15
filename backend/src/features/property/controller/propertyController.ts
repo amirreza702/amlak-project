@@ -1,11 +1,48 @@
 import { Request, Response } from "express";
-import { registerProperty } from "../service/propertyService";
 
-export async function registerPropertyController(req: Request, res: Response) {
+import {
+  getPropertyById,
+  registerProperty,
+} from "../service/propertyService";
+
+/**
+ * ============================================================
+ * ثبت ملک
+ * ============================================================
+ */
+export async function registerPropertyController(
+  req: Request,
+  res: Response
+) {
   try {
     const result = await registerProperty(req.body);
+
     res.status(201).json(result);
   } catch (error: any) {
-    res.status(400).json({ message: error.message || "خطای ناشناخته در ثبت ملک" });
+    res.status(400).json({
+      message: error.message || "خطای ناشناخته در ثبت ملک",
+    });
+  }
+}
+
+/**
+ * ============================================================
+ * دریافت جزئیات یک ملک
+ * ============================================================
+ *
+ * GET /properties/:id
+ */
+export async function getPropertyByIdController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const property = await getPropertyById(req.params.id);
+
+    res.status(200).json(property);
+  } catch (error: any) {
+    res.status(404).json({
+      message: error.message || "ملک مورد نظر پیدا نشد.",
+    });
   }
 }
