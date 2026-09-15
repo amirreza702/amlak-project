@@ -48,9 +48,29 @@ export function PropertySearchPage() {
       "
     >
 
-      <div className="absolute bottom-4 left-4 z-[1000] bg-white p-3 text-black">
-       نتایج: {results.length}
-      </div>
+      ```tsx
+<div
+  className="
+    absolute
+    bottom-5
+    right-4
+    z-[1000]
+    flex
+    h-10
+    items-center
+    rounded-xl
+    bg-white
+    px-4
+    text-sm
+    font-medium
+    text-slate-700
+    shadow-lg
+  "
+>
+  نتایج: {results.length}
+</div>
+```
+
 
       <SearchMap
         appliedFilters={appliedFilters}
