@@ -56,6 +56,11 @@ a {
   outline-offset: 2px;
 }
 
+.search-location-input:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
 ::selection {
   background: rgba(184, 150, 80, 0.22);
 }
