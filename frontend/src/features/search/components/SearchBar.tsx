@@ -209,16 +209,7 @@ export function SearchBar({
           placeholder="محله، خیابان، شهر یا کدپستی را جستجو کنید"
           autoComplete="off"
           className="
-            min-w-0
-            flex-1
-            bg-transparent
-            px-1
-            text-sm
-            font-medium
-            text-slate-800
-            outline-none
-            placeholder:text-slate-400
-            sm:text-base
+            min-w-0 flex-1 bg-transparent px-1 text-sm font-medium text-slate-800 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 placeholder:text-slate-400 sm:text-base
           "
           aria-label="جستجوی محله، خیابان، شهر یا کدپستی"
         />
