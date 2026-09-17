@@ -2,36 +2,21 @@
  * ============================================================
  * Property Types
  * ============================================================
- *
- * نوع Property مستقیماً از مدل Prisma گرفته می‌شود تا
- * TypeScript و Database دو تعریف جدا و ناسازگار از ملک
- * نداشته باشند.
- *
- * منبع اصلی ساختار ملک:
- *
- * backend/prisma/schema.prisma
- * ============================================================
  */
 
-import type { Property as PrismaProperty } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 /**
- * موجودیت اصلی ملک
- *
- * این Type همان مدل Property موجود در Prisma است.
- *
- * بنابراین فیلدهایی مثل:
- *
- * propertyType
- * registrationSource
- * city
- * district
- * postalCode
- * area
- * rooms
- * yearBuilt
- * ...
- *
- * همگی دقیقاً مطابق Schema خواهند بود.
+ * موجودیت اصلی Property بدون relation
  */
-export type Property = PrismaProperty;
+export type Property = Prisma.PropertyGetPayload<{}>;
+
+/**
+ * Property به همراه Listing فعلی
+ */
+export type PropertyWithListing =
+  Prisma.PropertyGetPayload<{
+    include: {
+      listing: true;
+    };
+  }>;

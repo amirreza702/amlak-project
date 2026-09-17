@@ -1,3 +1,15 @@
+/**
+ * ============================================================
+ * Property Controller
+ * ============================================================
+ *
+ * Controller مسئول دریافت Request و ارسال Response است.
+ *
+ * منطق Business در Service قرار دارد و Controller نباید
+ * منطق مربوط به Property را خودش انجام دهد.
+ * ============================================================
+ */
+
 import { Request, Response } from "express";
 
 import {
@@ -31,9 +43,14 @@ export async function registerPropertyController(
  * ============================================================
  *
  * GET /properties/:id
+ *
+ * نکته:
+ *
+ * در این Route می‌دانیم که id یک string است.
+ * بنابراین نوع Params را به Request اعلام می‌کنیم.
  */
 export async function getPropertyByIdController(
-  req: Request,
+  req: Request<{ id: string }>,
   res: Response
 ) {
   try {

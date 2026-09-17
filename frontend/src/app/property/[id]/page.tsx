@@ -22,14 +22,39 @@ import Link from "next/link";
 
 /**
  * ============================================================
+ * نوع Listing
+ * ============================================================
+ *
+ * قیمت فعلی ملک در PropertyListing قرار دارد.
+ */
+interface PropertyListing {
+  id: string;
+  propertyId: string;
+  transactionType: string;
+  salePrice?: string | null;
+  depositAmount?: string | null;
+  rentAmount?: string | null;
+  status: string;
+  publishedAt?: string | null;
+  rejectedAt?: string | null;
+  expiredAt?: string | null;
+}
+
+/**
+ * ============================================================
  * نوع اطلاعات ملک
  * ============================================================
  *
- * این ساختار مطابق پاسخ فعلی:
+ * ساختار پاسخ:
  *
  * GET /properties/:id
  *
- * است.
+ * شامل:
+ *
+ * Property
+ * +
+ * listing
+ * ============================================================
  */
 interface Property {
   id: string;
@@ -47,25 +72,18 @@ interface Property {
   latitudePublic?: number | null;
   longitudePublic?: number | null;
   isActive: boolean;
+
+  /**
+   * Listing فعلی ملک
+   *
+   * قیمت فعلی در این بخش قرار دارد.
+   */
+  listing?: PropertyListing | null;
 }
 
 /**
  * ============================================================
  * آدرس Backend
- * ============================================================
- *
- * در Docker:
- *
- * BACKEND_INTERNAL_URL
- *    ↓
- * http://backend:4000
- *
- * در اجرای عادی روی سیستم:
- *
- * NEXT_PUBLIC_API_URL
- *    ↓
- * http://localhost:4000
- *
  * ============================================================
  */
 function getBackendUrl() {
@@ -114,8 +132,8 @@ async function getPropertyById(
   id: string
 ): Promise<Property | null> {
   const response = await fetch(
-  `${getBackendUrl()}/properties/${encodeURIComponent(id)}`
-);
+    `${getBackendUrl()}/properties/${encodeURIComponent(id)}`
+  );
 
   if (response.status === 404) {
     return null;
@@ -156,31 +174,72 @@ function getPropertyTypeLabel(
  * نمایش قیمت
  * ============================================================
  *
- * Endpoint فعلی جزئیات ملک هنوز اطلاعات
- * PropertyListing را برنمی‌گرداند.
+ * قیمت بر اساس نوع معامله از PropertyListing خوانده می‌شود.
  *
- * بنابراین قیمت فعلاً از API موجود قابل نمایش نیست.
- * بعداً با اتصال PropertyListing تکمیل می‌شود.
- * ============================================================
+ * SALE
+ *   ↓
+ * salePrice
+ *
+ * FULL_DEPOSIT
+ *   ↓
+ * depositAmount
+ *
+ * RENT
+ *   ↓
+ * rentAmount
+ *
+ * نکته:
+ * مقدار Decimal از Backend به صورت string دریافت می‌شود.
  */
-function getPriceLabel() {
-  return "اطلاعات قیمت در مرحله بعد تکمیل می‌شود";
+function getPriceLabel(
+  listing?: PropertyListing | null
+): string {
+  if (!listing) {
+    return "قیمت ثبت نشده است";
+  }
+
+  /**
+   * فروش
+   */
+  if (
+    listing.transactionType === "SALE" &&
+    listing.salePrice
+  ) {
+    return `${Number(listing.salePrice).toLocaleString(
+      "fa-IR"
+    )} تومان`;
+  }
+
+  /**
+   * رهن کامل
+   */
+  if (
+    listing.transactionType === "FULL_DEPOSIT" &&
+    listing.depositAmount
+  ) {
+    return `${Number(
+      listing.depositAmount
+    ).toLocaleString("fa-IR")} تومان`;
+  }
+
+  /**
+   * اجاره
+   */
+  if (
+    listing.transactionType === "RENT" &&
+    listing.rentAmount
+  ) {
+    return `${Number(
+      listing.rentAmount
+    ).toLocaleString("fa-IR")} تومان`;
+  }
+
+  return "قیمت ثبت نشده است";
 }
 
 /**
  * ============================================================
  * generateStaticParams
- * ============================================================
- *
- * Static Export به این اطلاعات نیاز دارد.
- *
- * مثلاً اگر Backend این ملک‌ها را داشته باشد:
- *
- * test-map-001
- *
- * مسیر زیر هنگام Build ساخته می‌شود:
- *
- * /property/test-map-001
  * ============================================================
  */
 export async function generateStaticParams() {
@@ -301,7 +360,10 @@ export default async function PropertyPage({
     .filter(Boolean)
     .join("، ");
 
-  const price = getPriceLabel();
+  /**
+   * قیمت فعلی از Listing
+   */
+  const price = getPriceLabel(property.listing);
 
   /**
    * ==========================================================
@@ -395,7 +457,7 @@ export default async function PropertyPage({
               sm:p-7
             "
           >
-            {/* نوع ملک + شناسه */}
+            {/* نوع ملک + وضعیت */}
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className="

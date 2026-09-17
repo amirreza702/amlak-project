@@ -8,61 +8,63 @@
  */
 
 import { prisma } from "../../../lib/prisma";
-import type { Property } from "../types/property";
+
+import type {
+  Property,
+  PropertyWithListing,
+} from "../types/property";
 
 /**
+ * ============================================================
  * پیدا کردن ملک با کد پستی
- *
- * postalCode در Schema جدید:
- * - nullable است
- * - unique نیست
- *
- * بنابراین findUnique قابل استفاده نیست.
+ * ============================================================
  */
 export const findPropertyByPostalCode = async (
   postalCode: string
 ): Promise<Property | null> => {
   return prisma.property.findFirst({
-    where: {
-      postalCode,
-    },
+    where: { postalCode },
   });
 };
 
 /**
- * پیدا کردن ملک با شناسه یکتا
+ * ============================================================
+ * پیدا کردن ملک با ID
+ * ============================================================
+ *
+ * در این Use Case، علاوه بر خود Property،
+ * Listing فعلی نیز لازم است؛ چون قیمت فعلی
+ * در PropertyListing قرار دارد.
  */
 export const findPropertyById = async (
   id: string
-): Promise<Property | null> => {
+): Promise<PropertyWithListing | null> => {
   return prisma.property.findUnique({
-    where: {
-      id,
+    where: { id },
+    include: {
+      listing: true,
     },
   });
 };
 
 /**
- * ایجاد ملک
- *
- * Property در Prisma دارای فیلدهای اجباری جدید است؛
- * بنابراین نوع ورودی را مستقیماً از Prisma می‌گیریم.
+ * ============================================================
+ * ایجاد Property
+ * ============================================================
  */
 export const createProperty = async (
   data: Parameters<typeof prisma.property.create>[0]["data"]
 ): Promise<Property> => {
-  return prisma.property.create({
-    data,
-  });
+  return prisma.property.create({ data });
 };
 
 /**
- * دریافت همه ملک‌ها
+ * ============================================================
+ * دریافت همه Propertyها
+ * ============================================================
  */
 export const findAllProperties = async (): Promise<Property[]> => {
   return prisma.property.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
   });
 };
