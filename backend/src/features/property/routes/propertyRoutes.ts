@@ -39,6 +39,18 @@ import {
   updatePropertyPriceController,
 } from "../controller/propertyPriceController";
 
+import {
+  updatePropertyListingStatusController,
+} from "../controller/propertyListingStatusController";
+
+import {
+  checkPropertyConfirmationController,
+} from "../controller/propertyConfirmationController";
+
+import {
+  expirePropertyListingController,
+} from "../controller/expirePropertyListingController";
+
 const router = Router();
 
 /**
@@ -108,6 +120,21 @@ router.post(
 router.put(
   "/properties/:id/price",
   updatePropertyPriceController
+);
+
+router.put(
+  "/properties/:id/status",
+  updatePropertyListingStatusController
+);
+
+router.get(
+  "/properties/:id/confirmation",
+  checkPropertyConfirmationController
+);
+
+router.put(
+  "/properties/:id/expire",
+  expirePropertyListingController
 );
 
 export default router;
