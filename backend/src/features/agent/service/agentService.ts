@@ -1,79 +1,78 @@
- /**
-  * ============================================================
-  * Agent Service
-  * ============================================================
-  *
-  * این Service منطق مربوط به موجودیت مشاور را مدیریت می‌کند.
-  *
-  * در معماری جدید:
-  *
-  * User
-  * ├── mobile
-  * ├── passwordHash
-  * ├── isActive
-  * └── اطلاعات احراز هویت
-  *
-  * Agent
-  * ├── firstName
-  * ├── lastName
-  * ├── agencyName
-  * └── address
-  *
-  * اما AgentPublic فعلاً همان قرارداد قدیمی خروجی است.
-  * بنابراین این Service اطلاعات User و Agent را
-  * دوباره در قالب AgentPublic قرار می‌دهد.
-  * ============================================================
-  */
+/**
+ * ============================================================
+ * Agent Service
+ * ============================================================
+ *
+ * منطق مربوط به Agent در این Service قرار دارد.
+ *
+ * Repository اطلاعات Agent و User را در قالب
+ * AgentAuthRecord برمی‌گرداند.
+ *
+ * Service این اطلاعات داخلی را به AgentPublic
+ * تبدیل می‌کند.
+ * ============================================================
+ */
 
-import { findAgentById } from "../repository/agentRepository";
+import {
+  findAgentById,
+} from "../repository/agentRepository";
 
-import type { AgentPublic } from "../types/agent";
+import type {
+  AgentPublic,
+} from "../types/agent";
 
 /**
  * ============================================================
- * تبدیل رکورد جدید Agent + User به خروجی عمومی
+ * تبدیل AgentAuthRecord به AgentPublic
  * ============================================================
  *
- * passwordHash هرگز در خروجی قرار نمی‌گیرد.
+ * اطلاعات حساس مانند passwordHash وارد خروجی نمی‌شود.
  *
- * ساختار مورد انتظار AgentPublic:
- *
- * {
- *   id,
- *   firstName,
- *   lastName,
- *   mobile,
- *   agencyName,
- *   address,
- *   isActive,
- *   createdAt,
- *   updatedAt
- * }
+ * نکته:
+ * findAgentById() دیگر یک Prisma Agent خام نیست.
+ * بلکه AgentAuthRecord برمی‌گرداند؛ بنابراین اطلاعات
+ * User مستقیماً روی خود agent قرار دارند.
  */
-export const sanitizeAgent = (agent: any): AgentPublic => {
-  return {
-    // شناسه خود Agent
-    id: agent.id,
+export const sanitizeAgent = (
+  agent: any
+): AgentPublic => {
 
-    // اطلاعات پروفایل Agent
+  return {
+
+    /**
+     * شناسه Agent
+     */
+    id: agent.agentId,
+
+    /**
+     * اطلاعات پروفایل Agent
+     */
     firstName: agent.firstName,
     lastName: agent.lastName,
+
     agencyName: agent.agencyName ?? null,
     address: agent.address ?? null,
 
-    // اطلاعات User
-    mobile: agent.user.mobile,
-    isActive: agent.user.isActive,
+    /**
+     * اطلاعات User که در AgentAuthRecord
+     * مستقیماً در اختیار Service قرار گرفته‌اند.
+     */
+    mobile: agent.mobile,
+    isActive: agent.isActive,
 
-    // زمان‌های مربوط به User
-    createdAt: agent.user.createdAt,
-    updatedAt: agent.user.updatedAt,
+    /**
+     * AgentPublic این دو فیلد را اختیاری تعریف کرده است.
+     *
+     * Repository فعلی تاریخ‌های واقعی را در
+     * AgentAuthRecord برنمی‌گرداند، بنابراین
+     * فعلاً این فیلدها را ارسال نمی‌کنیم.
+     */
   };
 };
 
 /**
  * ============================================================
- * دریافت Agent بر اساس شناسه Agent
+ * دریافت Agent بر اساس Agent ID
  * ============================================================
  */
 export const getAgentById = async (
@@ -81,20 +80,22 @@ export const getAgentById = async (
 ): Promise<AgentPublic> => {
 
   /**
-   * Repository رکورد Agent را همراه User برمی‌گرداند.
+   * Repository Agent را پیدا می‌کند.
    */
   const agent = await findAgentById(id);
 
   /**
    * اگر Agent وجود نداشته باشد،
-   * خطای مناسب ایجاد می‌کنیم.
+   * عملیات متوقف می‌شود.
    */
   if (!agent) {
-    throw new Error("مشاور با این مشخصات یافت نشد.");
+    throw new Error(
+      "مشاور با این مشخصات یافت نشد."
+    );
   }
 
   /**
-   * تبدیل رکورد داخلی به خروجی امن.
+   * تبدیل رکورد داخلی به خروجی عمومی.
    */
   return sanitizeAgent(agent);
 };

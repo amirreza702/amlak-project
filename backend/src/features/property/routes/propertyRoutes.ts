@@ -59,6 +59,18 @@ import {
   verifyPropertyOwnerController,
 } from "../controller/propertyOwnerVerificationController";
 
+import {
+  approvePropertyAgentByOwnerController,
+} from "../controller/propertyAgentApprovalController";
+
+import {
+  revokePropertyAgentController,
+} from "../controller/propertyAgentRevocationController";
+
+import {
+  createVerificationCaseController,
+} from "../controller/verificationCaseController";
+
 const router = Router();
 
 /**
@@ -97,6 +109,11 @@ router.get(
 router.post(
   "/properties",
   registerPropertyController
+);
+
+router.post(
+  "/properties/:id/verification",
+  createVerificationCaseController
 );
 
 /**
@@ -162,6 +179,22 @@ router.post(
 router.patch(
   "/properties/:id/owners/:ownerId/verification",
   verifyPropertyOwnerController
+);
+
+/** 
+* ============================================================
+ * Property Agent
+ * ============================================================
+*/
+
+router.patch(
+  "/properties/:id/agents/:agentId/approval",
+  approvePropertyAgentByOwnerController
+);
+
+router.patch(
+  "/properties/:id/agents/:agentId/revoke",
+  revokePropertyAgentController
 );
 
 export default router;

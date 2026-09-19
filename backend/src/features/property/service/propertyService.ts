@@ -39,6 +39,7 @@ import {
 import {
   createPropertyAgent,
   findPropertyAgent,
+  reactivatePropertyAgent,
 } from "../repository/propertyAgentRepository";
 
 import type {
@@ -120,36 +121,63 @@ export async function registerProperty(
   }
 
   /**
-   * بررسی می‌کنیم آیا این مشاور قبلاً
-   * به این ملک متصل شده است یا خیر.
-   */
-  const existingAgent = await findPropertyAgent(
-    property.id,
-    data.agentId
-  );
+ * ----------------------------------------------------------
+ * بررسی ارتباط قبلی Agent با Property
+ * ----------------------------------------------------------
+ */
 
-  if (existingAgent) {
-    throw new Error(
-      "این مشاور قبلاً این ملک را ثبت کرده است."
-    );
+const existingAgent = await findPropertyAgent(
+  property.id,
+  data.agentId
+);
+
+/**
+ * اگر Agent قبلاً به این Property متصل بوده:
+ *
+ * ACTIVE
+ *   → ثبت مجدد مجاز نیست
+ *
+ * REVOKED
+ *   → ارتباط قبلی دوباره فعال می‌شود
+ */
+if (existingAgent) {
+  if (existingAgent.status === "REVOKED") {
+    const propertyAgent =
+      await reactivatePropertyAgent(
+        property.id,
+        data.agentId
+      );
+
+    return {
+      property,
+      propertyAgent,
+      isNewProperty,
+    };
   }
 
-  /**
-   * ایجاد ارتباط بین Agent و Property.
-   */
-  const propertyAgent = await createPropertyAgent(
-    property.id,
-    data.agentId
+  throw new Error(
+    "این مشاور قبلاً این ملک را ثبت کرده است."
   );
+}
 
-  /**
-   * نتیجه ثبت ملک.
-   */
-  return {
-    property,
-    propertyAgent,
-    isNewProperty,
-  };
+/**
+ * ----------------------------------------------------------
+ * Agent جدید
+ * ----------------------------------------------------------
+ */
+
+const propertyAgent = await createPropertyAgent(
+  property.id,
+  data.agentId
+);
+
+return {
+  property,
+  propertyAgent,
+  isNewProperty,
+};
+
+  
 }
 
 /**
