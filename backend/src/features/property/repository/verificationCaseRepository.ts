@@ -14,12 +14,20 @@ import { prisma } from "../../../lib/prisma";
 import type { VerificationCase } from "../types/verificationCase";
 
 /**
- * پیدا کردن پرونده تأیید یک Property
- *
- * چون در Schema فعلی برای propertyId محدودیت unique نداریم،
- * ممکن است یک Property چند VerificationCase داشته باشد.
- *
- * بنابراین آخرین پرونده را بر اساس createdAt برمی‌گردانیم.
+ * پیدا کردن VerificationCase با شناسه
+ */
+export const findVerificationCaseById = async (
+  id: string
+): Promise<VerificationCase | null> => {
+  return prisma.verificationCase.findUnique({
+    where: {
+      id,
+    },
+  });
+};
+
+/**
+ * پیدا کردن آخرین پرونده تأیید یک Property
  */
 export const findLatestVerificationCase = async (
   propertyId: string
@@ -36,8 +44,6 @@ export const findLatestVerificationCase = async (
 
 /**
  * ایجاد پرونده تأیید برای یک Property
- *
- * وضعیت اولیه طبق Prisma Schema برابر PENDING است.
  */
 export const createVerificationCase = async (
   propertyId: string

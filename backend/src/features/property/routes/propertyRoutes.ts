@@ -71,6 +71,10 @@ import {
   createVerificationCaseController,
 } from "../controller/verificationCaseController";
 
+import {
+  createVerificationDocumentController,
+} from "../controller/verificationDocumentController";
+
 const router = Router();
 
 /**
@@ -109,6 +113,14 @@ router.get(
 router.post(
   "/properties",
   registerPropertyController
+);
+ /** ============================================================
+ * Property verification
+ * ============================================================
+*/
+router.post(
+  "/verification-cases/:id/documents",
+  createVerificationDocumentController
 );
 
 router.post(
