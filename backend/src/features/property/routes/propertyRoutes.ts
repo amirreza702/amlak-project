@@ -55,6 +55,10 @@ import {
   addPropertyOwnerController,
 } from "../controller/propertyOwnerController";
 
+import {
+  verifyPropertyOwnerController,
+} from "../controller/propertyOwnerVerificationController";
+
 const router = Router();
 
 /**
@@ -153,6 +157,11 @@ router.put(
 router.post(
   "/properties/:id/owners",
   addPropertyOwnerController
+);
+
+router.patch(
+  "/properties/:id/owners/:ownerId/verification",
+  verifyPropertyOwnerController
 );
 
 export default router;
