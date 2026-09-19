@@ -1,14 +1,17 @@
 /**
- * تست مستقیم Batch Expiration Service
+ * تست مستقیم Property Expiration Job
  */
 
-import { expireExpiredProperties } from "./src/features/property/service/expireExpiredPropertiesService";
+import {
+  expirePropertiesJob,
+} from "./src/features/property/job/expirePropertiesJob";
 
 async function main() {
-  const result = await expireExpiredProperties();
+  const result =
+    await expirePropertiesJob();
 
   console.log(
-    "Batch expiration result:",
+    "Job result:",
     result
   );
 }

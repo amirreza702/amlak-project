@@ -51,6 +51,10 @@ import {
   expirePropertyListingController,
 } from "../controller/expirePropertyListingController";
 
+import {
+  addPropertyOwnerController,
+} from "../controller/propertyOwnerController";
+
 const router = Router();
 
 /**
@@ -135,6 +139,20 @@ router.get(
 router.put(
   "/properties/:id/expire",
   expirePropertyListingController
+);
+
+/**
+ * ============================================================
+ * Property Owner
+ * ============================================================
+ *
+ * اتصال یک مالک به یک Property
+ *
+ * POST /properties/:id/owners
+ */
+router.post(
+  "/properties/:id/owners",
+  addPropertyOwnerController
 );
 
 export default router;
