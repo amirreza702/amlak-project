@@ -152,6 +152,11 @@ import {
   reviewDuplicateController,
 } from "../controller/duplicateReviewController";
 
+import {
+  archivePropertyController,
+  getPropertyArchiveController,
+} from "../controller/propertyArchiveController";
+
 
 /**
  * ============================================================
@@ -258,6 +263,25 @@ router.get(
 router.patch(
   "/duplicate-reviews/:id/review",
   reviewDuplicateController
+);
+
+
+/**
+ * ============================================================
+ * Property Archive
+ * ============================================================
+ */
+
+// آرشیو کردن ملک
+router.patch(
+  "/properties/:id/archive",
+  archivePropertyController
+);
+
+// دریافت اطلاعات آرشیو ملک
+router.get(
+  "/properties/:id/archive",
+  getPropertyArchiveController
 );
 
 export default router;
