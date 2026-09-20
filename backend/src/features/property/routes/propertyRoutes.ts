@@ -77,6 +77,31 @@ import {
    getVerificationDocumentsController,
 } from "../controller/verificationDocumentController";
 
+import {
+  createPropertyMediaController,
+  getPropertyMediaController,
+} from "../controller/propertyMediaController";
+
+import {
+  createDuplicateReviewController,
+  getDuplicateReviewsController,
+  reviewDuplicateController,
+} from "../controller/duplicateReviewController";
+
+import {
+  archivePropertyController,
+  getPropertyArchiveController,
+} from "../controller/propertyArchiveController";
+
+import {
+  createExactLocationAccessLogController,
+  getExactLocationAccessLogsController,
+} from "../controller/exactLocationAccessLogController";
+
+import {
+  updatePropertyController,
+} from "../controller/propertyUpdateController";
+
 const router = Router();
 
 /**
@@ -141,21 +166,7 @@ router.patch(
   reviewVerificationCaseController
 );
 
-import {
-  createPropertyMediaController,
-  getPropertyMediaController,
-} from "../controller/propertyMediaController";
 
-import {
-  createDuplicateReviewController,
-  getDuplicateReviewsController,
-  reviewDuplicateController,
-} from "../controller/duplicateReviewController";
-
-import {
-  archivePropertyController,
-  getPropertyArchiveController,
-} from "../controller/propertyArchiveController";
 
 
 /**
@@ -282,6 +293,30 @@ router.patch(
 router.get(
   "/properties/:id/archive",
   getPropertyArchiveController
+);
+
+/**
+ * ============================================================
+ * Exact Location Access Log
+ * ============================================================
+ */
+
+// ثبت سابقه دسترسی به موقعیت دقیق
+router.post(
+  "/properties/:id/exact-location-access-logs",
+  createExactLocationAccessLogController
+);
+
+// دریافت سوابق دسترسی به موقعیت دقیق
+router.get(
+  "/properties/:id/exact-location-access-logs",
+  getExactLocationAccessLogsController
+);
+
+
+router.patch(
+  "/properties/:id",
+  updatePropertyController
 );
 
 export default router;

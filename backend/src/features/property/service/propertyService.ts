@@ -25,6 +25,7 @@
  */
 
 import {
+  PropertyHistoryAction,
   RegistrationSource,
 } from "@prisma/client";
 
@@ -34,6 +35,7 @@ import {
   createProperty,
   findPropertyByPostalCode,
   findPropertyById,
+  updateProperty,
 } from "../repository/propertyRepository";
 
 import {
@@ -48,7 +50,12 @@ import type {
 } from "../types/property";
 
 import type { PropertyAgent } from "../types/propertyAgent";
+
 import type { RegisterPropertyInput } from "../types/registerProperty";
+
+import { createPropertyHistory } from "../repository/propertyHistoryRepository";
+
+import type { UpdatePropertyInput } from "../types/updateProperty";
 
 /**
  * ============================================================
@@ -107,17 +114,28 @@ export async function registerProperty(
      * در غیر این صورت ملک جدید ایجاد می‌کنیم.
      */
     property = await createProperty({
-      registrationSource: RegistrationSource.AGENT,
-      propertyType: data.propertyType,
-      city: data.city,
-      district: data.district,
-      address: data.address,
-      postalCode: data.postalCode ?? null,
-      area: data.area ?? null,
-      rooms: data.rooms ?? null,
-      floor: data.floor ?? null,
-      isActive: true,
-    });
+  registrationSource: RegistrationSource.AGENT,
+  propertyType: data.propertyType,
+  city: data.city,
+  district: data.district,
+  address: data.address,
+  postalCode: data.postalCode ?? null,
+  area: data.area ?? null,
+  rooms: data.rooms ?? null,
+  floor: data.floor ?? null,
+  isActive: true,
+});
+
+/**
+ * ثبت ایجاد ملک در تاریخچه
+ *
+ * فقط برای ملکی که واقعاً جدید ایجاد شده است.
+ */
+await createPropertyHistory({
+  propertyId: property.id,
+  action: PropertyHistoryAction.CREATED,
+  reason: "ایجاد ملک جدید",
+});
   }
 
   /**
@@ -217,4 +235,56 @@ export async function getPropertyById(
    * Property به همراه Listing را برمی‌گردانیم.
    */
   return property;
+}
+
+/**
+ * ============================================================
+ * updatePropertyService
+ * ============================================================
+ *
+ * ویرایش اطلاعات پایه Property.
+ *
+ * جریان:
+ *
+ * دریافت Property
+ *      ↓
+ * بررسی وجود ملک
+ *      ↓
+ * Update اطلاعات
+ *      ↓
+ * ثبت UPDATED در PropertyHistory
+ */
+export async function updatePropertyService(
+  propertyId: string,
+  data: UpdatePropertyInput
+): Promise<Property> {
+  /**
+   * ابتدا بررسی می‌کنیم ملک وجود دارد.
+   */
+  const property = await findPropertyById(propertyId);
+
+  if (!property) {
+    throw new Error("ملک مورد نظر پیدا نشد.");
+  }
+
+  /**
+   * به‌روزرسانی اطلاعات Property
+   */
+  const updatedProperty = await updateProperty(
+    propertyId,
+    data
+  );
+
+  /**
+   * ثبت رویداد Update در تاریخچه.
+   *
+   * در این مرحله یک رویداد کلی UPDATED ثبت می‌کنیم.
+   */
+  await createPropertyHistory({
+    propertyId,
+    action: PropertyHistoryAction.UPDATED,
+    reason: "ویرایش اطلاعات ملک",
+  });
+
+  return updatedProperty;
 }
