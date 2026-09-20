@@ -126,3 +126,47 @@ export const getPropertyArchiveService = async (
 
   return archive;
 };
+
+export const restorePropertyService = async (
+  propertyId: string
+): Promise<PropertyArchive> => {
+  const archive = await findPropertyArchive(propertyId);
+
+  if (!archive) {
+    throw new Error("آرشیو این ملک پیدا نشد.");
+  }
+
+  const restoredArchive = await prisma.$transaction(
+    async (tx) => {
+      await tx.property.update({
+        where: {
+          id: propertyId,
+        },
+        data: {
+          isActive: true,
+        },
+      });
+
+      await tx.propertyHistory.create({
+        data: {
+          propertyId,
+          action: PropertyHistoryAction.RESTORED,
+          field: "isActive",
+          oldValue: "false",
+          newValue: "true",
+          reason: "بازگردانی ملک از آرشیو",
+        },
+      });
+
+      await tx.propertyArchive.delete({
+        where: {
+          propertyId,
+        },
+      });
+
+      return archive;
+    }
+  );
+
+  return restoredArchive;
+};

@@ -4,6 +4,8 @@ import {
   createPropertyOwner,
 } from "../repository/propertyOwnerRepository";
 import { prisma } from "../../../lib/prisma";
+import { PropertyHistoryAction } from "@prisma/client";
+import { createPropertyHistory } from "../repository/propertyHistoryRepository";
 
 export interface AddPropertyOwnerInput {
   propertyId: string;
@@ -41,8 +43,6 @@ export async function addPropertyOwner(
 
   // ----------------------------------------------------------
   // 3. بررسی اعتبار سهم این مالک
-  //
-  // هر مالک باید بیشتر از صفر و حداکثر ۶ دانگ داشته باشد.
   // ----------------------------------------------------------
 
   if (data.share <= 0 || data.share > 6) {
@@ -69,8 +69,6 @@ export async function addPropertyOwner(
 
   // ----------------------------------------------------------
   // 5. بررسی مالک اصلی
-  //
-  // هر ملک فقط می‌تواند یک مالک اصلی داشته باشد.
   // ----------------------------------------------------------
 
   if (data.isPrimary) {
@@ -91,18 +89,6 @@ export async function addPropertyOwner(
 
   // ----------------------------------------------------------
   // 6. بررسی مجموع سهم مالکان
-  //
-  // مجموع مالکیت یک ملک نباید بیشتر از ۶ دانگ شود.
-  //
-  // مثال:
-  //
-  // مالک اول = 3
-  // مالک دوم = 3
-  // مجموع = 6 ✅
-  //
-  // مالک اول = 6
-  // مالک دوم = 3
-  // مجموع = 9 ❌
   // ----------------------------------------------------------
 
   const existingOwners =
@@ -134,10 +120,28 @@ export async function addPropertyOwner(
   // 7. ایجاد ارتباط مالک و ملک
   // ----------------------------------------------------------
 
-  return createPropertyOwner({
+  const propertyOwner = await createPropertyOwner({
     propertyId: data.propertyId,
     ownerId: data.ownerId,
     share: data.share,
     isPrimary: data.isPrimary ?? false,
   });
+
+  // ----------------------------------------------------------
+  // 8. ثبت تغییر مالکیت در تاریخچه ملک
+  // ----------------------------------------------------------
+
+  await createPropertyHistory({
+    propertyId: data.propertyId,
+    action: PropertyHistoryAction.OWNERSHIP_CHANGED,
+    field: "propertyOwner",
+    newValue: JSON.stringify({
+      ownerId: data.ownerId,
+      share: data.share,
+      isPrimary: data.isPrimary ?? false,
+    }),
+    reason: "افزودن مالک به ملک",
+  });
+
+  return propertyOwner;
 }

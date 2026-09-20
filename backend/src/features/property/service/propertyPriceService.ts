@@ -33,6 +33,7 @@
 
 import {
   PriceChangeType,
+  PropertyHistoryAction,
   TransactionType,
   Prisma,
 } from "@prisma/client";
@@ -47,6 +48,8 @@ import { createPriceHistory } from "../repository/priceHistoryRepository";
 import type { UpdatePropertyPriceInput } from "../types/updatePropertyPrice";
 
 import { prisma } from "../../../lib/prisma";
+
+import { createPropertyHistory } from "../repository/propertyHistoryRepository";
 
 /**
  * ============================================================
@@ -194,45 +197,66 @@ export async function updatePropertyPrice(
    *
    * اگر هر کدام شکست بخورد، هر دو Rollback می‌شوند.
    */
-  return prisma.$transaction(
-    async (tx: Prisma.TransactionClient) => {
-      /**
-       * ------------------------------------------------------
-       * تغییر قیمت فعلی
-       * ------------------------------------------------------
-       */
-      const updatedListing = await updatePropertyListing(
-        listing.id,
-        updateData,
-        tx
-      );
+ return prisma.$transaction(
+  async (tx: Prisma.TransactionClient) => {
+    /**
+     * ------------------------------------------------------
+     * تغییر قیمت فعلی
+     * ------------------------------------------------------
+     */
+    const updatedListing = await updatePropertyListing(
+      listing.id,
+      updateData,
+      tx
+    );
 
-      /**
-       * ------------------------------------------------------
-       * ثبت تاریخچه تغییر قیمت
-       * ------------------------------------------------------
-       */
-      const history = await createPriceHistory(
-        {
-          propertyId,
-          changeType: PriceChangeType.PRICE_CHANGE,
+    /**
+     * ------------------------------------------------------
+     * ثبت تاریخچه تغییر قیمت
+     * ------------------------------------------------------
+     */
+    const history = await createPriceHistory(
+      {
+        propertyId,
+        changeType: PriceChangeType.PRICE_CHANGE,
+        salePrice: newSalePrice,
+        depositAmount: newDepositAmount,
+        rentAmount: newRentAmount,
+      },
+      tx
+    );
+
+    /**
+     * ------------------------------------------------------
+     * ثبت تغییر قیمت در تاریخچه Property
+     * ------------------------------------------------------
+     */
+    await createPropertyHistory(
+      {
+        propertyId,
+        action: PropertyHistoryAction.PRICE_CHANGED,
+        field: "listing.price",
+        newValue: JSON.stringify({
+          transactionType: data.transactionType,
           salePrice: newSalePrice,
           depositAmount: newDepositAmount,
           rentAmount: newRentAmount,
-        },
-        tx
-      );
+        }),
+        reason: "تغییر قیمت ملک",
+      },
+      tx
+    );
 
-      /**
-       * ------------------------------------------------------
-       * نتیجه Transaction
-       * ------------------------------------------------------
-       */
-      return {
-        listing: updatedListing,
-        priceChanged: true,
-        history,
-      };
-    }
-  );
+    /**
+     * ------------------------------------------------------
+     * نتیجه Transaction
+     * ------------------------------------------------------
+     */
+    return {
+      listing: updatedListing,
+      priceChanged: true,
+      history,
+    };
+  }
+);
 }

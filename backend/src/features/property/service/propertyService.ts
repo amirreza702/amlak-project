@@ -258,33 +258,53 @@ export async function updatePropertyService(
   propertyId: string,
   data: UpdatePropertyInput
 ): Promise<Property> {
-  /**
-   * ابتدا بررسی می‌کنیم ملک وجود دارد.
-   */
   const property = await findPropertyById(propertyId);
 
   if (!property) {
     throw new Error("ملک مورد نظر پیدا نشد.");
   }
 
-  /**
-   * به‌روزرسانی اطلاعات Property
-   */
+  const locationChanged =
+    data.latitudeExact !== undefined &&
+    data.latitudeExact !== property.latitudeExact ||
+    data.longitudeExact !== undefined &&
+    data.longitudeExact !== property.longitudeExact ||
+    data.latitudePublic !== undefined &&
+    data.latitudePublic !== property.latitudePublic ||
+    data.longitudePublic !== undefined &&
+    data.longitudePublic !== property.longitudePublic;
+
   const updatedProperty = await updateProperty(
     propertyId,
     data
   );
 
-  /**
-   * ثبت رویداد Update در تاریخچه.
-   *
-   * در این مرحله یک رویداد کلی UPDATED ثبت می‌کنیم.
-   */
   await createPropertyHistory({
     propertyId,
     action: PropertyHistoryAction.UPDATED,
     reason: "ویرایش اطلاعات ملک",
   });
+
+  if (locationChanged) {
+    await createPropertyHistory({
+      propertyId,
+      action: PropertyHistoryAction.LOCATION_CHANGED,
+      field: "location",
+      oldValue: JSON.stringify({
+        latitudeExact: property.latitudeExact,
+        longitudeExact: property.longitudeExact,
+        latitudePublic: property.latitudePublic,
+        longitudePublic: property.longitudePublic,
+      }),
+      newValue: JSON.stringify({
+        latitudeExact: updatedProperty.latitudeExact,
+        longitudeExact: updatedProperty.longitudeExact,
+        latitudePublic: updatedProperty.latitudePublic,
+        longitudePublic: updatedProperty.longitudePublic,
+      }),
+      reason: "تغییر موقعیت ملک",
+    });
+  }
 
   return updatedProperty;
 }

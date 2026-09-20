@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import {
   archivePropertyService,
   getPropertyArchiveService,
+  restorePropertyService,
 } from "../service/propertyArchiveService";
 
 /**
@@ -74,6 +75,31 @@ export async function getPropertyArchiveController(
         error instanceof Error
           ? error.message
           : "خطایی در دریافت آرشیو ملک رخ داد.",
+    });
+  }
+}
+
+export async function restorePropertyController(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const propertyId = String(req.params.id);
+
+    const archive =
+      await restorePropertyService(propertyId);
+
+    res.status(200).json({
+      archive,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "خطای ناشناخته.";
+
+    res.status(400).json({
+      message,
     });
   }
 }

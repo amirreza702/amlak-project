@@ -91,6 +91,7 @@ import {
 import {
   archivePropertyController,
   getPropertyArchiveController,
+  restorePropertyController,
 } from "../controller/propertyArchiveController";
 
 import {
@@ -293,6 +294,11 @@ router.patch(
 router.get(
   "/properties/:id/archive",
   getPropertyArchiveController
+);
+
+router.patch(
+  "/properties/:id/restore",
+  restorePropertyController
 );
 
 /**
