@@ -69,10 +69,12 @@ import {
 
 import {
   createVerificationCaseController,
+   reviewVerificationCaseController,
 } from "../controller/verificationCaseController";
 
 import {
   createVerificationDocumentController,
+   getVerificationDocumentsController,
 } from "../controller/verificationDocumentController";
 
 const router = Router();
@@ -123,10 +125,33 @@ router.post(
   createVerificationDocumentController
 );
 
+
+router.get(
+  "/verification-cases/:id/documents",
+  getVerificationDocumentsController
+);
+
 router.post(
   "/properties/:id/verification",
   createVerificationCaseController
 );
+
+router.patch(
+  "/verification-cases/:id/review",
+  reviewVerificationCaseController
+);
+
+import {
+  createPropertyMediaController,
+  getPropertyMediaController,
+} from "../controller/propertyMediaController";
+
+import {
+  createDuplicateReviewController,
+  getDuplicateReviewsController,
+  reviewDuplicateController,
+} from "../controller/duplicateReviewController";
+
 
 /**
  * ============================================================
@@ -207,6 +232,32 @@ router.patch(
 router.patch(
   "/properties/:id/agents/:agentId/revoke",
   revokePropertyAgentController
+);
+
+router.post(
+  "/properties/:id/media",
+  createPropertyMediaController
+);
+
+router.get(
+  "/properties/:id/media",
+  getPropertyMediaController
+);
+
+
+router.post(
+  "/properties/:id/duplicate-reviews",
+  createDuplicateReviewController
+);
+
+router.get(
+  "/properties/:id/duplicate-reviews",
+  getDuplicateReviewsController
+);
+
+router.patch(
+  "/duplicate-reviews/:id/review",
+  reviewDuplicateController
 );
 
 export default router;

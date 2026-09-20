@@ -3,37 +3,26 @@
  * VerificationDocument Service
  * ============================================================
  *
- * منطق Business مربوط به ثبت مدرک در پرونده تأیید.
+ * منطق Business مربوط به مدارک پرونده تأیید.
  *
- * جریان:
+ * عملیات:
  *
- * دریافت درخواست ثبت مدرک
- *          ↓
- * بررسی وجود VerificationCase
- *          ↓
- * بررسی وضعیت پرونده
- *          ↓
- * اگر PENDING باشد
- *          ↓
- * ایجاد VerificationDocument
- *
- * فایل واقعی در این Service آپلود نمی‌شود.
- * fileUrl از لایه بالاتر دریافت می‌شود.
+ * 1. ایجاد مدرک
+ * 2. دریافت مدارک یک پرونده
  */
 
 import { VerificationStatus } from "@prisma/client";
 
-
-
 import {
   createVerificationDocument,
+  findVerificationDocuments,
 } from "../repository/verificationDocumentRepository";
-
-import type { VerificationDocument } from "../types/verificationDocument";
 
 import {
   findVerificationCaseById,
 } from "../repository/verificationCaseRepository";
+
+import type { VerificationDocument } from "../types/verificationDocument";
 
 /**
  * ورودی ثبت مدرک
@@ -52,12 +41,12 @@ export const createVerificationDocumentService = async (
 ): Promise<VerificationDocument> => {
 
   /**
-   * ابتدا بررسی می‌کنیم پرونده تأیید وجود داشته باشد.
+   * بررسی وجود پرونده تأیید
    */
   const verificationCase =
-  await findVerificationCaseById(
-    data.verificationCaseId
-  );
+    await findVerificationCaseById(
+      data.verificationCaseId
+    );
 
   if (!verificationCase) {
     throw new Error(
@@ -66,8 +55,7 @@ export const createVerificationDocumentService = async (
   }
 
   /**
-   * فقط پرونده‌ای که هنوز در حال بررسی است
-   * می‌تواند مدرک جدید دریافت کند.
+   * فقط پرونده PENDING می‌تواند مدرک جدید دریافت کند.
    */
   if (
     verificationCase.status !==
@@ -78,12 +66,38 @@ export const createVerificationDocumentService = async (
     );
   }
 
-  /**
-   * ثبت مدرک از طریق Repository
-   */
   return createVerificationDocument(
     data.verificationCaseId,
     data.documentType,
     data.fileUrl
+  );
+};
+
+/**
+ * دریافت تمام مدارک یک پرونده تأیید
+ */
+export const getVerificationDocumentsService = async (
+  verificationCaseId: string
+): Promise<VerificationDocument[]> => {
+
+  /**
+   * ابتدا بررسی می‌کنیم پرونده وجود داشته باشد.
+   */
+  const verificationCase =
+    await findVerificationCaseById(
+      verificationCaseId
+    );
+
+  if (!verificationCase) {
+    throw new Error(
+      "پرونده تأیید مورد نظر پیدا نشد."
+    );
+  }
+
+  /**
+   * دریافت مدارک از Repository
+   */
+  return findVerificationDocuments(
+    verificationCaseId
   );
 };

@@ -13,6 +13,8 @@ import { prisma } from "../../../lib/prisma";
 
 import type { VerificationCase } from "../types/verificationCase";
 
+import { VerificationStatus } from "@prisma/client";
+
 /**
  * پیدا کردن VerificationCase با شناسه
  */
@@ -51,6 +53,23 @@ export const createVerificationCase = async (
   return prisma.verificationCase.create({
     data: {
       propertyId,
+    },
+  });
+};
+
+export const reviewVerificationCase = async (
+  id: string,
+  status: VerificationStatus,
+  reviewedBy: string,
+  notes: string | null
+): Promise<VerificationCase> => {
+  return prisma.verificationCase.update({
+    where: { id },
+    data: {
+      status,
+      reviewedBy,
+      reviewedAt: new Date(),
+      notes,
     },
   });
 };

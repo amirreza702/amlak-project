@@ -1,60 +1,34 @@
-/**
- * ============================================================
- * VerificationCase Service
- * ============================================================
- *
- * منطق Business مربوط به پرونده تأیید Property.
- *
- * جریان:
- *
- * درخواست ایجاد پرونده
- *        ↓
- * بررسی وجود Property
- *        ↓
- * بررسی پرونده قبلی
- *        ↓
- * اگر پرونده PENDING وجود داشته باشد → همان پرونده
- *        ↓
- * در غیر این صورت → ایجاد پرونده جدید
- */
-
-import { findPropertyById } from "../repository/propertyRepository";
+import { VerificationStatus } from "@prisma/client";
 
 import {
   createVerificationCase,
   findLatestVerificationCase,
+  findVerificationCaseById,
+  reviewVerificationCase,
 } from "../repository/verificationCaseRepository";
+
+import { findPropertyById } from "../repository/propertyRepository";
+import { createPropertyHistory } from "../repository/propertyHistoryRepository";
 
 import type { VerificationCase } from "../types/verificationCase";
 
-import { VerificationStatus } from "@prisma/client";
-
 /**
- * ایجاد یا بازگرداندن پرونده تأیید Property
+ * ============================================================
+ * Create Verification Case
+ * ============================================================
  */
+
 export const createVerificationCaseService = async (
   propertyId: string
 ): Promise<VerificationCase> => {
-
-  /**
-   * ابتدا بررسی می‌کنیم Property وجود داشته باشد.
-   */
   const property = await findPropertyById(propertyId);
 
   if (!property) {
     throw new Error("ملک مورد نظر پیدا نشد.");
   }
 
-  /**
-   * آخرین پرونده تأیید ملک را پیدا می‌کنیم.
-   */
-  const existingCase =
-    await findLatestVerificationCase(propertyId);
+  const existingCase = await findLatestVerificationCase(propertyId);
 
-  /**
-   * اگر پرونده هنوز در حال بررسی باشد،
-   * پرونده جدید ایجاد نمی‌کنیم.
-   */
   if (
     existingCase &&
     existingCase.status === VerificationStatus.PENDING
@@ -62,9 +36,60 @@ export const createVerificationCaseService = async (
     return existingCase;
   }
 
-  /**
-   * اگر پرونده قبلی VERIFIED یا REJECTED باشد،
-   * فعلاً امکان ایجاد پرونده جدید وجود دارد.
-   */
   return createVerificationCase(propertyId);
+};
+
+/**
+ * ============================================================
+ * Review Verification Case
+ * ============================================================
+ */
+
+export interface ReviewVerificationCaseInput {
+  verificationCaseId: string;
+  status: VerificationStatus;
+  reviewedBy: string;
+  notes: string | null;
+}
+
+export const reviewVerificationCaseService = async (
+  data: ReviewVerificationCaseInput
+): Promise<VerificationCase> => {
+  const verificationCase = await findVerificationCaseById(
+    data.verificationCaseId
+  );
+
+  if (!verificationCase) {
+    throw new Error("پرونده تأیید مورد نظر پیدا نشد.");
+  }
+
+  if (verificationCase.status !== VerificationStatus.PENDING) {
+    throw new Error("این پرونده قبلاً بررسی شده است.");
+  }
+
+  if (
+  data.status !== VerificationStatus.VERIFIED &&
+  data.status !== VerificationStatus.REJECTED
+) {
+  throw new Error("وضعیت بررسی پرونده معتبر نیست.");
+}
+
+  const reviewedCase = await reviewVerificationCase(
+    data.verificationCaseId,
+    data.status,
+    data.reviewedBy,
+    data.notes
+  );
+
+  await createPropertyHistory({
+    propertyId: verificationCase.propertyId,
+    action: "VERIFICATION_CHANGED",
+    field: "verificationCase.status",
+    oldValue: VerificationStatus.PENDING,
+    newValue: data.status,
+    performedBy: data.reviewedBy,
+    reason: data.notes ?? "بررسی پرونده تأیید توسط هشتی",
+  });
+
+  return reviewedCase;
 };
