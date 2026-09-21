@@ -172,6 +172,8 @@ export async function revokePropertyAgent(
       tx
     );
 
+  
+
     return updatedPropertyAgent;
   });
 }

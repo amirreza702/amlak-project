@@ -146,6 +146,8 @@ export async function addPropertyOwner(
     tx
   );
 
+  
+
   return propertyOwner;
 });
 }

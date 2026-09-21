@@ -134,6 +134,8 @@ export async function verifyPropertyOwner(
       tx
     );
 
+ 
+
     return updatedPropertyOwner;
   });
 }
