@@ -24,7 +24,14 @@
 
 import { prisma } from "../../../lib/prisma";
 
-import type { PropertyOwner } from "@prisma/client";
+import type {
+  Prisma,
+  PropertyOwner,
+} from "@prisma/client";
+
+type DatabaseClient =
+  | typeof prisma
+  | Prisma.TransactionClient;
 
 /**
  * ============================================================
@@ -59,13 +66,19 @@ export const findPropertyOwner = async (
  * ============================================================
  *
  * ایجاد رابطه بین یک مالک و یک ملک.
+ *
+ * db به صورت پیش‌فرض prisma است.
+ *
+ * اما اگر این عملیات بخشی از یک Transaction باشد،
+ * Transaction Client از Service دریافت می‌شود.
  */
 export const createPropertyOwner = async (
   data: Parameters<
     typeof prisma.propertyOwner.create
-  >[0]["data"]
+  >[0]["data"],
+  db: DatabaseClient = prisma
 ): Promise<PropertyOwner> => {
-  return prisma.propertyOwner.create({
+  return db.propertyOwner.create({
     data,
   });
 };

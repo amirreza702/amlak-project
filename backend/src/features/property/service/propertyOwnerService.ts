@@ -120,28 +120,32 @@ export async function addPropertyOwner(
   // 7. ایجاد ارتباط مالک و ملک
   // ----------------------------------------------------------
 
-  const propertyOwner = await createPropertyOwner({
-    propertyId: data.propertyId,
-    ownerId: data.ownerId,
-    share: data.share,
-    isPrimary: data.isPrimary ?? false,
-  });
-
-  // ----------------------------------------------------------
-  // 8. ثبت تغییر مالکیت در تاریخچه ملک
-  // ----------------------------------------------------------
-
-  await createPropertyHistory({
-    propertyId: data.propertyId,
-    action: PropertyHistoryAction.OWNERSHIP_CHANGED,
-    field: "propertyOwner",
-    newValue: JSON.stringify({
+  return prisma.$transaction(async (tx) => {
+  const propertyOwner = await createPropertyOwner(
+    {
+      propertyId: data.propertyId,
       ownerId: data.ownerId,
       share: data.share,
       isPrimary: data.isPrimary ?? false,
-    }),
-    reason: "افزودن مالک به ملک",
-  });
+    },
+    tx
+  );
+
+  await createPropertyHistory(
+    {
+      propertyId: data.propertyId,
+      action: PropertyHistoryAction.OWNERSHIP_CHANGED,
+      field: "propertyOwner",
+      newValue: JSON.stringify({
+        ownerId: data.ownerId,
+        share: data.share,
+        isPrimary: data.isPrimary ?? false,
+      }),
+      reason: "افزودن مالک به ملک",
+    },
+    tx
+  );
 
   return propertyOwner;
+});
 }

@@ -1,4 +1,9 @@
-import { VerificationStatus } from "@prisma/client";
+import {
+  PropertyHistoryAction,
+  VerificationStatus,
+} from "@prisma/client";
+
+import { prisma } from "../../../lib/prisma";
 
 import {
   createVerificationCase,
@@ -68,28 +73,48 @@ export const reviewVerificationCaseService = async (
   }
 
   if (
-  data.status !== VerificationStatus.VERIFIED &&
-  data.status !== VerificationStatus.REJECTED
-) {
-  throw new Error("وضعیت بررسی پرونده معتبر نیست.");
-}
+    data.status !== VerificationStatus.VERIFIED &&
+    data.status !== VerificationStatus.REJECTED
+  ) {
+    throw new Error("وضعیت بررسی پرونده معتبر نیست.");
+  }
 
-  const reviewedCase = await reviewVerificationCase(
-    data.verificationCaseId,
-    data.status,
-    data.reviewedBy,
-    data.notes
-  );
+  /**
+   * ==========================================================
+   * Transaction
+   * ==========================================================
+   *
+   * تغییر وضعیت VerificationCase
+   * و ثبت PropertyHistory باید یک عملیات اتمیک باشند.
+   *
+   * اگر هر کدام شکست بخورد:
+   *
+   * VerificationCase → Rollback
+   * PropertyHistory   → Rollback
+   */
+  return prisma.$transaction(async (tx) => {
+    const reviewedCase = await reviewVerificationCase(
+      data.verificationCaseId,
+      data.status,
+      data.reviewedBy,
+      data.notes,
+      tx
+    );
 
-  await createPropertyHistory({
-    propertyId: verificationCase.propertyId,
-    action: "VERIFICATION_CHANGED",
-    field: "verificationCase.status",
-    oldValue: VerificationStatus.PENDING,
-    newValue: data.status,
-    performedBy: data.reviewedBy,
-    reason: data.notes ?? "بررسی پرونده تأیید توسط هشتی",
+    await createPropertyHistory(
+      {
+        propertyId: verificationCase.propertyId,
+        action: PropertyHistoryAction.VERIFICATION_CHANGED,
+        field: "verificationCase.status",
+        oldValue: VerificationStatus.PENDING,
+        newValue: data.status,
+        performedBy: data.reviewedBy,
+        reason:
+          data.notes ?? "بررسی پرونده تأیید توسط هشتی",
+      },
+      tx
+    );
+
+    return reviewedCase;
   });
-
-  return reviewedCase;
 };

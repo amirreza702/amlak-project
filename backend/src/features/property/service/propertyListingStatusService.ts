@@ -1,6 +1,10 @@
 import {
   ListingStatus,
+  Prisma,
+  PropertyHistoryAction,
 } from "@prisma/client";
+
+import { prisma } from "../../../lib/prisma";
 
 import {
   findPropertyListingByPropertyId,
@@ -10,6 +14,10 @@ import {
 import {
   updateProperty,
 } from "../repository/propertyRepository";
+
+import {
+  createPropertyHistory,
+} from "../repository/propertyHistoryRepository";
 
 import type {
   UpdatePropertyListingStatusInput,
@@ -63,9 +71,6 @@ const allowedTransitions: Record<
 
 /**
  * مدت اعتبار تأیید ملک
- *
- * فعلاً طبق تصمیم فعلی پروژه:
- * ۳۰ روز
  */
 const PROPERTY_CONFIRMATION_DAYS = 30;
 
@@ -128,46 +133,81 @@ export async function updatePropertyListingStatus(
   };
 
   /**
-   * وقتی Listing منتشر می‌شود:
-   *
-   * 1. publishedAt ثبت می‌شود.
+   * وقتی Listing منتشر می‌شود،
+   * publishedAt ثبت می‌شود.
    */
   if (data.status === ListingStatus.PUBLISHED) {
     updateData.publishedAt =
       listing.publishedAt ?? new Date();
   }
 
-  const updatedListing =
-    await updatePropertyListing(
-      listing.id,
-      updateData
-    );
-
   /**
-   * وقتی Listing منتشر می‌شود،
-   * ملک نیز برای ۳۰ روز معتبر خواهد بود
-   * و بعد از آن نیاز به تأیید مجدد دارد.
+   * تمام تغییرات وابسته به تغییر وضعیت
+   * باید اتمیک باشند:
+   *
+   * 1. تغییر وضعیت Listing
+   * 2. تغییر confirmUntil در صورت انتشار
+   * 3. ثبت History
    */
-  if (data.status === ListingStatus.PUBLISHED) {
-    const confirmUntil =
-      calculateConfirmUntil(new Date());
+  return prisma.$transaction(
+    async (
+      tx: Prisma.TransactionClient
+    ) => {
+      const updatedListing =
+        await updatePropertyListing(
+          listing.id,
+          updateData,
+          tx
+        );
 
-    await updateProperty(
-      propertyId,
-      {
-        confirmUntil,
+      let confirmUntil:
+        Date | undefined;
+
+      /**
+       * انتشار Listing باعث می‌شود
+       * اعتبار Property برای ۳۰ روز تنظیم شود.
+       */
+      if (
+        data.status === ListingStatus.PUBLISHED
+      ) {
+        confirmUntil =
+          calculateConfirmUntil(new Date());
+
+        await updateProperty(
+          propertyId,
+          {
+            confirmUntil,
+          },
+          tx
+        );
       }
-    );
 
-    return {
-      listing: updatedListing,
-      statusChanged: true,
-      confirmUntil,
-    };
-  }
+      /**
+       * ثبت تغییر وضعیت Listing در History
+       *
+       * performedBy فعلاً NULL است،
+       * چون قرارداد ورودی فعلی شناسه کاربر را دریافت نمی‌کند.
+       */
+      await createPropertyHistory(
+        {
+          propertyId,
+          action:
+            PropertyHistoryAction.LISTING_CHANGED,
+          field: "listing.status",
+          oldValue: listing.status,
+          newValue: data.status,
+          reason: "تغییر وضعیت آگهی",
+        },
+        tx
+      );
 
-  return {
-    listing: updatedListing,
-    statusChanged: true,
-  };
+      return {
+        listing: updatedListing,
+        statusChanged: true,
+        ...(confirmUntil
+          ? { confirmUntil }
+          : {}),
+      };
+    }
+  );
 }
