@@ -21,11 +21,31 @@ import { PropertyHistoryAction } from "@prisma/client";
  *   ↓
  * ایجاد PropertyArchive
  *   ↓
+ * حذف اطلاعات مصرفی:
+ *   ├── PropertyListing
+ *   ├── PropertyMedia
+ *   └── VirtualTour360
+ *   ↓
  * غیرفعال کردن Property
  *   ↓
  * ثبت PropertyHistory با action = ARCHIVED
  *
- * هر سه عملیات داخل یک Transaction انجام می‌شوند.
+ * تمام عملیات داخل یک Transaction انجام می‌شوند.
+ *
+ * نکته:
+ * اطلاعات تاریخی و آماری ملک حذف نمی‌شوند:
+ *
+ * - PropertyOwner
+ * - PropertyAgent
+ * - PropertyHistory
+ * - PriceHistory
+ * - VerificationCase
+ * - VerificationDocument
+ * - DuplicateReview
+ * - ExactLocationAccessLog
+ * - PropertyArchive
+ *
+ * فقط اطلاعات مصرفی و حجیم حذف می‌شوند.
  */
 export interface ArchivePropertyInput {
   propertyId: string;
@@ -56,12 +76,14 @@ export const archivePropertyService = async (
   }
 
   /**
-   * آرشیو، غیرفعال‌سازی ملک و ثبت تاریخچه
-   * باید یک عملیات اتمیک باشند.
+   * آرشیو، حذف اطلاعات مصرفی، غیرفعال‌سازی ملک
+   * و ثبت تاریخچه باید یک عملیات اتمیک باشند.
    */
   const archive = await prisma.$transaction(async (tx) => {
     /**
-     * ایجاد Snapshot آرشیو
+     * --------------------------------------------------------
+     * 1. ایجاد Snapshot آرشیو
+     * --------------------------------------------------------
      */
     const createdArchive = await tx.propertyArchive.create({
       data: {
@@ -77,7 +99,55 @@ export const archivePropertyService = async (
     });
 
     /**
-     * غیرفعال کردن ملک
+     * --------------------------------------------------------
+     * 2. حذف اطلاعات آگهی فعلی
+     * --------------------------------------------------------
+     *
+     * PropertyListing اطلاعات وضعیت فعلی آگهی است.
+     * سابقه تغییرات مهم آن در PropertyHistory باقی می‌ماند.
+     */
+    await tx.propertyListing.deleteMany({
+      where: {
+        propertyId: property.id,
+      },
+    });
+
+  
+
+    /**
+     * --------------------------------------------------------
+     * 3. حذف رسانه‌های ملک
+     * --------------------------------------------------------
+     *
+     * تصاویر و Floor Plan ارزش تاریخی مستقلی ندارند
+     * و برای آزادسازی فضای ذخیره‌سازی حذف می‌شوند.
+     */
+    await tx.propertyMedia.deleteMany({
+      where: {
+        propertyId: property.id,
+      },
+    });
+
+    /**
+     * --------------------------------------------------------
+     * 4. حذف تورهای 360 درجه
+     * --------------------------------------------------------
+     *
+     * VirtualTour360 اطلاعات مصرفی/حجیم است.
+     *
+     * با حذف VirtualTour360، رکوردهای TourOrder وابسته
+     * نیز به دلیل onDelete: Cascade حذف خواهند شد.
+     */
+    await tx.virtualTour360.deleteMany({
+      where: {
+        propertyId: property.id,
+      },
+    });
+
+    /**
+     * --------------------------------------------------------
+     * 5. غیرفعال کردن ملک
+     * --------------------------------------------------------
      */
     await tx.property.update({
       where: {
@@ -89,7 +159,9 @@ export const archivePropertyService = async (
     });
 
     /**
-     * ثبت رویداد آرشیو در تاریخچه ملک
+     * --------------------------------------------------------
+     * 6. ثبت رویداد آرشیو
+     * --------------------------------------------------------
      */
     await tx.propertyHistory.create({
       data: {
@@ -127,6 +199,22 @@ export const getPropertyArchiveService = async (
   return archive;
 };
 
+/**
+ * ============================================================
+ * Restore Property
+ * ============================================================
+ *
+ * نکته مهم:
+ *
+ * هنگام Restore:
+ *
+ * - Property دوباره فعال می‌شود.
+ * - PropertyArchive حذف می‌شود.
+ * - History ثبت می‌شود.
+ *
+ * اطلاعات مصرفی حذف‌شده هنگام Archive
+ * برنمی‌گردند و باید در صورت نیاز دوباره ایجاد شوند.
+ */
 export const restorePropertyService = async (
   propertyId: string
 ): Promise<PropertyArchive> => {
@@ -138,6 +226,9 @@ export const restorePropertyService = async (
 
   const restoredArchive = await prisma.$transaction(
     async (tx) => {
+      /**
+       * فعال کردن مجدد ملک
+       */
       await tx.property.update({
         where: {
           id: propertyId,
@@ -147,6 +238,9 @@ export const restorePropertyService = async (
         },
       });
 
+      /**
+       * ثبت تاریخچه بازگردانی
+       */
       await tx.propertyHistory.create({
         data: {
           propertyId,
@@ -158,8 +252,9 @@ export const restorePropertyService = async (
         },
       });
 
- 
-
+      /**
+       * حذف رکورد آرشیو
+       */
       await tx.propertyArchive.delete({
         where: {
           propertyId,
