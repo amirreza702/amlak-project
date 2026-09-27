@@ -232,7 +232,10 @@ model Customer {
   evaluations     Evaluation[]
   favorites       CustomerPropertyFavorite[]
 
-  searchRequests  PropertySearchRequest[]
+  searchRequests PropertySearchRequest[]
+
+  // سوابق مشاهده اطلاعات تماس توسط مشاوران
+  contactAccessLogs ContactAccessLog[]
 
   @@map("customers")
 }
@@ -277,19 +280,22 @@ model PropertySearchRequest {
   city            String
 
   // بودجه تقریبی مشتری
-  budget          Decimal?
+  budget Decimal?
 
   // خواسته‌ها و جزئیات قابل مذاکره
-  description     String?
+  description String?
 
-  hashtiVerified  Boolean @default(false)
+  hashtiVerified Boolean @default(false)
 
-  status          String @default("ACTIVE")
+  status String @default("ACTIVE")
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // سوابق مشاهده اطلاعات تماس این درخواست توسط مشاوران
+  contactAccessLogs ContactAccessLog[]
 
   @@index([customerId, createdAt])
   @@index([city])
@@ -309,7 +315,7 @@ model Owner {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  properties PropertyOwner[]
+  properties  PropertyOwner[]
   evaluations Evaluation[]
 
   @@map("owners")
@@ -320,20 +326,76 @@ model Owner {
 // ============================================================
 
 model Agent {
-  id         String   @id @default(uuid())
-  userId     String   @unique
+  id         String  @id @default(uuid())
+  userId     String  @unique
   firstName  String
   lastName   String
   agencyName String?
   address    String?
-  isVerified Boolean  @default(false)
+  isVerified Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   propertyAgents PropertyAgent[]
   evaluations    Evaluation[]
 
+  // سوابق مشاهده اطلاعات تماس مشتریان
+  contactAccessLogs ContactAccessLog[]
+
   @@map("agents")
+}
+
+// ============================================================
+// CONTACT ACCESS LOG
+// ============================================================
+//
+// ثبت سابقه دسترسی مشاور به اطلاعات تماس مشتری.
+//
+// نکته:
+// در این مرحله فقط دسترسی به Contact مشتری از طریق
+// PropertySearchRequest را پوشش می‌دهیم.
+//
+// بعداً می‌توان همین مفهوم را برای Contact مالک نیز
+// گسترش داد.
+//
+
+model ContactAccessLog {
+  id String @id @default(uuid())
+
+  // مشاوری که اطلاعات تماس را مشاهده کرده است
+  agentId String
+
+  // مشتری صاحب اطلاعات تماس
+  customerId String
+
+  // درخواست ملکی که از طریق آن Contact مشاهده شده است
+  searchRequestId String
+
+  // زمان مشاهده اطلاعات تماس
+  accessedAt DateTime @default(now())
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  searchRequest PropertySearchRequest @relation(fields: [searchRequestId], references: [id], onDelete: Cascade)
+
+  // هر مشاور برای هر درخواست فقط یک بار Contact را مشاهده می‌کند
+  //
+  // بنابراین مشاهده دوباره همان Contact برای همان درخواست
+  // نباید یک دسترسی جدید محسوب شود.
+  @@unique([agentId, searchRequestId])
+
+  // دسترسی‌های هر مشاور
+  @@index([agentId, accessedAt])
+
+  // دسترسی‌های هر مشتری
+  @@index([customerId, accessedAt])
+
+  // دسترسی‌های مربوط به یک درخواست
+  @@index([searchRequestId])
+
+  @@map("contact_access_logs")
 }
 
 // ============================================================
@@ -341,10 +403,10 @@ model Agent {
 // ============================================================
 
 model HashtiStaff {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   firstName String
   lastName  String
-  mobile    String @unique
+  mobile    String  @unique
   isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -574,7 +636,7 @@ model PropertyAgent {
 // ============================================================
 
 model PropertyMedia {
-  id         String    @id @default(uuid())
+  id         String @id @default(uuid())
   propertyId String
 
   type MediaType
@@ -723,10 +785,10 @@ model VirtualTour360 {
 
   publishedUrl String?
 
-  requestedAt  DateTime @default(now())
-  scheduledAt  DateTime?
-  capturedAt   DateTime?
-  publishedAt  DateTime?
+  requestedAt DateTime  @default(now())
+  scheduledAt DateTime?
+  capturedAt  DateTime?
+  publishedAt DateTime?
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -763,7 +825,7 @@ model Payment {
 
   amount Decimal
 
-  gateway     String?
+  gateway       String?
   transactionId String?
 
   status String
@@ -879,7 +941,7 @@ model Evaluation {
   propertyId String?
 
   // Raw evaluation input
-  score Float?
+  score   Float?
   comment String?
 
   status EvaluationStatus @default(SUBMITTED)
