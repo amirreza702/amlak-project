@@ -230,8 +230,35 @@ model Customer {
 
   viewingRequests ViewingRequest[]
   evaluations     Evaluation[]
+  favorites       CustomerPropertyFavorite[]
 
   @@map("customers")
+}
+
+// ============================================================
+// CUSTOMER PROPERTY FAVORITE
+// ============================================================
+
+model CustomerPropertyFavorite {
+  id         String @id @default(uuid())
+  customerId String
+  propertyId String
+
+  createdAt DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  // هر مشتری هر ملک را فقط یک بار می‌تواند علاقه‌مندی کند
+  @@unique([customerId, propertyId])
+
+  // علاقه‌مندی‌های یک مشتری بر اساس زمان
+  @@index([customerId, createdAt])
+
+  // علاقه‌مندی‌های یک ملک
+  @@index([propertyId])
+
+  @@map("customer_property_favorites")
 }
 
 // ============================================================
@@ -301,7 +328,7 @@ model Property {
   // Basic information
   // ----------------------------
 
-  propertyType    PropertyType
+  propertyType       PropertyType
   registrationSource RegistrationSource
 
   city     String
@@ -356,9 +383,9 @@ model Property {
   // Legal information
   // ----------------------------
 
-  documentType   DocumentType?
-  ownershipType  OwnershipType?
-  landTenure     LandTenure?
+  documentType  DocumentType?
+  ownershipType OwnershipType?
+  landTenure    LandTenure?
 
   // ----------------------------
   // Description
@@ -379,9 +406,9 @@ model Property {
   // Current listing / activity
   // ----------------------------
 
-  isActive       Boolean  @default(true)
+  isActive       Boolean   @default(true)
   lastConfirmedAt DateTime?
-  confirmUntil    DateTime?
+  confirmUntil   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -411,6 +438,8 @@ model Property {
   virtualTours VirtualTour360[]
 
   evaluations Evaluation[]
+
+  favorites CustomerPropertyFavorite[]
 
   archive PropertyArchive?
 
