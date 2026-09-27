@@ -9,6 +9,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import propertyRoutes from "./features/property/routes/propertyRoutes";
+import customerRoutes from "./features/customer/routes/customerRoutes";
 import authRoutes from "./features/auth/routes/authRoutes";
 
 import {
@@ -43,6 +44,7 @@ app.use(cookieParser());
  */
 
 app.use(propertyRoutes);
+app.use(customerRoutes);
 
 app.use("/api/auth", authRoutes);
 

@@ -232,6 +232,8 @@ model Customer {
   evaluations     Evaluation[]
   favorites       CustomerPropertyFavorite[]
 
+  searchRequests  PropertySearchRequest[]
+
   @@map("customers")
 }
 
@@ -259,6 +261,40 @@ model CustomerPropertyFavorite {
   @@index([propertyId])
 
   @@map("customer_property_favorites")
+}
+
+// ============================================================
+// CUSTOMER PROPERTY SEARCH REQUEST
+// ============================================================
+
+model PropertySearchRequest {
+  id              String @id @default(uuid())
+
+  customerId      String
+
+  transactionType TransactionType
+  propertyType    PropertyType
+  city            String
+
+  // بودجه تقریبی مشتری
+  budget          Decimal?
+
+  // خواسته‌ها و جزئیات قابل مذاکره
+  description     String?
+
+  hashtiVerified  Boolean @default(false)
+
+  status          String @default("ACTIVE")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@index([city])
+  @@index([status])
+  @@map("property_search_requests")
 }
 
 // ============================================================
