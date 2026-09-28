@@ -34,6 +34,9 @@ import {
   createCustomerSearchRequestController,
   getCustomerSearchRequestController,
   getCustomerSearchRequestsController,
+  closeCustomerSearchRequestController,
+  updateCustomerSearchRequestController,
+  getActivePropertySearchRequestsController,
 } from "../controller/propertySearchRequestController";
 
 import {
@@ -94,10 +97,36 @@ router.get(
   getCustomerSearchRequestController
 );
 
+/**
+ * بستن درخواست جستجو
+ */
+router.put(
+  "/customers/:customerId/search-requests/:requestId/close",
+  closeCustomerSearchRequestController
+);
+
+router.put(
+  "/customers/:customerId/search-requests/:requestId",
+  updateCustomerSearchRequestController
+);
+
+router.get(
+  "/search-requests/active",
+  getActivePropertySearchRequestsController
+);
+
+// ============================================================
+// AGENT CONTACT ACCESS
+// ============================================================
+
 router.post(
   "/agents/:agentId/search-requests/:searchRequestId/contact",
   accessCustomerContactController
 );
+
+// ============================================================
+// AGENT SUBSCRIPTIONS
+// ============================================================
 
 router.post(
   "/agents/:agentId/subscriptions",

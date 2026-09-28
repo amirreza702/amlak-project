@@ -27,6 +27,9 @@ import {
   createPropertySearchRequest,
   findPropertySearchRequestById,
   findPropertySearchRequestsByCustomerId,
+   updatePropertySearchRequestStatus,
+   updatePropertySearchRequest,
+   findActivePropertySearchRequests,
 } from "../repository/propertySearchRequestRepository";
 
 /**
@@ -167,4 +170,198 @@ export const getCustomerSearchRequests =
     return findPropertySearchRequestsByCustomerId(
       customerId
     );
+  };
+
+  /**
+ * بستن درخواست جستجوی مشتری
+ */
+export const closeCustomerSearchRequest = async (
+  customerId: string,
+  requestId: string
+) => {
+  /**
+   * ابتدا مشتری باید وجود داشته باشد.
+   */
+  const customer =
+    await findCustomerById(customerId);
+
+  if (!customer) {
+    throw new Error(
+      "Customer not found"
+    );
+  }
+
+  /**
+   * درخواست باید وجود داشته باشد.
+   */
+  const request =
+    await findPropertySearchRequestById(
+      requestId
+    );
+
+  if (!request) {
+    throw new Error(
+      "Search request not found"
+    );
+  }
+
+  /**
+   * مشتری فقط می‌تواند درخواست خودش
+   * را تغییر دهد.
+   */
+  if (
+    request.customerId !== customerId
+  ) {
+    throw new Error(
+      "Search request does not belong to customer"
+    );
+  }
+
+  /**
+   * فقط درخواست ACTIVE قابل بستن است.
+   */
+  if (request.status !== "ACTIVE") {
+    throw new Error(
+      "Only active search requests can be closed"
+    );
+  }
+
+  /**
+   * تغییر وضعیت به CLOSED
+   */
+  return updatePropertySearchRequestStatus(
+    requestId,
+    "CLOSED"
+  );
+};
+
+/**
+ * ویرایش درخواست جستجوی مشتری
+ */
+export const updateCustomerSearchRequest = async (
+  customerId: string,
+  requestId: string,
+  data: {
+    transactionType?: 
+      | "SALE"
+      | "FULL_DEPOSIT"
+      | "RENT";
+
+    propertyType?:
+      | "APARTMENT"
+      | "HOUSE"
+      | "VILLA"
+      | "LAND"
+      | "SHOP"
+      | "OFFICE"
+      | "GARDEN";
+
+    city?: string;
+
+    budget?: number | null;
+
+    description?: string | null;
+  }
+) => {
+  /**
+   * مشتری باید وجود داشته باشد.
+   */
+  const customer =
+    await findCustomerById(customerId);
+
+  if (!customer) {
+    throw new Error(
+      "Customer not found"
+    );
+  }
+
+  /**
+   * درخواست باید وجود داشته باشد.
+   */
+  const request =
+    await findPropertySearchRequestById(
+      requestId
+    );
+
+  if (!request) {
+    throw new Error(
+      "Search request not found"
+    );
+  }
+
+  /**
+   * مشتری فقط درخواست خودش را
+   * می‌تواند ویرایش کند.
+   */
+  if (
+    request.customerId !== customerId
+  ) {
+    throw new Error(
+      "Search request does not belong to customer"
+    );
+  }
+
+  /**
+   * فقط درخواست ACTIVE قابل ویرایش است.
+   */
+  if (request.status !== "ACTIVE") {
+    throw new Error(
+      "Only active search requests can be updated"
+    );
+  }
+
+  /**
+   * اگر city ارسال شده باشد،
+   * نباید خالی باشد.
+   */
+  if (
+    data.city !== undefined &&
+    !data.city.trim()
+  ) {
+    throw new Error(
+      "City is required"
+    );
+  }
+
+  /**
+   * بودجه نباید منفی باشد.
+   */
+  if (
+    data.budget !== undefined &&
+    data.budget !== null &&
+    data.budget < 0
+  ) {
+    throw new Error(
+      "Budget cannot be negative"
+    );
+  }
+
+  return updatePropertySearchRequest(
+    requestId,
+    {
+      ...data,
+
+      city:
+        data.city !== undefined
+          ? data.city.trim()
+          : undefined,
+
+      description:
+        data.description !== undefined
+          ? data.description?.trim() || null
+          : undefined,
+    }
+  );
+};
+
+/**
+ * دریافت درخواست‌های فعال جستجوی ملک
+ *
+ * این اطلاعات برای Agent قابل مشاهده است.
+ *
+ * اطلاعات تماس مشتری در این مرحله برگردانده نمی‌شود.
+ */
+export const getActivePropertySearchRequests =
+  async () => {
+    return findActivePropertySearchRequests();
   };

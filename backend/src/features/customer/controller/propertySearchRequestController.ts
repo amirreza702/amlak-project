@@ -15,6 +15,9 @@ import {
   createCustomerSearchRequest,
   getCustomerSearchRequest,
   getCustomerSearchRequests,
+  closeCustomerSearchRequest,
+  updateCustomerSearchRequest,
+  getActivePropertySearchRequests,
 } from "../service/propertySearchRequestService";
 
 /**
@@ -91,6 +94,187 @@ export async function getCustomerSearchRequestsController(
       message:
         error.message ||
         "درخواست‌های جستجوی مشتری پیدا نشد",
+    });
+  }
+}
+
+/**
+ * بستن درخواست جستجوی مشتری
+ */
+export async function closeCustomerSearchRequestController(
+  req: Request<{
+    customerId: string;
+    requestId: string;
+  }>,
+  res: Response
+) {
+  try {
+    const result =
+      await closeCustomerSearchRequest(
+        req.params.customerId,
+        req.params.requestId
+      );
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    if (
+      error.message ===
+      "Search request not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Customer not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Search request does not belong to customer"
+    ) {
+      return res.status(403).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Only active search requests can be closed"
+    ) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    console.error(
+      "Error closing customer search request:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Internal server error",
+    });
+  }
+}
+
+/**
+ * ویرایش درخواست جستجوی مشتری
+ */
+export async function updateCustomerSearchRequestController(
+  req: Request<{
+    customerId: string;
+    requestId: string;
+  }>,
+  res: Response
+) {
+  try {
+    const result =
+      await updateCustomerSearchRequest(
+        req.params.customerId,
+        req.params.requestId,
+        req.body
+      );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    if (
+      error.message ===
+      "Customer not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Search request not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Search request does not belong to customer"
+    ) {
+      return res.status(403).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Only active search requests can be updated"
+    ) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "City is required"
+    ) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    if (
+      error.message ===
+      "Budget cannot be negative"
+    ) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    console.error(
+      "Error updating customer search request:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Internal server error",
+    });
+  }
+}
+
+/**
+ * دریافت درخواست‌های فعال جستجوی ملک
+ *
+ * این اطلاعات برای Agent قابل مشاهده است.
+ * اطلاعات تماس مشتری در این مرحله نمایش داده نمی‌شود.
+ */
+export async function getActivePropertySearchRequestsController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const result =
+      await getActivePropertySearchRequests();
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error(
+      "Error getting active property search requests:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Internal server error",
     });
   }
 }
