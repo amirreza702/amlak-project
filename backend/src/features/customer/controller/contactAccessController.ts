@@ -3,11 +3,9 @@
  * Contact Access Controller
  * ============================================================
  *
- * این Controller فقط مسئول دریافت درخواست HTTP
- * و ارسال آن به Service است.
+ * مسئول دریافت درخواست HTTP و ارسال پاسخ مناسب است.
  *
- * منطق Business در Service قرار دارد.
- * ============================================================
+ * منطق کسب‌وکار در ContactAccessService قرار دارد.
  */
 
 import { Request, Response } from "express";
@@ -17,69 +15,48 @@ import {
 } from "../service/contactAccessService";
 
 /**
- * ------------------------------------------------------------
  * دسترسی Agent به اطلاعات تماس Customer
- * ------------------------------------------------------------
- *
- * پارامترهای مسیر:
- *
- * agentId
- * searchRequestId
- *
- * مثال:
- *
- * POST
- * /agents/:agentId/search-requests/:searchRequestId/contact
- * ------------------------------------------------------------
  */
 export const accessCustomerContactController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    /**
-     * دریافت شناسه Agent از URL
-     */
-    const agentId = req.params.agentId as string;
-    const searchRequestId = req.params.searchRequestId as string;
+    const agentId =
+      req.params.agentId as string;
+
+    const searchRequestId =
+      req.params.searchRequestId as string;
 
     /**
-     * اعتبارسنجی اولیه ورودی‌ها
+     * بررسی وجود پارامترهای مسیر
      */
     if (!agentId || !searchRequestId) {
       return res.status(400).json({
-        message: "agentId and searchRequestId are required",
+        message:
+          "agentId and searchRequestId are required",
       });
     }
 
     /**
-     * اجرای منطق Business
+     * اجرای Use Case
      */
-    const result = await accessCustomerContact(
-      agentId,
-      searchRequestId
-    );
+    const result =
+      await accessCustomerContact(
+        agentId,
+        searchRequestId
+      );
 
-    /**
-     * پاسخ موفق
-     */
     return res.status(200).json(result);
   } catch (error) {
+
     /**
-     * خطاهای شناخته‌شده Business
+     * Search Request پیدا نشد
      */
     if (
       error instanceof Error &&
-      error.message === "Search request not found"
-    ) {
-      return res.status(404).json({
-        message: error.message,
-      });
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === "Customer not found"
+      error.message ===
+        "Search request not found"
     ) {
       return res.status(404).json({
         message: error.message,
@@ -87,7 +64,46 @@ export const accessCustomerContactController = async (
     }
 
     /**
-     * خطای غیرمنتظره
+     * Customer پیدا نشد
+     */
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Customer not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    /**
+     * Agent اشتراک فعال ندارد
+     */
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Active subscription not found"
+    ) {
+      return res.status(403).json({
+        message: error.message,
+      });
+    }
+
+    /**
+     * سقف مصرف ماهانه تمام شده است
+     */
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Monthly contact access limit reached"
+    ) {
+      return res.status(403).json({
+        message: error.message,
+      });
+    }
+
+    /**
+     * خطای پیش‌بینی‌نشده
      */
     console.error(
       "Error accessing customer contact:",

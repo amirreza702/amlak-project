@@ -342,6 +342,10 @@ model Agent {
   // سوابق مشاهده اطلاعات تماس مشتریان
   contactAccessLogs ContactAccessLog[]
 
+//سوابق اشتراک
+  subscriptions      AgentSubscription[]
+contactAccessUsages ContactAccessUsage[]
+
   @@map("agents")
 }
 
@@ -1042,4 +1046,47 @@ model PropertyArchive {
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("property_archives")
+}
+
+// ============================================================
+// Agent Subscription
+// ============================================================
+
+model AgentSubscription {
+  id                  String   @id @default(uuid())
+  agentId             String
+
+  plan                String
+  status              String   @default("ACTIVE")
+
+  monthlyContactLimit Int
+
+  startsAt            DateTime
+  expiresAt           DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, status])
+  @@index([expiresAt])
+  @@map("agent_subscriptions")
+}
+
+model ContactAccessUsage {
+  id         String   @id @default(uuid())
+  agentId    String
+  periodStart DateTime
+
+  usedCount  Int      @default(0)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, periodStart])
+  @@index([agentId, periodStart])
+  @@map("contact_access_usage")
 }

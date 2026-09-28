@@ -36,6 +36,10 @@ import {
   getCustomerSearchRequestsController,
 } from "../controller/propertySearchRequestController";
 
+import {
+  accessCustomerContactController,
+} from "../controller/contactAccessController";
+
 const router = Router();
 
 // ============================================================
@@ -83,6 +87,11 @@ router.get(
 router.get(
   "/customers/:customerId/search-requests/:requestId",
   getCustomerSearchRequestController
+);
+
+router.post(
+  "/agents/:agentId/search-requests/:searchRequestId/contact",
+  accessCustomerContactController
 );
 
 export default router;
