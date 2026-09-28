@@ -180,7 +180,7 @@ export const accessCustomerContact = async (
    */
   if (
     usage.usedCount >=
-    subscription.monthlyContactLimit
+    subscription.subscriptionPlan.monthlyContactLimit
   ) {
     throw new Error(
       "Monthly contact access limit reached"

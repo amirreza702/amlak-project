@@ -346,6 +346,8 @@ model Agent {
   subscriptions      AgentSubscription[]
 contactAccessUsages ContactAccessUsage[]
 
+
+
   @@map("agents")
 }
 
@@ -1056,10 +1058,11 @@ model AgentSubscription {
   id                  String   @id @default(uuid())
   agentId             String
 
-  plan                String
+  
   status              String   @default("ACTIVE")
 
-  monthlyContactLimit Int
+  planId String
+  
 
   startsAt            DateTime
   expiresAt           DateTime?
@@ -1069,8 +1072,11 @@ model AgentSubscription {
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
+  subscriptionPlan SubscriptionPlan @relation(fields: [planId], references: [id])
+
   @@index([agentId, status])
   @@index([expiresAt])
+  @@index([planId])
   @@map("agent_subscriptions")
 }
 
@@ -1089,4 +1095,24 @@ model ContactAccessUsage {
   @@unique([agentId, periodStart])
   @@index([agentId, periodStart])
   @@map("contact_access_usage")
+}
+
+model SubscriptionPlan {
+  id                  String   @id @default(uuid())
+
+  code                String   @unique
+  name                String
+  level               Int
+  monthlyContactLimit Int
+
+  status              String   @default("ACTIVE")
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  subscriptions AgentSubscription[]
+
+  @@index([level])
+  @@index([status])
+  @@map("subscription_plans")
 }

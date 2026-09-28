@@ -3,22 +3,16 @@
  * Agent Subscription Repository
  * ============================================================
  *
- * دسترسی مستقیم به جدول AgentSubscription
- *
- * این فایل فقط مسئول خواندن و ایجاد اطلاعات اشتراک است.
- * منطق کسب‌وکار مربوط به محدودیت Contact در Service قرار می‌گیرد.
+ * دسترسی مستقیم به AgentSubscription
  */
 
 import { prisma } from "../../../lib/prisma";
 
 /**
- * پیدا کردن اشتراک فعال و معتبر Agent
+ * پیدا کردن Subscription فعال و معتبر Agent
  *
- * شرایط معتبر بودن:
- * 1. متعلق به Agent موردنظر باشد.
- * 2. وضعیت آن ACTIVE باشد.
- * 3. تاریخ شروع آن رسیده باشد.
- * 4. تاریخ پایان نداشته باشد یا هنوز منقضی نشده باشد.
+ * اطلاعات Plan نیز همراه Subscription
+ * دریافت می‌شود.
  */
 export const findActiveAgentSubscription = async (
   agentId: string
@@ -28,13 +22,10 @@ export const findActiveAgentSubscription = async (
   return prisma.agentSubscription.findFirst({
     where: {
       agentId,
-
       status: "ACTIVE",
-
       startsAt: {
         lte: now,
       },
-
       OR: [
         {
           expiresAt: null,
@@ -46,7 +37,9 @@ export const findActiveAgentSubscription = async (
         },
       ],
     },
-
+    include: {
+      subscriptionPlan: true,
+    },
     orderBy: {
       startsAt: "desc",
     },
@@ -54,22 +47,48 @@ export const findActiveAgentSubscription = async (
 };
 
 /**
- * ایجاد اشتراک برای Agent
+ * ایجاد Subscription جدید
+ *
+ * Plan از طریق planId مشخص می‌شود.
  */
 export const createAgentSubscription = async (
   agentId: string,
-  plan: string,
-  monthlyContactLimit: number,
+  planId: string,
   startsAt: Date,
   expiresAt?: Date
 ) => {
   return prisma.agentSubscription.create({
     data: {
       agentId,
-      plan,
-      monthlyContactLimit,
+      planId,
       startsAt,
       expiresAt,
+    },
+    include: {
+      subscriptionPlan: true,
+    },
+  });
+};
+
+/**
+ * ارتقای Subscription فعلی
+ *
+ * فقط Plan تغییر می‌کند.
+ */
+export const upgradeAgentSubscription = async (
+  subscriptionId: string,
+  planId: string
+) => {
+  return prisma.agentSubscription.update({
+    where: {
+      id: subscriptionId,
+    },
+    data: {
+      planId,
+      updatedAt: new Date(),
+    },
+    include: {
+      subscriptionPlan: true,
     },
   });
 };

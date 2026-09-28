@@ -40,6 +40,11 @@ import {
   accessCustomerContactController,
 } from "../controller/contactAccessController";
 
+import {
+  createAgentSubscriptionController,
+  upgradeAgentSubscriptionController,
+} from "../controller/agentSubscriptionController";
+
 const router = Router();
 
 // ============================================================
@@ -92,6 +97,16 @@ router.get(
 router.post(
   "/agents/:agentId/search-requests/:searchRequestId/contact",
   accessCustomerContactController
+);
+
+router.post(
+  "/agents/:agentId/subscriptions",
+  createAgentSubscriptionController
+);
+
+router.put(
+  "/agents/:agentId/subscriptions",
+  upgradeAgentSubscriptionController
 );
 
 export default router;
