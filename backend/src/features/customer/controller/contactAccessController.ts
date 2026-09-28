@@ -40,7 +40,8 @@ export const accessCustomerContactController = async (
     /**
      * دریافت شناسه Agent از URL
      */
-    const { agentId, searchRequestId } = req.params;
+    const agentId = req.params.agentId as string;
+    const searchRequestId = req.params.searchRequestId as string;
 
     /**
      * اعتبارسنجی اولیه ورودی‌ها
