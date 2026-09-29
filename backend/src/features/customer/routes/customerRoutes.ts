@@ -48,7 +48,26 @@ import {
   upgradeAgentSubscriptionController,
 } from "../controller/agentSubscriptionController";
 
+import {
+  getCustomerProfileController,
+  updateCustomerProfileController,
+} from "../controller/customerController";
+
 const router = Router();
+
+// ============================================================
+// CUSTOMER PROFILE
+// ============================================================
+
+router.get(
+  "/customers/:customerId/profile",
+  getCustomerProfileController
+);
+
+router.put(
+  "/customers/:customerId/profile",
+  updateCustomerProfileController
+);
 
 // ============================================================
 // FAVORITES
@@ -73,33 +92,21 @@ router.get(
 // PROPERTY SEARCH REQUESTS
 // ============================================================
 
-/**
- * ایجاد درخواست جستجوی جدید
- */
 router.post(
   "/customers/:customerId/search-requests",
   createCustomerSearchRequestController
 );
 
-/**
- * دریافت تمام درخواست‌های جستجوی مشتری
- */
 router.get(
   "/customers/:customerId/search-requests",
   getCustomerSearchRequestsController
 );
 
-/**
- * دریافت یک درخواست جستجوی مشخص
- */
 router.get(
   "/customers/:customerId/search-requests/:requestId",
   getCustomerSearchRequestController
 );
 
-/**
- * بستن درخواست جستجو
- */
 router.put(
   "/customers/:customerId/search-requests/:requestId/close",
   closeCustomerSearchRequestController
@@ -114,8 +121,6 @@ router.get(
   "/search-requests/active",
   getActivePropertySearchRequestsController
 );
-
-
 
 // ============================================================
 // AGENT CONTACT ACCESS
