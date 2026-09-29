@@ -274,6 +274,7 @@ model PropertySearchRequest {
   id              String @id @default(uuid())
 
   customerId      String
+  
 
   transactionType TransactionType
   propertyType    PropertyType
@@ -296,6 +297,8 @@ model PropertySearchRequest {
 
   // سوابق مشاهده اطلاعات تماس این درخواست توسط مشاوران
   contactAccessLogs ContactAccessLog[]
+
+  
 
   @@index([customerId, createdAt])
   @@index([city])

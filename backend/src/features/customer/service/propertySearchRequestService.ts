@@ -32,6 +32,28 @@ import {
    findActivePropertySearchRequests,
 } from "../repository/propertySearchRequestRepository";
 
+
+
+
+/**
+ * بررسی وجود Customer
+ *
+ * این تابع فقط وجود Customer را بررسی می‌کند.
+ * کنترل دسترسی، مالکیت درخواست و سایر قواعد
+ * در Service مربوط به همان عملیات انجام می‌شود.
+ */
+const validateCustomer = async (
+  customerId: string
+) => {
+  const customer =
+    await findCustomerById(customerId);
+
+  if (!customer) {
+    throw new Error("Customer not found");
+  }
+
+  return customer;
+};
 /**
  * ایجاد درخواست جستجوی ملک
  */
@@ -365,3 +387,5 @@ export const getActivePropertySearchRequests =
   async () => {
     return findActivePropertySearchRequests();
   };
+
+ 

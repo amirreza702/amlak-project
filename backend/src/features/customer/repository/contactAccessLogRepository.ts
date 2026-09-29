@@ -1,4 +1,23 @@
+/**
+ * ============================================================
+ * Contact Access Log Repository
+ * ============================================================
+ */
+
 import { prisma } from "../../../lib/prisma";
+import { Prisma } from "@prisma/client";
+
+/**
+ * نوع Client قابل استفاده برای Repository
+ *
+ * می‌تواند:
+ * - Prisma معمولی
+ * - یا Transaction Client
+ * باشد.
+ */
+type PrismaClientLike =
+  | typeof prisma
+  | Prisma.TransactionClient;
 
 /**
  * ثبت اولین دسترسی مشاور به اطلاعات تماس یک درخواست مشتری
@@ -6,9 +25,10 @@ import { prisma } from "../../../lib/prisma";
 export const createContactAccessLog = async (
   agentId: string,
   customerId: string,
-  searchRequestId: string
+  searchRequestId: string,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessLog.create({
+  return db.contactAccessLog.create({
     data: {
       agentId,
       customerId,
@@ -22,9 +42,10 @@ export const createContactAccessLog = async (
  */
 export const findContactAccessLog = async (
   agentId: string,
-  searchRequestId: string
+  searchRequestId: string,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessLog.findUnique({
+  return db.contactAccessLog.findUnique({
     where: {
       agentId_searchRequestId: {
         agentId,
@@ -38,9 +59,10 @@ export const findContactAccessLog = async (
  * دریافت سوابق دسترسی یک مشاور
  */
 export const findAgentContactAccessLogs = async (
-  agentId: string
+  agentId: string,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessLog.findMany({
+  return db.contactAccessLog.findMany({
     where: {
       agentId,
     },

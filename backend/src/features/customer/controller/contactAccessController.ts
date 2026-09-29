@@ -76,6 +76,19 @@ export const accessCustomerContactController = async (
       });
     }
 
+        /**
+     * Search Request بسته است
+     */
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Only active search requests can be accessed"
+    ) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
     /**
      * Agent اشتراک فعال ندارد
      */

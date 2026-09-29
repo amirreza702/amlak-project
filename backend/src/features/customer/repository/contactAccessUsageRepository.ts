@@ -5,15 +5,29 @@
  */
 
 import { prisma } from "../../../lib/prisma";
+import { Prisma } from "@prisma/client";
+
+/**
+ * نوع Client قابل استفاده برای Repository
+ *
+ * می‌تواند:
+ * - Prisma معمولی
+ * - یا Transaction Client
+ * باشد.
+ */
+type PrismaClientLike =
+  | typeof prisma
+  | Prisma.TransactionClient;
 
 /**
  * پیدا کردن مصرف Agent در یک دوره
  */
 export const findContactAccessUsage = async (
   agentId: string,
-  periodStart: Date
+  periodStart: Date,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessUsage.findUnique({
+  return db.contactAccessUsage.findUnique({
     where: {
       agentId_periodStart: {
         agentId,
@@ -28,9 +42,10 @@ export const findContactAccessUsage = async (
  */
 export const createContactAccessUsage = async (
   agentId: string,
-  periodStart: Date
+  periodStart: Date,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessUsage.create({
+  return db.contactAccessUsage.create({
     data: {
       agentId,
       periodStart,
@@ -44,9 +59,10 @@ export const createContactAccessUsage = async (
  */
 export const incrementContactAccessUsage = async (
   agentId: string,
-  periodStart: Date
+  periodStart: Date,
+  db: PrismaClientLike = prisma
 ) => {
-  return prisma.contactAccessUsage.update({
+  return db.contactAccessUsage.update({
     where: {
       agentId_periodStart: {
         agentId,
