@@ -16,6 +16,8 @@ import {
   startPropertyExpirationScheduler,
 } from "./jobs/propertyExpirationScheduler";
 
+import evaluationRoutes from "./features/evaluation/routes/evaluationRoutes";
+
 const app = express();
 
 /**
@@ -37,6 +39,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+
 /**
  * ============================================================
  * Routes
@@ -45,6 +48,7 @@ app.use(cookieParser());
 
 app.use(propertyRoutes);
 app.use(customerRoutes);
+app.use(evaluationRoutes);
 
 app.use("/api/auth", authRoutes);
 

@@ -4,7 +4,7 @@
  * ============================================================
  *
  * این Repository فقط مسئول ارتباط مستقیم
- * با دیتابیس و جدول‌های مرتبط با Evaluation است.
+ * با دیتابیس است.
  *
  * منطق Business در Service قرار می‌گیرد.
  *
@@ -52,18 +52,174 @@ export const findEvaluationById = async (
 
 /**
  * ============================================================
- * Evaluationهای مربوط به Customer
+ * پیدا کردن User بر اساس ID
  * ============================================================
  *
- * این متد برای زمانی است که Customer
- * به عنوان ارزیاب یا هدف Evaluation مطرح باشد.
+ * فقط اطلاعات موردنیاز برای تشخیص نقش ارزیاب
+ * از دیتابیس خوانده می‌شود.
+ */
+export const findEvaluatorUserById = async (
+  userId: string
+) => {
+  return prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+
+    select: {
+      id: true,
+      role: true,
+      isActive: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * بررسی وجود Customer
+ * ============================================================
+ */
+export const findCustomerById = async (
+  customerId: string
+) => {
+  return prisma.customer.findUnique({
+    where: {
+      id: customerId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * بررسی وجود Owner
+ * ============================================================
+ */
+export const findOwnerById = async (
+  ownerId: string
+) => {
+  return prisma.owner.findUnique({
+    where: {
+      id: ownerId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * بررسی وجود Agent
+ * ============================================================
+ */
+export const findAgentById = async (
+  agentId: string
+) => {
+  return prisma.agent.findUnique({
+    where: {
+      id: agentId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * پیدا کردن Customer بر اساس User ID
+ * ============================================================
  *
- * توجه:
- * فعلاً فیلتر دقیق بر اساس evaluatorUserId
- * در Service انجام می‌شود.
- *
- * این متد Evaluationهایی را بر اساس
- * customerId دریافت می‌کند.
+ * برای تشخیص اینکه evaluatorUserId
+ * متعلق به کدام Customer است.
+ */
+export const findCustomerByUserId = async (
+  userId: string
+) => {
+  return prisma.customer.findUnique({
+    where: {
+      userId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * پیدا کردن Owner بر اساس User ID
+ * ============================================================
+ */
+export const findOwnerByUserId = async (
+  userId: string
+) => {
+  return prisma.owner.findUnique({
+    where: {
+      userId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * پیدا کردن Agent بر اساس User ID
+ * ============================================================
+ */
+export const findAgentByUserId = async (
+  userId: string
+) => {
+  return prisma.agent.findUnique({
+    where: {
+      userId,
+    },
+
+    select: {
+      id: true,
+      userId: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * بررسی وجود Property
+ * ============================================================
+ */
+export const findPropertyById = async (
+  propertyId: string
+) => {
+  return prisma.property.findUnique({
+    where: {
+      id: propertyId,
+    },
+
+    select: {
+      id: true,
+    },
+  });
+};
+
+/**
+ * ============================================================
+ * Evaluationهای مربوط به Customer
+ * ============================================================
  */
 export const findEvaluationsByCustomerId = async (
   customerId: string
