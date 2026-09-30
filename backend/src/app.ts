@@ -18,6 +18,8 @@ import {
 
 import evaluationRoutes from "./features/evaluation/routes/evaluationRoutes";
 
+import ownerRoutes from "./features/owner/routes/ownerRoutes";
+
 const app = express();
 
 /**
@@ -49,6 +51,8 @@ app.use(cookieParser());
 app.use(propertyRoutes);
 app.use(customerRoutes);
 app.use(evaluationRoutes);
+app.use(ownerRoutes);
+
 
 app.use("/api/auth", authRoutes);
 
