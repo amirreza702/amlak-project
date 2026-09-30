@@ -20,6 +20,8 @@ import evaluationRoutes from "./features/evaluation/routes/evaluationRoutes";
 
 import ownerRoutes from "./features/owner/routes/ownerRoutes";
 
+import agentRoutes from "./features/agent/routes/agentRoutes";
+
 const app = express();
 
 /**
@@ -52,6 +54,7 @@ app.use(propertyRoutes);
 app.use(customerRoutes);
 app.use(evaluationRoutes);
 app.use(ownerRoutes);
+app.use(agentRoutes);
 
 
 
