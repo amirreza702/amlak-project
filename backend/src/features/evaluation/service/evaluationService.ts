@@ -103,6 +103,17 @@ export const createEvaluationService = async (
     throw new Error("Evaluator user is inactive");
   }
 
+  if (
+  data.score !== undefined &&
+  (!Number.isInteger(data.score) ||
+    data.score < 1 ||
+    data.score > 5)
+) {
+  throw new Error(
+    "Score must be an integer between 1 and 5"
+  );
+}
+
   /**
    * ----------------------------------------------------------
    * تعیین منطق بر اساس نوع Evaluation

@@ -54,7 +54,9 @@ export async function createEvaluationController(
       error.message ===
         "Owner is required for this evaluation" ||
       error.message ===
-        "Property is required for this evaluation"
+        "Property is required for this evaluation" ||
+      error.message ===
+        "Score must be an integer between 1 and 5"
     ) {
       return res.status(400).json({
         message: error.message,

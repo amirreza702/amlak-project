@@ -762,7 +762,7 @@ model DuplicateReview {
   primaryPropertyId   String
   candidatePropertyId String
 
-  similarityScore Float
+  similarityScore int
 
   decision DuplicateDecision?
 
@@ -950,7 +950,7 @@ model Evaluation {
   propertyId String?
 
   // Raw evaluation input
-  score   Float?
+  score   int?
   comment String?
 
   status EvaluationStatus @default(SUBMITTED)
