@@ -1,3 +1,4 @@
+
 /**
  * ============================================================
  * Property Service
@@ -29,7 +30,7 @@ import {
   RegistrationSource,
 } from "@prisma/client";
 
-import { getAgentById } from "../../agent/service/agentService";
+import { findAgentById } from "../../agent/repository/agentRepository";
 
 import {
   createProperty,
@@ -81,8 +82,14 @@ export async function registerProperty(
    * ============================================================
    *
    * این مرحله فقط خواندنی است و قبل از Transaction انجام می‌شود.
+   *
+   * دسترسی به جدول Agent از طریق Repository انجام می‌شود.
    */
-  await getAgentById(data.agentId);
+  const agent = await findAgentById(data.agentId);
+
+  if (!agent) {
+    throw new Error("مشاور مورد نظر پیدا نشد.");
+  }
 
   /**
    * ============================================================
@@ -189,8 +196,6 @@ export async function registerProperty(
             tx
           );
 
-   
-
         return {
           property,
           propertyAgent,
@@ -217,8 +222,6 @@ export async function registerProperty(
         tx
       );
 
-    
-
     return {
       property,
       propertyAgent,
@@ -226,7 +229,6 @@ export async function registerProperty(
     };
   });
 }
-
 
 export async function getPropertyById(
   id: string
@@ -367,8 +369,7 @@ export async function updatePropertyService(
       );
     }
 
-   
-
     return updatedProperty;
   });
 }
+

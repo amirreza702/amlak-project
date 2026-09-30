@@ -10,7 +10,7 @@ import cookieParser from "cookie-parser";
 
 import propertyRoutes from "./features/property/routes/propertyRoutes";
 import customerRoutes from "./features/customer/routes/customerRoutes";
-import authRoutes from "./features/auth/routes/authRoutes";
+
 
 import {
   startPropertyExpirationScheduler,
@@ -54,7 +54,7 @@ app.use(evaluationRoutes);
 app.use(ownerRoutes);
 
 
-app.use("/api/auth", authRoutes);
+
 
 /**
  * ============================================================
