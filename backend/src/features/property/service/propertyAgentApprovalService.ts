@@ -27,17 +27,23 @@ import {
   PropertyHistoryAction,
 } from "@prisma/client";
 
-import { prisma } from "../../../lib/prisma";
-
 import {
   findPropertyAgent,
 } from "../repository/propertyAgentRepository";
 
-import { findPropertyById } from "../repository/propertyRepository";
+import {
+  findPropertyById,
+} from "../repository/propertyRepository";
+
+import {
+  findPropertyOwner,
+} from "../repository/propertyOwnerRepository";
 
 import {
   createPropertyHistory,
 } from "../repository/propertyHistoryRepository";
+
+import { prisma } from "../../../lib/prisma";
 
 export interface ApprovePropertyAgentInput {
   propertyId: string;
@@ -66,19 +72,17 @@ export async function approvePropertyAgentByOwnerService(
 
   /**
    * ----------------------------------------------------------
-   * 2. بررسی مالک
+   * 2. بررسی ارتباط مالک با ملک
    * ----------------------------------------------------------
+   *
+   * دسترسی به PropertyOwner از طریق Repository انجام می‌شود.
    */
 
   const propertyOwner =
-    await prisma.propertyOwner.findUnique({
-      where: {
-        propertyId_ownerId: {
-          propertyId: data.propertyId,
-          ownerId: data.ownerId,
-        },
-      },
-    });
+    await findPropertyOwner(
+      data.propertyId,
+      data.ownerId
+    );
 
   if (!propertyOwner) {
     throw new Error(
@@ -163,8 +167,6 @@ export async function approvePropertyAgentByOwnerService(
       },
       tx
     );
-
- 
 
     return updatedPropertyAgent;
   });
