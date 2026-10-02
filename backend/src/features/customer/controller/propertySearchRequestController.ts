@@ -18,6 +18,7 @@ import {
   closeCustomerSearchRequest,
   updateCustomerSearchRequest,
   getActivePropertySearchRequests,
+  getActivePropertySearchRequestById,
 } from "../service/propertySearchRequestService";
 
 /**
@@ -275,6 +276,46 @@ export async function getActivePropertySearchRequestsController(
     return res.status(500).json({
       message:
         "Internal server error",
+    });
+  }
+}
+
+/**
+ * دریافت جزئیات یک درخواست فعال جستجوی ملک
+ *
+ * این اطلاعات برای Agent قابل مشاهده است.
+ *
+ * اطلاعات تماس و customerId در این مرحله
+ * برگردانده نمی‌شود.
+ */
+export async function getActivePropertySearchRequestByIdController(
+  req: Request<{ requestId: string }>,
+  res: Response
+) {
+  try {
+    const result =
+      await getActivePropertySearchRequestById(
+        req.params.requestId
+      );
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    if (
+      error.message ===
+      "Active search request not found"
+    ) {
+      return res.status(404).json({
+        message: error.message,
+      });
+    }
+
+    console.error(
+      "Error getting active property search request:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 }

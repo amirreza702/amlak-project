@@ -140,4 +140,40 @@ export const findActivePropertySearchRequests =
     });
   };
 
+  /**
+ * دریافت جزئیات یک درخواست فعال برای Agent
+ *
+ * این Query مخصوص Marketplace Agent است.
+ *
+ * فقط درخواست ACTIVE قابل مشاهده است.
+ *
+ * customerId عمداً در خروجی وجود ندارد.
+ * بنابراین اطلاعات هویتی Customer وارد Service
+ * و سپس Controller نمی‌شود.
+ */
+export const findActivePropertySearchRequestById =
+  async (
+    id: string
+  ) => {
+    return prisma.propertySearchRequest.findFirst({
+      where: {
+        id,
+        status: "ACTIVE",
+      },
+
+      select: {
+        id: true,
+        transactionType: true,
+        propertyType: true,
+        city: true,
+        budget: true,
+        description: true,
+        hashtiVerified: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  };
+
   

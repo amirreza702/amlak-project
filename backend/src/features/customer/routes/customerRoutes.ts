@@ -37,6 +37,7 @@ import {
   closeCustomerSearchRequestController,
   updateCustomerSearchRequestController,
   getActivePropertySearchRequestsController,
+  getActivePropertySearchRequestByIdController,
 } from "../controller/propertySearchRequestController";
 
 import {
@@ -120,6 +121,11 @@ router.put(
 router.get(
   "/search-requests/active",
   getActivePropertySearchRequestsController
+);
+
+router.get(
+  "/search-requests/active/:requestId",
+  getActivePropertySearchRequestByIdController
 );
 
 // ============================================================

@@ -30,6 +30,7 @@ import {
    updatePropertySearchRequestStatus,
    updatePropertySearchRequest,
    findActivePropertySearchRequests,
+   findActivePropertySearchRequestById,
 } from "../repository/propertySearchRequestRepository";
 
 
@@ -386,6 +387,34 @@ export const updateCustomerSearchRequest = async (
 export const getActivePropertySearchRequests =
   async () => {
     return findActivePropertySearchRequests();
+  };
+
+  /**
+ * دریافت جزئیات یک درخواست فعال جستجوی ملک برای Agent
+ *
+ * این عملیات مخصوص Marketplace Agent است.
+ *
+ * فقط درخواست ACTIVE قابل مشاهده است.
+ *
+ * اطلاعات Customer در Repository انتخاب نشده،
+ * بنابراین این Service نیز به customerId دسترسی ندارد.
+ */
+export const getActivePropertySearchRequestById =
+  async (
+    requestId: string
+  ) => {
+    const request =
+      await findActivePropertySearchRequestById(
+        requestId
+      );
+
+    if (!request) {
+      throw new Error(
+        "Active search request not found"
+      );
+    }
+
+    return request;
   };
 
  
