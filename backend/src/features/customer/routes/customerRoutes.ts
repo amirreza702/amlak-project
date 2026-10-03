@@ -25,12 +25,6 @@
 import { Router } from "express";
 
 import {
-  addPropertyToFavoriteController,
-  removePropertyFromFavoriteController,
-  getCustomerFavoritesController,
-} from "../controller/customerPropertyFavoriteController";
-
-import {
   createCustomerSearchRequestController,
   getCustomerSearchRequestController,
   getCustomerSearchRequestsController,
@@ -68,25 +62,6 @@ router.get(
 router.put(
   "/customers/:customerId/profile",
   updateCustomerProfileController
-);
-
-// ============================================================
-// FAVORITES
-// ============================================================
-
-router.post(
-  "/customers/:customerId/favorites/:propertyId",
-  addPropertyToFavoriteController
-);
-
-router.delete(
-  "/customers/:customerId/favorites/:propertyId",
-  removePropertyFromFavoriteController
-);
-
-router.get(
-  "/customers/:customerId/favorites",
-  getCustomerFavoritesController
 );
 
 // ============================================================
