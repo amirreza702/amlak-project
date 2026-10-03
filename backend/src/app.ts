@@ -22,6 +22,8 @@ import ownerRoutes from "./features/owner/routes/ownerRoutes";
 
 import agentRoutes from "./features/agent/routes/agentRoutes";
 
+import notificationRoutes from "./features/notification/routes/notificationRoutes";
+
 const app = express();
 
 /**
@@ -55,6 +57,7 @@ app.use(customerRoutes);
 app.use(evaluationRoutes);
 app.use(ownerRoutes);
 app.use(agentRoutes);
+app.use(notificationRoutes);
 
 
 
