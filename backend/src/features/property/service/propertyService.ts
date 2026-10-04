@@ -144,6 +144,8 @@ export async function registerProperty(
           city: data.city,
           district: data.district,
           address: data.address,
+          latitudeExact: data.latitudeExact,
+          longitudeExact: data.longitudeExact,
           postalCode: data.postalCode ?? null,
           area: data.area ?? null,
           rooms: data.rooms ?? null,

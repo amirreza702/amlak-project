@@ -448,8 +448,8 @@ model Property {
   // Exact location
   // ----------------------------
 
-  latitudeExact  Float?
-  longitudeExact Float?
+  latitudeExact  Float
+  longitudeExact Float
 
   // Approximate public location
   latitudePublic  Float?

@@ -40,6 +40,17 @@ export interface RegisterPropertyInput {
   postalCode?: string | null;
 
   /**
+   * مختصات دقیق ملک
+   *
+   * برای ثبت ملک اجباری است.
+   *
+   * کاربر در UI مختصات را دستی وارد نمی‌کند؛
+   * نقطه ملک روی نقشه انتخاب می‌شود.
+   */
+  latitudeExact: number;
+  longitudeExact: number;
+
+  /**
    * مشخصات ملک
    */
   area?: number | null;
