@@ -6,7 +6,7 @@ import type {
   PropertyWithListing,
 } from "../types/property";
 
-import type { Prisma } from "@prisma/client";
+import  { Prisma } from "@prisma/client";
 
 /**
  * ============================================================
@@ -118,7 +118,129 @@ export const findAllProperties = async (): Promise<
   });
 };
 
-/**
+
+ /**
+ * ============================================================
+ * findPropertiesWithinRadius
+ * ============================================================
+ *
+ * پیدا کردن ملک‌های نزدیک به یک مختصات مشخص.
+ *
+ * این تابع علاوه بر خود Property،
+ * فاصله واقعی آن تا نقطه اصلی را نیز برمی‌گرداند.
+ *
+ * Database Logic:
+ *   PostgreSQL + Haversine
+ *
+ * خروجی:
+ *
+ * {
+ *   property: Property,
+ *   distanceMeters: number
+ * }
+ * ============================================================
+ */
+
+export const findPropertiesWithinRadius = async (
+  latitude: number,
+  longitude: number,
+  radiusMeters: number,
+  excludePropertyId?: string
+): Promise<
+  {
+    property: Property;
+    distanceMeters: number;
+  }[]
+> => {
+  const rows = await prisma.$queryRaw<
+    (Property & {
+      distanceMeters: number;
+    })[]
+  >`
+    SELECT
+      p.*,
+
+      (
+        6371000 * 2 * ASIN(
+          SQRT(
+            POWER(
+              SIN(
+                RADIANS(
+                  p."latitudeExact" - ${latitude}
+                ) / 2
+              ),
+              2
+            )
+            +
+            COS(RADIANS(${latitude}))
+            *
+            COS(RADIANS(p."latitudeExact"))
+            *
+            POWER(
+              SIN(
+                RADIANS(
+                  p."longitudeExact" - ${longitude}
+                ) / 2
+              ),
+              2
+            )
+          )
+        )
+      ) AS "distanceMeters"
+
+    FROM "properties" p
+
+    WHERE
+      p."latitudeExact" IS NOT NULL
+      AND p."longitudeExact" IS NOT NULL
+
+      ${
+        excludePropertyId
+          ? Prisma.sql`
+              AND p."id" <> ${excludePropertyId}
+            `
+          : Prisma.empty
+      }
+
+      AND (
+        6371000 * 2 * ASIN(
+          SQRT(
+            POWER(
+              SIN(
+                RADIANS(
+                  p."latitudeExact" - ${latitude}
+                ) / 2
+              ),
+              2
+            )
+            +
+            COS(RADIANS(${latitude}))
+            *
+            COS(RADIANS(p."latitudeExact"))
+            *
+            POWER(
+              SIN(
+                RADIANS(
+                  p."longitudeExact" - ${longitude}
+                ) / 2
+              ),
+              2
+            )
+          )
+        )
+      ) <= ${radiusMeters}
+
+    ORDER BY
+      "distanceMeters" ASC
+  `;
+
+  return rows.map((row) => ({
+    property: row,
+    distanceMeters: Number(row.distanceMeters),
+  }));
+};
+
+/** 
  * ============================================================
  * updateProperty
  * ============================================================

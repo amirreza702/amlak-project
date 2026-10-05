@@ -103,6 +103,10 @@ import {
   updatePropertyController,
 } from "../controller/propertyUpdateController";
 
+import {
+  findDuplicateMatchesController,
+} from "../controller/duplicateMatchingController";
+
 const router = Router();
 
 /**
@@ -275,6 +279,16 @@ router.get(
 router.patch(
   "/duplicate-reviews/:id/review",
   reviewDuplicateController
+);
+
+/**
+ * ============================================================
+ * Duplicate Matching
+ * ============================================================
+ */
+router.get(
+  "/properties/:id/duplicate-matches",
+  findDuplicateMatchesController
 );
 
 
