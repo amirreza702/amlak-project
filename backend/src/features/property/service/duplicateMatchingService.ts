@@ -103,13 +103,14 @@ export const findDuplicateMatchesService = async (
    * فاصله در اینجا وارد محاسبه نمی‌شود.
    */
   const matches: DuplicateMatchResult[] =
-    candidateProperties
-      .map((candidate) => {
-        const similarityScore =
-          calculatePropertySimilarity(
-            primaryProperty,
-            candidate.property
-          );
+    candidateProperties.map((candidate) => {
+  
+
+  const similarityScore =
+    calculatePropertySimilarity(
+      primaryProperty,
+      candidate.property
+    );
 
         return {
           property: candidate.property,

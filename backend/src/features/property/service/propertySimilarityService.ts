@@ -149,8 +149,10 @@ export const calculatePropertySimilarity = (
    * 0.00 → کمترین شباهت
    * 1.00 → بیشترین شباهت
    */
-  return Math.min(
+  return Number(
+  Math.min(
     1,
     Math.max(0, score)
-  );
+  ).toFixed(2)
+);
 };
