@@ -26,6 +26,8 @@ import notificationRoutes from "./features/notification/routes/notificationRoute
 
 import customerPropertyFavoriteRoutes from "./features/favorite/routes/customerPropertyFavoriteRoutes";
 
+import authRoutes from "./features/auth/routes/authRoutes";
+
 const app = express();
 
 /**
@@ -61,6 +63,7 @@ app.use(ownerRoutes);
 app.use(agentRoutes);
 app.use(notificationRoutes);
 app.use(customerPropertyFavoriteRoutes);
+app.use(authRoutes);
 
 
 
