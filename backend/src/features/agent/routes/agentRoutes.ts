@@ -1,15 +1,4 @@
 
-/**
- * ============================================================
- * Agent Routes
- * ============================================================
- *
- * Route فقط مسیر HTTP را به Controller متصل می‌کند.
- *
- * منطق Business در Service قرار دارد.
- * ============================================================
- */
-
 import { Router } from "express";
 
 import {
@@ -17,21 +6,35 @@ import {
   updateAgentProfileController,
 } from "../controller/agentController";
 
+import { authMiddleware } from "../../auth/middleware/authMiddleware";
+import { requireRole } from "../../auth/middleware/requireRole";
+
+import { UserRole } from "@prisma/client";
+
 const router = Router();
 
 /**
- * دریافت Profile مشاور
+ * دریافت پروفایل مشاور:
+ * فقط کاربر واردشده با نقش AGENT.
+ * کنترل مالکیت شناسه Agent نیز باید در مرحله بعد
+ * داخل Service انجام شود.
  */
 router.get(
   "/agents/:agentId/profile",
+  authMiddleware,
+  requireRole(UserRole.AGENT),
   getAgentProfileController
 );
 
 /**
- * ویرایش Profile مشاور
+ * ویرایش پروفایل مشاور:
+ * فقط کاربر واردشده با نقش AGENT.
+ * کنترل مالکیت در Service الزامی است.
  */
 router.put(
   "/agents/:agentId/profile",
+  authMiddleware,
+  requireRole(UserRole.AGENT),
   updateAgentProfileController
 );
 

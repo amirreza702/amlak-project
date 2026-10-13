@@ -1,78 +1,42 @@
 
 /**
- * ============================================================
  * Agent Repository
- * ============================================================
  *
- * این Repository فقط مسئول ارتباط مستقیم با Database است.
- *
- * منطق Business در Service قرار دارد.
- *
- * ============================================================
+ * مسئول ارتباط مستقیم با دیتابیس.
  */
 
 import { prisma } from "../../../lib/prisma";
 
 /**
- * ------------------------------------------------------------
- * پیدا کردن Agent بر اساس Agent ID
- * ------------------------------------------------------------
+ * دریافت شناسه مالک پروفایل مشاور.
  *
- * این تابع برای بررسی وجود Agent استفاده می‌شود.
- *
- * این Use Case فقط به id نیاز دارد.
+ * userId شناسه حساب User است، نه Agent.id.
  */
-export const findAgentById = async (
-  agentId: string
-) => {
+export const findAgentById = async (agentId: string) => {
   return prisma.agent.findUnique({
-    where: {
-      id: agentId,
-    },
-
+    where: { id: agentId },
     select: {
       id: true,
+      userId: true,
     },
   });
 };
 
 /**
- * ------------------------------------------------------------
- * دریافت اطلاعات Profile مشاور
- * ------------------------------------------------------------
- *
- * اطلاعات مورد نیاز Profile:
- *
- * Agent:
- * - id
- * - firstName
- * - lastName
- * - agencyName
- * - address
- * - isVerified
- *
- * User:
- * - mobile
- *
- * mobile در جدول User قرار دارد و در این Repository
- * همراه اطلاعات Agent خوانده می‌شود.
+ * دریافت پروفایل مشاور همراه با userId
+ * برای بررسی مالکیت در Service.
  */
-export const findAgentProfileById = async (
-  id: string
-) => {
+export const findAgentProfileById = async (id: string) => {
   return prisma.agent.findUnique({
-    where: {
-      id,
-    },
-
+    where: { id },
     select: {
       id: true,
+      userId: true,
       firstName: true,
       lastName: true,
       agencyName: true,
       address: true,
       isVerified: true,
-
       user: {
         select: {
           mobile: true,
@@ -83,18 +47,10 @@ export const findAgentProfileById = async (
 };
 
 /**
- * ------------------------------------------------------------
- * ویرایش اطلاعات Profile مشاور
- * ------------------------------------------------------------
+ * ویرایش پروفایل.
  *
- * فقط اطلاعات مربوط به Profile Agent تغییر می‌کند.
- *
- * mobile قابل تغییر نیست؛
- * چون مربوط به User و Authentication / OTP است.
- *
- * isVerified نیز در اینجا قابل تغییر نیست؛
- * چون وضعیت تأیید باید توسط فرآیند Verification سیستم
- * کنترل شود.
+ * userId و isVerified از طریق این تابع قابل تغییر نیستند.
+ * پاسخ نیز فقط فیلدهای مجاز پروفایل را برمی‌گرداند.
  */
 export const updateAgentProfile = async (
   id: string,
@@ -106,10 +62,15 @@ export const updateAgentProfile = async (
   }
 ) => {
   return prisma.agent.update({
-    where: {
-      id,
-    },
-
+    where: { id },
     data,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      agencyName: true,
+      address: true,
+      isVerified: true,
+    },
   });
 };

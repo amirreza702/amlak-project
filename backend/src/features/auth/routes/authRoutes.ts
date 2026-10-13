@@ -1,13 +1,16 @@
 
 import { Router } from "express";
+import { UserRole } from "@prisma/client";
 
 import {
   registerUserController,
   loginUserController,
   logoutUserController,
+  adminResetUserPasswordController,
 } from "../controller/authController";
 
 import { authMiddleware } from "../middleware/authMiddleware";
+import { requireRole } from "../middleware/requireRole";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -29,5 +32,16 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 
 // خروج کاربر و حذف نشست فعلی
 router.post("/auth/logout", authMiddleware, logoutUserController);
+
+// بازنشانی مدیریتی رمز حساب کاربر؛ فقط کارکنان هشتی
+router.post(
+  "/auth/admin/users/:userId/reset-password",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  adminResetUserPasswordController
+);
+
+// تغییر رمز شخصی با OTP در آینده پیاده‌سازی خواهد شد.
+// فعلاً هیچ endpoint فعالی برای این قابلیت تعریف نمی‌شود.
 
 export default router;

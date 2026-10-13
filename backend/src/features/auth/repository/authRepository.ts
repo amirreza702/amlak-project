@@ -78,3 +78,40 @@ export async function deleteSessionByTokenHash(
     where: { tokenHash },
   });
 }
+
+/**
+ * بازنشانی رمز عبور و حذف تمام Sessionهای کاربر
+ *
+ * هر دو عملیات در یک تراکنش انجام می‌شوند.
+ * رمز خام هرگز در دیتابیس ذخیره نمی‌شود.
+ */
+export async function resetUserPasswordAndSessions(
+  userId: string,
+  passwordHash: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        mobile: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+
+    return user;
+  });
+}

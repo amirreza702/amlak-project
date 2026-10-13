@@ -9,6 +9,7 @@ import {
   findUserByMobile,
   findSessionByTokenHash,
   deleteSessionByTokenHash,
+  resetUserPasswordAndSessions,
 } from "../repository/authRepository";
 
 interface RegisterInput {
@@ -161,3 +162,37 @@ export const logoutUserService = async (
 
   await deleteSessionByTokenHash(tokenHash);
 };
+
+
+/**
+ * بازنشانی مدیریتی رمز عبور توسط کارکنان هشتی
+ *
+ * این تابع فقط هش رمز را دریافت می‌کند.
+ * کنترل دسترسی HASHTI در لایه Route انجام می‌شود.
+ */
+export const adminResetUserPasswordService = async (
+  userId: string,
+  newPassword: string
+) => {
+  if (!userId.trim()) {
+    throw new Error("INVALID_USER_ID");
+  }
+
+  if (newPassword.length < 8) {
+    throw new Error("PASSWORD_TOO_SHORT");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  const user = await resetUserPasswordAndSessions(
+    userId,
+    passwordHash
+  );
+
+  return {
+    id: user.id,
+    mobile: user.mobile,
+    role: user.role,
+  };
+};
+
