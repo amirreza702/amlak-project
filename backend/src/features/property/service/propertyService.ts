@@ -41,11 +41,7 @@ import {
   updateProperty,
 } from "../repository/propertyRepository";
 
-import {
-  createPropertyAgent,
-  findPropertyAgent,
-  reactivatePropertyAgent,
-} from "../repository/propertyAgentRepository";
+
 
 import type {
   Property,
