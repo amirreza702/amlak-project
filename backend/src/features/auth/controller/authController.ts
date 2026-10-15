@@ -18,17 +18,21 @@ export async function registerUserController(
   res: Response
 ) {
   try {
-    const { mobile, password, role } = req.body;
+    const { mobile, password, role, firstName, lastName } = req.body;
 
     if (
       typeof mobile !== "string" ||
       typeof password !== "string" ||
       typeof role !== "string" ||
       !mobile.trim() ||
-      !password
+      !password ||
+      typeof firstName !== "string" ||
+      typeof lastName !== "string" ||
+      !firstName.trim() ||
+      !lastName.trim()
     ) {
       return res.status(400).json({
-        message: "Mobile, password and role are required",
+        message: "Mobile, password, role, firstName and lastName are required",
       });
     }
 
@@ -48,6 +52,8 @@ export async function registerUserController(
       mobile: mobile.trim(),
       password,
       role: role as UserRole,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
     });
 
     return res.status(201).json({
