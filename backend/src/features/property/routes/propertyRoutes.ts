@@ -38,12 +38,20 @@ router.get("/properties/search", searchPropertyController);
 router.get("/properties/:id", getPropertyByIdController);
 router.get("/properties/:id/media", getPropertyMediaController);
 
-// ثبت ملک فقط توسط Agent واردشده؛ agentId از نشست استخراج می‌شود.
+// ثبت ملک توسط مالک یا مشاور؛ شناسه پروفایل از نشست استخراج می‌شود.
 router.post(
   "/properties",
   authMiddleware,
-  requireRole(UserRole.AGENT),
-  bindOwnProfileIdToBody("agent", "agentId"),
+  requireRole(UserRole.OWNER, UserRole.AGENT),
+  (req, res, next) => {
+    const role = (req as AuthenticatedRequest).user?.role;
+    const bindProfile =
+      role === UserRole.OWNER
+        ? bindOwnProfileIdToBody("owner", "ownerId")
+        : bindOwnProfileIdToBody("agent", "agentId");
+
+    return bindProfile(req, res, next);
+  },
   registerPropertyController
 );
 
