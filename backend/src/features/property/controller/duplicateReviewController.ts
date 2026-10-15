@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import { DuplicateDecision } from "@prisma/client";
 
@@ -89,7 +90,6 @@ export async function reviewDuplicateController(
     unknown,
     {
       decision: DuplicateDecision;
-      reviewedBy: string;
       notes?: string | null;
     }
   >,
@@ -98,17 +98,18 @@ export async function reviewDuplicateController(
   try {
     const duplicateReviewId = req.params.id;
 
-    const {
-      decision,
-      reviewedBy,
-      notes = null,
-    } = req.body;
+    const user = (req as AuthenticatedRequest).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { decision, notes = null } = req.body;
 
     const duplicateReview =
       await reviewDuplicateService({
         duplicateReviewId,
         decision,
-        reviewedBy,
+        reviewedBy: user.id,
         notes,
       });
 
