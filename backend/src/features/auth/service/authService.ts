@@ -16,6 +16,8 @@ interface RegisterInput {
   mobile: string;
   password: string;
   role: UserRole;
+  firstName: string;
+  lastName: string;
 }
 
 /**
@@ -31,6 +33,8 @@ export const registerUserService = async ({
   mobile,
   password,
   role,
+  firstName,
+  lastName,
 }: RegisterInput) => {
   // نقش کارکنان هشتی نباید ثبت‌نام عمومی داشته باشد.
   if (role === UserRole.HASHTI) {
@@ -39,6 +43,13 @@ export const registerUserService = async ({
 
   
   // قواعد کسب‌وکار ثبت‌نام
+
+  // نام و نام خانوادگی برای ساخت پروفایل نقش‌محور لازم‌اند.
+  const normalizedFirstName = firstName.trim();
+  const normalizedLastName = lastName.trim();
+  if (!normalizedFirstName || !normalizedLastName) {
+    throw new Error("PROFILE_NAME_REQUIRED");
+  }
 
   // شماره موبایل باید در قالب شماره موبایل ایران باشد.
   const normalizedMobile = mobile.trim();
@@ -65,6 +76,8 @@ export const registerUserService = async ({
     mobile:normalizedMobile,
     passwordHash,
     role,
+    firstName: normalizedFirstName,
+    lastName: normalizedLastName,
   });
 };
 
