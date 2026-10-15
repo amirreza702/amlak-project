@@ -35,7 +35,7 @@ const propertyEditors = [UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI] as con
 
 // اطلاعات عمومی منتشرشده ملک و جست‌وجو عمومی باقی می‌مانند.
 router.get("/properties/search", searchPropertyController);
-router.get("/properties/:id", getPropertyByIdController);
+router.get("/properties/:id", authMiddleware, getPropertyByIdController);
 router.get("/properties/:id/media", getPropertyMediaController);
 
 // ثبت ملک توسط مالک یا مشاور؛ شناسه پروفایل از نشست استخراج می‌شود.
@@ -126,7 +126,7 @@ router.post(
 // پرونده تأیید و مدارک آن: فقط طرف مرتبط با ملک یا کارکنان هشتی.
 router.post(
   "/properties/:id/verification",
-  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess("id", false),
   createVerificationCaseController
 );
 router.post(
