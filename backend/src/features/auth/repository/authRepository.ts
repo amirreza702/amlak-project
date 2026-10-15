@@ -1,43 +1,66 @@
-
 import { UserRole } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 
-/**
- * یافتن کاربر با شماره موبایل
- */
+/** یافتن کاربر با شماره موبایل */
 export async function findUserByMobile(mobile: string) {
-  return prisma.user.findUnique({
-    where: { mobile },
-  });
+  return prisma.user.findUnique({ where: { mobile } });
 }
 
 /**
- * ایجاد کاربر جدید
+ * ایجاد حساب و پروفایل نقش‌محور در یک تراکنش.
+ * در صورت شکست ایجاد پروفایل، حساب ناقص باقی نمی‌ماند.
  */
 export async function createUser(data: {
   mobile: string;
   passwordHash: string;
   role: UserRole;
+  firstName: string;
+  lastName: string;
 }) {
-  return prisma.user.create({
-    data: {
-      mobile: data.mobile,
-      passwordHash: data.passwordHash,
-      role: data.role,
-    },
-    select: {
-      id: true,
-      mobile: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        mobile: data.mobile,
+        passwordHash: data.passwordHash,
+        role: data.role,
+      },
+      select: {
+        id: true,
+        mobile: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    let profileId: string;
+    if (data.role === UserRole.CUSTOMER) {
+      const profile = await tx.customer.create({
+        data: { userId: user.id, firstName: data.firstName, lastName: data.lastName },
+        select: { id: true },
+      });
+      profileId = profile.id;
+    } else if (data.role === UserRole.OWNER) {
+      const profile = await tx.owner.create({
+        data: { userId: user.id, firstName: data.firstName, lastName: data.lastName },
+        select: { id: true },
+      });
+      profileId = profile.id;
+    } else if (data.role === UserRole.AGENT) {
+      const profile = await tx.agent.create({
+        data: { userId: user.id, firstName: data.firstName, lastName: data.lastName },
+        select: { id: true },
+      });
+      profileId = profile.id;
+    } else {
+      throw new Error("ROLE_NOT_ALLOWED");
+    }
+
+    return { ...user, profileId };
   });
 }
 
-/**
- * ایجاد Session در دیتابیس
- */
+/** ایجاد Session در دیتابیس */
 export async function createSession(data: {
   tokenHash: string;
   userId: string;
@@ -52,39 +75,20 @@ export async function createSession(data: {
   });
 }
 
-/**
- * یافتن Session همراه با اطلاعات کاربر
- */
-export async function findSessionByTokenHash(
-  tokenHash: string
-) {
+/** یافتن Session همراه با اطلاعات کاربر */
+export async function findSessionByTokenHash(tokenHash: string) {
   return prisma.session.findUnique({
     where: { tokenHash },
-    include: {
-      user: true,
-    },
+    include: { user: true },
   });
 }
 
-/**
- * حذف Session بر اساس هش توکن
- *
- * اگر Session وجود نداشته باشد، خطا ایجاد نمی‌کند.
- */
-export async function deleteSessionByTokenHash(
-  tokenHash: string
-) {
-  return prisma.session.deleteMany({
-    where: { tokenHash },
-  });
+/** حذف Session بر اساس هش توکن */
+export async function deleteSessionByTokenHash(tokenHash: string) {
+  return prisma.session.deleteMany({ where: { tokenHash } });
 }
 
-/**
- * بازنشانی رمز عبور و حذف تمام Sessionهای کاربر
- *
- * هر دو عملیات در یک تراکنش انجام می‌شوند.
- * رمز خام هرگز در دیتابیس ذخیره نمی‌شود.
- */
+/** بازنشانی رمز عبور و حذف تمام Sessionهای کاربر در یک تراکنش */
 export async function resetUserPasswordAndSessions(
   userId: string,
   passwordHash: string
@@ -92,26 +96,17 @@ export async function resetUserPasswordAndSessions(
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        mobile: true,
-        role: true,
-      },
+      select: { id: true, mobile: true, role: true },
     });
 
-    if (!user) {
-      throw new Error("USER_NOT_FOUND");
-    }
+    if (!user) throw new Error("USER_NOT_FOUND");
 
     await tx.user.update({
       where: { id: userId },
       data: { passwordHash },
     });
 
-    await tx.session.deleteMany({
-      where: { userId },
-    });
-
+    await tx.session.deleteMany({ where: { userId } });
     return user;
   });
 }
