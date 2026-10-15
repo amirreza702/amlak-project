@@ -31,6 +31,8 @@ import {
 } from "@prisma/client";
 
 import { findAgentById } from "../../agent/repository/agentRepository";
+import { createPropertyOwner } from "../repository/propertyOwnerRepository";
+import type { PropertyOwner } from "@prisma/client";
 
 import {
   createProperty,
@@ -69,77 +71,62 @@ import { prisma } from "../../../lib/prisma";
  */
 export interface RegisterPropertyResult {
   property: Property;
-  propertyAgent: PropertyAgent;
+  propertyAgent?: PropertyAgent;
+  propertyOwner?: PropertyOwner;
   isNewProperty: boolean;
 }
 
 export async function registerProperty(
   data: RegisterPropertyInput
 ): Promise<RegisterPropertyResult> {
-  /**
-   * ============================================================
-   * 1. بررسی وجود Agent
-   * ============================================================
-   *
-   * این مرحله فقط خواندنی است و قبل از Transaction انجام می‌شود.
-   *
-   * دسترسی به جدول Agent از طریق Repository انجام می‌شود.
-   */
-  const agent = await findAgentById(data.agentId);
+  // هویت ثبت‌کننده باید دقیقاً یک پروفایل معتبر داشته باشد.
+  const isAgentRegistration = Boolean(data.agentId);
+  const isOwnerRegistration = Boolean(data.ownerId);
 
-  if (!agent) {
-    throw new Error("مشاور مورد نظر پیدا نشد.");
+  if (isAgentRegistration === isOwnerRegistration) {
+    throw new Error("اطلاعات ثبت‌کننده معتبر نیست.");
   }
 
-  /**
-   * ============================================================
-   * 2. بررسی وجود Property
-   * ============================================================
-   *
-   * این مرحله نیز فقط خواندنی است.
-   */
+  if (isAgentRegistration) {
+    const agent = await findAgentById(data.agentId!);
+    if (!agent) {
+      throw new Error("مشاور مورد نظر پیدا نشد.");
+    }
+  } else {
+    const owner = await prisma.owner.findUnique({
+      where: { id: data.ownerId! },
+      select: { id: true },
+    });
+    if (!owner) {
+      throw new Error("مالک مورد نظر پیدا نشد.");
+    }
+  }
+
   const existingProperty = data.postalCode
     ? await findPropertyByPostalCode(data.postalCode)
     : null;
 
-  /**
-   * مشخص می‌کند آیا Property جدید ایجاد خواهد شد یا خیر.
-   */
+  // مالک نباید ناخواسته به ملک موجودی که ممکن است متعلق به شخص دیگری باشد متصل شود.
+  // اتصال مالکیت برای ملک موجود باید از فرایند بررسی/تأیید مالکیت عبور کند.
+  if (isOwnerRegistration && existingProperty) {
+    throw new Error(
+      "ملکی با این کد پستی قبلاً ثبت شده است؛ برای اتصال و تأیید مالکیت از فرایند بررسی هشتی استفاده کنید."
+    );
+  }
+
   const isNewProperty = !existingProperty;
 
-  /**
-   * ============================================================
-   * 3. عملیات اصلی ثبت Property
-   * ============================================================
-   *
-   * ایجاد Property،
-   * ثبت History،
-   * و ایجاد ارتباط Agent
-   *
-   * همگی یک عملیات اتمیک هستند.
-   */
   return prisma.$transaction(async (tx) => {
-    /**
-     * ----------------------------------------------------------
-     * Property
-     * ----------------------------------------------------------
-     */
-
     let property: Property;
 
-    /**
-     * اگر Property قبلاً وجود داشته باشد،
-     * همان Property استفاده می‌شود.
-     */
     if (existingProperty) {
       property = existingProperty;
     } else {
-      /**
-       * ایجاد Property جدید.
-       */
       property = await createProperty(
         {
-          registrationSource: RegistrationSource.AGENT,
+          registrationSource: isOwnerRegistration
+            ? RegistrationSource.OWNER
+            : RegistrationSource.AGENT,
           propertyType: data.propertyType,
           city: data.city,
           district: data.district,
@@ -155,80 +142,93 @@ export async function registerProperty(
         tx
       );
 
-      /**
-       * ثبت History ایجاد Property.
-       *
-       * این رکورد نیز داخل همان Transaction است.
-       */
       await createPropertyHistory(
         {
           propertyId: property.id,
           action: PropertyHistoryAction.CREATED,
-          reason: "ایجاد ملک جدید",
+          reason: isOwnerRegistration
+            ? "ایجاد ملک توسط مالک"
+            : "ایجاد ملک جدید توسط مشاور",
         },
         tx
       );
     }
 
-    /**
-     * ----------------------------------------------------------
-     * بررسی ارتباط قبلی Agent با Property
-     * ----------------------------------------------------------
-     */
-    const existingAgent = await findPropertyAgent(
-      property.id,
-      data.agentId
-    );
-
-    /**
-     * اگر Agent قبلاً به Property متصل بوده:
-     *
-     * ACTIVE
-     *   → ثبت مجدد مجاز نیست
-     *
-     * REVOKED
-     *   → ارتباط دوباره فعال می‌شود.
-     */
-    if (existingAgent) {
-      if (existingAgent.status === "REVOKED") {
-        const propertyAgent =
-          await reactivatePropertyAgent(
-            property.id,
-            data.agentId,
-            tx
-          );
-
-        return {
-          property,
-          propertyAgent,
-          isNewProperty,
-        };
-      }
-
-      throw new Error(
-        "این مشاور قبلاً این ملک را ثبت کرده است."
-      );
-    }
-
-    /**
-     * ----------------------------------------------------------
-     * Agent جدید
-     * ----------------------------------------------------------
-     *
-     * ایجاد ارتباط Agent نیز داخل همان Transaction است.
-     */
-    const propertyAgent =
-      await createPropertyAgent(
-        property.id,
-        data.agentId,
+    if (isOwnerRegistration) {
+      // مالکیت ادعاشده با وضعیت PENDING ذخیره می‌شود و تأیید نهایی جداگانه است.
+      const propertyOwner = await createPropertyOwner(
+        {
+          propertyId: property.id,
+          ownerId: data.ownerId!,
+          share: 6,
+          isPrimary: true,
+        },
         tx
       );
 
-    return {
-      property,
-      propertyAgent,
-      isNewProperty,
-    };
+      await createPropertyHistory(
+        {
+          propertyId: property.id,
+          action: PropertyHistoryAction.OWNERSHIP_CHANGED,
+          field: "propertyOwner",
+          newValue: JSON.stringify({
+            ownerId: data.ownerId,
+            share: 6,
+            isPrimary: true,
+            verificationStatus: "PENDING",
+          }),
+          reason: "ثبت ادعای مالکیت توسط مالک؛ نیازمند تأیید هشتی",
+        },
+        tx
+      );
+
+      return { property, propertyOwner, isNewProperty };
+    }
+
+    const existingAgent = await tx.propertyAgent.findUnique({
+      where: {
+        propertyId_agentId: {
+          propertyId: property.id,
+          agentId: data.agentId!,
+        },
+      },
+    });
+
+    if (existingAgent) {
+      if (existingAgent.status === "REVOKED") {
+        const propertyAgent = await tx.propertyAgent.update({
+          where: {
+            propertyId_agentId: {
+              propertyId: property.id,
+              agentId: data.agentId!,
+            },
+          },
+          data: {
+            status: "ACTIVE",
+            approvedByOwner: false,
+            approvedAt: null,
+          },
+        });
+
+        return { property, propertyAgent, isNewProperty };
+      }
+
+      throw new Error("این مشاور قبلاً این ملک را ثبت کرده است.");
+    }
+
+    const hasAgents = (await tx.propertyAgent.count({
+      where: { propertyId: property.id },
+    })) > 0;
+
+    const propertyAgent = await tx.propertyAgent.create({
+      data: {
+        propertyId: property.id,
+        agentId: data.agentId!,
+        isFirstRegistrant: !hasAgents,
+      },
+    });
+
+    return { property, propertyAgent, isNewProperty };
   });
 }
 
