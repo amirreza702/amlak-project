@@ -15,11 +15,12 @@
  *      ↓
  * HTTP Response
  *
- * performedBy فعلاً از Client دریافت نمی‌شود.
- * بعداً از Authentication / HashtiStaff استخراج خواهد شد.
+ * شناسه انجام‌دهنده از نشست کاربر HASHTI استخراج می‌شود؛
+ * Client نمی‌تواند هویت ثبت‌شده در تاریخچه را جعل کند.
  */
 
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import { VerificationStatus } from "@prisma/client";
 
@@ -41,6 +42,10 @@ export async function verifyPropertyOwnerController(
   try {
     const propertyId = req.params.id;
     const ownerId = req.params.ownerId;
+    const user = (req as AuthenticatedRequest).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
 
     const { status, reason } = req.body;
 
@@ -50,6 +55,7 @@ export async function verifyPropertyOwnerController(
         ownerId,
         status,
         reason,
+        performedBy: user.id,
       });
 
     return res.status(200).json({
