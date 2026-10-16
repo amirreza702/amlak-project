@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { loginUser, logoutUser } from "../api/authApi";
+import { useAuthForm } from "../hooks/useAuthForm";
 
 export type AuthRole = "agent" | "owner";
 
@@ -13,71 +12,26 @@ export interface AuthModalProps {
   onSuccess?: () => void;
 }
 
-export function AuthModal({ isOpen, role, onClose, onSuccess }: AuthModalProps) {
-  const [mounted, setMounted] = useState<boolean>(false);
-  const [mobile, setMobile] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const isAgent = role === "agent";
-  const expectedRole = isAgent ? "AGENT" : "OWNER";
-  const roleLabel = isAgent ? "مشاور املاک" : "مالک";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setErrorMessage(null);
-      setMobile("");
-      setPassword("");
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, role]);
+export function AuthModal({
+  isOpen,
+  role,
+  onClose,
+  onSuccess,
+}: AuthModalProps) {
+  const {
+    mounted,
+    mobile,
+    password,
+    isLoading,
+    errorMessage,
+    isAgent,
+    roleLabel,
+    handleMobileChange,
+    handlePasswordChange,
+    handleSubmit,
+  } = useAuthForm({ isOpen, role, onClose, onSuccess });
 
   if (!mounted || !isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-
-    if (!mobile.trim() || !password.trim()) {
-      setErrorMessage("لطفاً شماره همراه و رمز عبور را وارد کنید.");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await loginUser(mobile.trim(), password);
-
-      if (result.user.role !== expectedRole) {
-        try {
-          await logoutUser();
-        } catch {
-          // خطای خروج نباید پیام اصلی عدم تطابق نقش را بپوشاند.
-        }
-        throw new Error(`این حساب کاربری، حساب ${roleLabel} نیست.`);
-      }
-
-      if (onSuccess) onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : "خطا در برقراری ارتباط با سرور"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const modalContent = (
     <div
@@ -87,7 +41,7 @@ export function AuthModal({ isOpen, role, onClose, onSuccess }: AuthModalProps) 
     >
       <div
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
@@ -118,7 +72,7 @@ export function AuthModal({ isOpen, role, onClose, onSuccess }: AuthModalProps) 
               autoComplete="username"
               placeholder="09123456789"
               value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
+              onChange={(event) => handleMobileChange(event.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-left focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               dir="ltr"
             />
@@ -133,7 +87,7 @@ export function AuthModal({ isOpen, role, onClose, onSuccess }: AuthModalProps) 
               autoComplete="current-password"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => handlePasswordChange(event.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-left focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               dir="ltr"
             />
