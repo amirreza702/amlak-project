@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { loginAgent } from "../api/authApi";
+import { loginUser, logoutUser } from "../api/authApi";
 
 export type UserRole = "agent" | "customer" | "owner";
 
@@ -39,7 +39,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
   if (!mounted || !isOpen) return null;
 
-  // پردازش فرم لاگین مشاور
+  // پردازش فرم ورود مشاور؛ نقش واقعی از بک‌اند بررسی می‌شود.
   const handleAgentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -51,14 +51,26 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     setIsLoading(true);
     try {
-      // ارسال به API احراز هویت با رعایت کوکی
-      await loginAgent(mobile.trim(), password);
-      
-      // فراخوانی کال‌بک موفقیت و بستن مودال
+      const result = await loginUser(mobile.trim(), password);
+
+      if (result.user.role !== "AGENT") {
+        // جلوگیری از باقی‌ماندن نشستِ نقش اشتباه در فرم ورود مشاور
+        try {
+          await logoutUser();
+        } catch {
+          // خطای خروج نباید پیام اصلی عدم تطابق نقش را بپوشاند.
+        }
+        throw new Error("این حساب کاربری، حساب مشاور املاک نیست.");
+      }
+
       if (onSuccess) onSuccess();
       onClose();
-    } catch (err: any) {
-      setErrorMessage(err.message || "خطا در برقراری ارتباط با سرور");
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "خطا در برقراری ارتباط با سرور"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +82,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       dir="rtl"
       onClick={onClose}
     >
-      <div 
+      <div
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all"
         onClick={(e) => e.stopPropagation()}
       >
@@ -125,7 +137,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           </div>
         )}
 
-        {/* فرم لاگین مشاور */}
+        {/* فرم ورود مشاور */}
         {activeTab === "agent" && (
           <form onSubmit={handleAgentSubmit} className="space-y-4">
             <div>
