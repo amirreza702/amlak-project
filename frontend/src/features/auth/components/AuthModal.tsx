@@ -2,8 +2,9 @@
 
 import { createPortal } from "react-dom";
 import { useAuthForm } from "../hooks/useAuthForm";
+import type { AuthRole } from "../types";
 
-export type AuthRole = "agent" | "owner";
+export type { AuthRole } from "../types";
 
 export interface AuthModalProps {
   isOpen: boolean;
