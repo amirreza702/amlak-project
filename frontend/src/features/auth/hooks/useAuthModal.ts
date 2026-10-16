@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { AuthRole } from "../components/AuthModal";
+import type { AuthRole } from "../types";
 
 export function useAuthModal() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
