@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { AuthModal } from "@/features/auth/components/AuthModal";
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
@@ -26,6 +28,8 @@ const RealMap = dynamic(
 );
 
 export default function Page() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   return (
     <div
       dir="rtl"
@@ -186,7 +190,7 @@ export default function Page() {
                 <HomeRequestButton />
 
                 {/* نقش‌های کاربر */}
-                <HomeRoleCards />
+                <HomeRoleCards onAgentClick={() => setIsAuthModalOpen(true)} />
 
               </div>
             </div>
@@ -198,6 +202,11 @@ export default function Page() {
           </div>
         </main>
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 }
