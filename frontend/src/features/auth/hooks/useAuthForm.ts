@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { loginUser, logoutUser } from "../api/authApi";
-import type { AuthRole } from "../components/AuthModal";
+import type { AuthRole } from "../types";
 
 interface UseAuthFormOptions {
   isOpen: boolean;
