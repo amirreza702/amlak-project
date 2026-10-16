@@ -2,59 +2,113 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-export interface AgentPublic {
+/**
+ * قرارداد عمومی کاربر مطابق پاسخ‌های فعلی بک‌اند.
+ * پاسخ /auth/me فقط id، mobile و role را برمی‌گرداند؛
+ * پاسخ ورود علاوه بر آن isActive را نیز دارد.
+ */
+export type UserRole = "CUSTOMER" | "OWNER" | "AGENT" | "HASHTI";
+
+export interface UserPublic {
   id: string;
-  firstName: string;
-  lastName: string;
   mobile: string;
-  agencyName?: string | null;
-  address?: string | null;
-  isActive: boolean;
+  role: UserRole;
+  isActive?: boolean;
 }
+
+/** نام قدیمی برای جلوگیری از شکستن importهای موجود. */
+export type AgentPublic = UserPublic;
 
 export interface AuthResponse {
   message: string;
-  agent: AgentPublic;
+  user: UserPublic;
 }
 
-// ۱. ارسال درخواست ورود با شماره موبایل و رمز عبور
-export async function loginAgent(mobile: string, password: string): Promise<AuthResponse> {
-  const res = await fetch(`${API_URL}/api/auth/login`, {
+interface CurrentUserResponse {
+  user: UserPublic;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+}
+
+async function readJson<T>(response: Response): Promise<T> {
+  return response.json() as Promise<T>;
+}
+
+async function getErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const data = await readJson<ApiErrorResponse>(response);
+    return data.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// ورود با نشست و کوکی HttpOnly؛ مسیر دقیق مطابق authRoutes بک‌اند است.
+export async function loginUser(
+  mobile: string,
+  password: string
+): Promise<AuthResponse> {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // ضروری برای ارسال و دریافت کوکی httponly
+    credentials: "include",
     body: JSON.stringify({ mobile, password }),
   });
 
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "ورود ناموفق بود. لطفاً اطلاعات را بررسی کنید.");
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "ورود ناموفق بود. لطفاً اطلاعات را بررسی کنید."
+      )
+    );
   }
-  return data;
+
+  return readJson<AuthResponse>(response);
 }
 
-// ۲. بررسی نشست جاری کاربر و دریافت مشخصات
-export async function getCurrentAgent(): Promise<AgentPublic> {
-  const res = await fetch(`${API_URL}/api/auth/me`, {
+// بررسی نشست فعلی؛ API بک‌اند پاسخ را داخل فیلد user قرار می‌دهد.
+export async function getCurrentUser(): Promise<UserPublic> {
+  const response = await fetch(`${API_URL}/auth/me`, {
     method: "GET",
     credentials: "include",
   });
 
-  if (!res.ok) {
-    throw new Error("ابتدا وارد حساب کاربری خود شوید.");
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, "ابتدا وارد حساب کاربری خود شوید.")
+    );
   }
-  return res.json();
+
+  const data = await readJson<CurrentUserResponse>(response);
+  return data.user;
 }
 
-// ۳. خروج از حساب و پاک کردن کوکی
-export async function logoutAgent(): Promise<{ message: string }> {
-  const res = await fetch(`${API_URL}/api/auth/logout`, {
+// خروج از نشست فعلی.
+export async function logoutUser(): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
 
-  if (!res.ok) {
-    throw new Error("خطا در خروج از حساب کاربری.");
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, "خطا در خروج از حساب کاربری.")
+    );
   }
-  return res.json();
+
+  return readJson<{ message: string }>(response);
 }
+
+/**
+ * نام‌های قدیمی حفظ شده‌اند تا مصرف‌کننده‌های فعلی بدون تغییر نام
+ * توابع همچنان کار کنند؛ نوع خروجی اکنون UserPublic است، نه پروفایل فرضی مشاور.
+ */
+export const loginAgent = loginUser;
+export const getCurrentAgent = getCurrentUser;
+export const logoutAgent = logoutUser;
