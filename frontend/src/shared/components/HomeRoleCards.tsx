@@ -2,12 +2,17 @@
 
 import { Building2, UserCheck } from "lucide-react";
 
-export function HomeRoleCards() {
+interface HomeRoleCardsProps {
+  onAgentClick: () => void;
+}
+
+export function HomeRoleCards({ onAgentClick }: HomeRoleCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 pt-1">
       {/* کارت مشاور */}
       <button
         type="button"
+        onClick={onAgentClick}
         className="group relative flex flex-col items-start gap-2.5 rounded-2xl border border-white/80 bg-white/70 p-3.5 text-right shadow-sm backdrop-blur-md transition-all duration-200 active:scale-[0.97] hover:border-[#4F9CF9]/40 hover:bg-white"
       >
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#043873]/10 text-[#043873] transition-colors group-hover:bg-[#043873] group-hover:text-white">
