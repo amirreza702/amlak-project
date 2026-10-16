@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AuthModal } from "@/features/auth/components/AuthModal";
+import { AuthModal, type AuthRole } from "@/features/auth/components/AuthModal";
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
@@ -29,6 +29,12 @@ const RealMap = dynamic(
 
 export default function Page() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authRole, setAuthRole] = useState<AuthRole>("agent");
+
+  const openAuthModal = (role: AuthRole) => {
+    setAuthRole(role);
+    setIsAuthModalOpen(true);
+  };
 
   return (
     <div
@@ -42,53 +48,41 @@ export default function Page() {
       "
     >
       {/* ======================================================
-          نقشه پس‌زمینه
+          نقشه پس‌زمینه Home
           ====================================================== */}
+      <div
+        className="
+          pointer-events-none
+          fixed
+          inset-0
+          z-0
+          select-none
+        "
+      >
+        {/* خود نقشه */}
+        <div
+          className="
+            absolute
+            inset-0
+            grayscale
+            opacity-40
+          "
+        >
+          <RealMap />
+        </div>
 
-      {/* ======================================================
-    نقشه پس‌زمینه Home
-    ======================================================
-    نقشه عمداً خاکستری، کم‌رنگ و غیرفعال است.
-    هدف این است که کاربر متوجه شود نقشه پس‌زمینه
-    است و تعامل اصلی باید با پنل Home انجام شود.
-====================================================== */}
+        {/* لایه سفید برای کم‌رنگ‌تر کردن نقشه */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-white/45
+          "
+        />
+      </div>
 
-<div
-  className="
-    pointer-events-none
-    fixed
-    inset-0
-    z-0
-    select-none
-  "
->
-  {/* خود نقشه */}
-  <div
-    className="
-      absolute
-      inset-0
-      grayscale
-      opacity-40
-    "
-  >
-    <RealMap />
-  </div>
-
-  {/* لایه سفید برای کم‌رنگ‌تر کردن نقشه */}
-  <div
-    className="
-      pointer-events-none
-      absolute
-      inset-0
-      bg-white/45
-    "
-  />
-</div>
-
-      {/* ======================================================
-          محتوای اصلی Home
-          ====================================================== */}
-
+      {/* محتوای اصلی Home */}
       <div
         className="
           relative
@@ -100,10 +94,8 @@ export default function Page() {
           overflow-visible
         "
       >
-        {/* Header */}
         <HomeHeader />
 
-        {/* Main */}
         <main
           className="
             flex
@@ -127,10 +119,7 @@ export default function Page() {
               lg:max-w-5xl
             "
           >
-            {/* =================================================
-                عنوان Home
-                ================================================= */}
-
+            {/* عنوان Home */}
             <div
               className="
                 mb-6
@@ -164,10 +153,7 @@ export default function Page() {
               </h2>
             </div>
 
-            {/* =================================================
-                پنل اصلی
-                ================================================= */}
-
+            {/* پنل اصلی */}
             <div
               className="
                 rounded-2xl
@@ -182,16 +168,13 @@ export default function Page() {
               "
             >
               <div className="space-y-3 sm:space-y-4">
-
-                {/* ورود به Search */}
                 <HomeSearchButton />
-
-                {/* ورود به Request */}
                 <HomeRequestButton />
 
-                {/* نقش‌های کاربر */}
-                <HomeRoleCards onAgentClick={() => setIsAuthModalOpen(true)} />
-
+                <HomeRoleCards
+                  onAgentClick={() => openAuthModal("agent")}
+                  onOwnerClick={() => openAuthModal("owner")}
+                />
               </div>
             </div>
 
@@ -205,6 +188,7 @@ export default function Page() {
 
       <AuthModal
         isOpen={isAuthModalOpen}
+        role={authRole}
         onClose={() => setIsAuthModalOpen(false)}
       />
     </div>
