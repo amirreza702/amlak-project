@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { AuthModal, type AuthRole } from "@/features/auth/components/AuthModal";
+import { AuthModal } from "@/features/auth/components/AuthModal";
+import { useAuthModal } from "@/features/auth/hooks/useAuthModal";
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
@@ -28,13 +28,12 @@ const RealMap = dynamic(
 );
 
 export default function Page() {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authRole, setAuthRole] = useState<AuthRole>("agent");
-
-  const openAuthModal = (role: AuthRole) => {
-    setAuthRole(role);
-    setIsAuthModalOpen(true);
-  };
+  const {
+    isAuthModalOpen,
+    authRole,
+    openAuthModal,
+    closeAuthModal,
+  } = useAuthModal();
 
   return (
     <div
@@ -189,7 +188,7 @@ export default function Page() {
       <AuthModal
         isOpen={isAuthModalOpen}
         role={authRole}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={closeAuthModal}
       />
     </div>
   );
