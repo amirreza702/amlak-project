@@ -2,54 +2,61 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getCurrentAgent, loginAgent, logoutAgent, AgentPublic } from "../api/authApi";
+import {
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  type UserPublic,
+} from "../api/authApi";
 
 export function useCurrentAgent() {
-  const [agent, setAgent] = useState<AgentPublic | null>(null);
+  const [user, setUser] = useState<UserPublic | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // واکشی اطلاعات نشست جاری از سرور
-  const fetchAgent = useCallback(async () => {
+  // بازیابی نشست جاری از پاسخ { user } بک‌اند
+  const fetchUser = useCallback(async () => {
     setIsLoading(true);
     try {
-      const current = await getCurrentAgent();
-      setAgent(current);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
       setError(null);
-    } catch (err: any) {
-      setAgent(null);
-      setError(err?.message || "ابتدا وارد حساب شوید.");
+    } catch (err: unknown) {
+      setUser(null);
+      setError(
+        err instanceof Error ? err.message : "ابتدا وارد حساب شوید."
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAgent();
-  }, [fetchAgent]);
+    void fetchUser();
+  }, [fetchUser]);
 
-  // عملیات ورود و به‌روزرسانی فوری وضعیت
-  const handleLogin = async (mobile: string, pass: string) => {
+  // ورود و به‌روزرسانی وضعیت با کاربر واقعی پاسخ بک‌اند
+  const handleLogin = async (mobile: string, password: string) => {
     setIsLoading(true);
     try {
-      const result = await loginAgent(mobile, pass);
-      setAgent(result.agent);
+      const result = await loginUser(mobile, password);
+      setUser(result.user);
       setError(null);
-      return result.agent;
-    } catch (err: any) {
-      setError(err?.message || "خطا در ورود");
+      return result.user;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "خطا در ورود");
       throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // عملیات خروج
+  // خروج از نشست
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      await logoutAgent();
-      setAgent(null);
+      await logoutUser();
+      setUser(null);
       setError("ابتدا وارد حساب شوید.");
     } finally {
       setIsLoading(false);
@@ -57,11 +64,15 @@ export function useCurrentAgent() {
   };
 
   return {
-    agent,
+    // user قرارداد درست برای همه نقش‌هاست.
+    user,
+    // نام agent برای سازگاری با مصرف‌کننده‌های قبلی حفظ شده؛
+    // مقدار آن می‌تواند هر نقشی باشد و دیگر پروفایل مشاور فرض نمی‌شود.
+    agent: user,
     isLoading,
     error,
     login: handleLogin,
     logout: handleLogout,
-    refetch: fetchAgent,
+    refetch: fetchUser,
   };
 }
