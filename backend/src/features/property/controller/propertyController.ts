@@ -11,6 +11,7 @@
  */
 
 import { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   getPropertyById,
@@ -55,8 +56,19 @@ export async function getPropertyByIdController(
 ) {
   try {
     const property = await getPropertyById(req.params.id);
+    const user = (req as AuthenticatedRequest).user;
 
-    res.status(200).json(property);
+    // جزئیات دقیق برای نقش مشتری پنهان است؛ سایر نقش‌های احراز هویت‌شده آن را می‌بینند.
+    if (user?.role === "CUSTOMER") {
+      const {
+        latitudeExact: _latitudeExact,
+        longitudeExact: _longitudeExact,
+        ...customerVisibleProperty
+      } = property;
+      return res.status(200).json(customerVisibleProperty);
+    }
+
+    return res.status(200).json(property);
   } catch (error: any) {
     res.status(404).json({
       message: error.message || "ملک مورد نظر پیدا نشد.",

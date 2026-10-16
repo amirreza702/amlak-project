@@ -1,342 +1,215 @@
-/**
- * ============================================================
- * Property Routes
- * ============================================================
- *
- * Routeهای مربوط به Feature Property.
- *
- * ساختار:
- *
- * HTTP Request
- *      ↓
- * Route
- *      ↓
- * Controller
- *      ↓
- * Service
- *      ↓
- * Repository
- *
- * ============================================================
- */
-
 import { Router } from "express";
+import { UserRole } from "@prisma/client";
 
-import {
-  getPropertyByIdController,
-  registerPropertyController,
-} from "../controller/propertyController";
+import { getPropertyByIdController, registerPropertyController } from "../controller/propertyController";
+import { searchPropertyController } from "../controller/propertySearchController";
+import { createPropertyListingController } from "../controller/propertyListingController";
+import { updatePropertyPriceController } from "../controller/propertyPriceController";
+import { updatePropertyListingStatusController } from "../controller/propertyListingStatusController";
+import { checkPropertyConfirmationController } from "../controller/propertyConfirmationController";
+import { expirePropertyListingController } from "../controller/expirePropertyListingController";
+import { addPropertyOwnerController } from "../controller/propertyOwnerController";
+import { verifyPropertyOwnerController } from "../controller/propertyOwnerVerificationController";
+import { approvePropertyAgentByOwnerController } from "../controller/propertyAgentApprovalController";
+import { revokePropertyAgentController } from "../controller/propertyAgentRevocationController";
+import { createVerificationCaseController, reviewVerificationCaseController } from "../controller/verificationCaseController";
+import { createVerificationDocumentController, getVerificationDocumentsController } from "../controller/verificationDocumentController";
+import { createPropertyMediaController, getPropertyMediaController } from "../controller/propertyMediaController";
+import { createDuplicateReviewController, getDuplicateReviewsController, reviewDuplicateController } from "../controller/duplicateReviewController";
+import { archivePropertyController, getPropertyArchiveController, restorePropertyController } from "../controller/propertyArchiveController";
+import { createExactLocationAccessLogController, getExactLocationAccessLogsController } from "../controller/exactLocationAccessLogController";
+import { updatePropertyController } from "../controller/propertyUpdateController";
+import { findDuplicateMatchesController } from "../controller/duplicateMatchingController";
 
+import { authMiddleware, type AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
+import { requireRole } from "../../auth/middleware/requireRole";
 import {
-  searchPropertyController,
-} from "../controller/propertySearchController";
-
-import {
-  createPropertyListingController,
-} from "../controller/propertyListingController";
-
-import {
-  updatePropertyPriceController,
-} from "../controller/propertyPriceController";
-
-import {
-  updatePropertyListingStatusController,
-} from "../controller/propertyListingStatusController";
-
-import {
-  checkPropertyConfirmationController,
-} from "../controller/propertyConfirmationController";
-
-import {
-  expirePropertyListingController,
-} from "../controller/expirePropertyListingController";
-
-import {
-  addPropertyOwnerController,
-} from "../controller/propertyOwnerController";
-
-import {
-  verifyPropertyOwnerController,
-} from "../controller/propertyOwnerVerificationController";
-
-import {
-  approvePropertyAgentByOwnerController,
-} from "../controller/propertyAgentApprovalController";
-
-import {
-  revokePropertyAgentController,
-} from "../controller/propertyAgentRevocationController";
-
-import {
-  createVerificationCaseController,
-   reviewVerificationCaseController,
-} from "../controller/verificationCaseController";
-
-import {
-  createVerificationDocumentController,
-   getVerificationDocumentsController,
-} from "../controller/verificationDocumentController";
-
-import {
-  createPropertyMediaController,
-  getPropertyMediaController,
-} from "../controller/propertyMediaController";
-
-import {
-  createDuplicateReviewController,
-  getDuplicateReviewsController,
-  reviewDuplicateController,
-} from "../controller/duplicateReviewController";
-
-import {
-  archivePropertyController,
-  getPropertyArchiveController,
-  restorePropertyController,
-} from "../controller/propertyArchiveController";
-
-import {
-  createExactLocationAccessLogController,
-  getExactLocationAccessLogsController,
-} from "../controller/exactLocationAccessLogController";
-
-import {
-  updatePropertyController,
-} from "../controller/propertyUpdateController";
-
-import {
-  findDuplicateMatchesController,
-} from "../controller/duplicateMatchingController";
+  bindOwnProfileIdToBody,
+  requirePropertyAccess,
+  requireVerificationCaseAccess,
+} from "../../auth/middleware/authorizationMiddleware";
 
 const router = Router();
+const propertyManagers = [UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI] as const;
+const propertyEditors = [UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI] as const;
 
-/**
- * ============================================================
- * Property Search
- * ============================================================
- *
- * GET /properties/search
- */
-router.get(
-  "/properties/search",
-  searchPropertyController
-);
+// اطلاعات عمومی منتشرشده ملک و جست‌وجو عمومی باقی می‌مانند.
+router.get("/properties/search", searchPropertyController);
+router.get("/properties/:id", authMiddleware, getPropertyByIdController);
+router.get("/properties/:id/media", getPropertyMediaController);
 
-/**
- * ============================================================
- * Property Detail
- * ============================================================
- *
- * GET /properties/:id
- */
-router.get(
-  "/properties/:id",
-  getPropertyByIdController
-);
-
-/**
- * ============================================================
- * Property Registration
- * ============================================================
- *
- * POST /properties
- *
- * این Route همان ثبت ملک قبلی است.
- */
+// ثبت ملک توسط مالک یا مشاور؛ شناسه پروفایل از نشست استخراج می‌شود.
 router.post(
   "/properties",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT),
+  (req, res, next) => {
+    const role = (req as AuthenticatedRequest).user?.role;
+    const bindProfile =
+      role === UserRole.OWNER
+        ? bindOwnProfileIdToBody("owner", "ownerId")
+        : bindOwnProfileIdToBody("agent", "agentId");
+
+    return bindProfile(req, res, next);
+  },
   registerPropertyController
 );
- /** ============================================================
- * Property verification
- * ============================================================
-*/
-router.post(
-  "/verification-cases/:id/documents",
-  createVerificationDocumentController
-);
 
-
-router.get(
-  "/verification-cases/:id/documents",
-  getVerificationDocumentsController
-);
-
-router.post(
-  "/properties/:id/verification",
-  createVerificationCaseController
-);
-
-router.patch(
-  "/verification-cases/:id/review",
-  reviewVerificationCaseController
-);
-
-
-
-
-/**
- * ============================================================
- * Property Listing + Initial Price
- * ============================================================
- *
- * POST /properties/:id/listing
- *
- * برای ایجاد اولین Listing و ثبت اولین قیمت ملک.
- *
- * قیمت اولیه همزمان در PriceHistory با نوع INITIAL
- * ثبت می‌شود.
- */
+// Listing، قیمت، وضعیت و ویرایش فقط برای مالک/مشاور مرتبط یا کارکنان هشتی.
 router.post(
   "/properties/:id/listing",
+  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess(),
   createPropertyListingController
 );
-
-/**
- * ============================================================
- * Property Price Update
- * ============================================================
- *
- * PUT /properties/:id/price
- *
- * تغییر قیمت فعلی ملک و ثبت تغییر در PriceHistory.
- */
 router.put(
   "/properties/:id/price",
+  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
   updatePropertyPriceController
 );
-
 router.put(
   "/properties/:id/status",
+  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
   updatePropertyListingStatusController
 );
-
 router.get(
   "/properties/:id/confirmation",
+  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess(),
   checkPropertyConfirmationController
 );
-
 router.put(
   "/properties/:id/expire",
-  expirePropertyListingController
+  authMiddleware, requireRole(UserRole.HASHTI), expirePropertyListingController
+);
+router.patch(
+  "/properties/:id",
+  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
+  updatePropertyController
 );
 
-/**
- * ============================================================
- * Property Owner
- * ============================================================
- *
- * اتصال یک مالک به یک Property
- *
- * POST /properties/:id/owners
- */
+// ایجاد رابطه مالکیت و تغییر وضعیت تأیید مالک، عملیات حساس کارکنان هشتی است.
 router.post(
   "/properties/:id/owners",
+  authMiddleware, requireRole(UserRole.HASHTI),
   addPropertyOwnerController
 );
-
 router.patch(
   "/properties/:id/owners/:ownerId/verification",
+  authMiddleware, requireRole(UserRole.HASHTI),
   verifyPropertyOwnerController
 );
 
-/** 
-* ============================================================
- * Property Agent
- * ============================================================
-*/
-
+// تصمیم درباره نمایندگی ملک فقط با نشست مالک همان ملک انجام می‌شود.
 router.patch(
   "/properties/:id/agents/:agentId/approval",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  bindOwnProfileIdToBody("owner", "ownerId"),
+  requirePropertyAccess(),
   approvePropertyAgentByOwnerController
 );
-
 router.patch(
   "/properties/:id/agents/:agentId/revoke",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  bindOwnProfileIdToBody("owner", "ownerId"),
+  requirePropertyAccess(),
   revokePropertyAgentController
 );
 
+// رسانه فقط توسط مالک/مشاور مرتبط یا کارکنان هشتی قابل افزودن است.
 router.post(
   "/properties/:id/media",
+  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
   createPropertyMediaController
 );
 
+// پرونده تأیید و مدارک آن: فقط طرف مرتبط با ملک یا کارکنان هشتی.
+router.post(
+  "/properties/:id/verification",
+  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess("id", false),
+  createVerificationCaseController
+);
+router.post(
+  "/verification-cases/:id/documents",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerificationCaseAccess(),
+  createVerificationDocumentController
+);
 router.get(
-  "/properties/:id/media",
-  getPropertyMediaController
+  "/verification-cases/:id/documents",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerificationCaseAccess(),
+  getVerificationDocumentsController
+);
+router.patch(
+  "/verification-cases/:id/review",
+  authMiddleware, requireRole(UserRole.HASHTI),
+  reviewVerificationCaseController
 );
 
-
+// بررسی‌های Duplicate و تصمیم نهایی محرمانه و در اختیار هشتی است.
 router.post(
   "/properties/:id/duplicate-reviews",
+  authMiddleware, requireRole(UserRole.HASHTI), requirePropertyAccess(),
   createDuplicateReviewController
 );
-
 router.get(
   "/properties/:id/duplicate-reviews",
+  authMiddleware, requireRole(UserRole.HASHTI), requirePropertyAccess(),
   getDuplicateReviewsController
 );
-
 router.patch(
   "/duplicate-reviews/:id/review",
+  authMiddleware, requireRole(UserRole.HASHTI),
   reviewDuplicateController
 );
-
-/**
- * ============================================================
- * Duplicate Matching
- * ============================================================
- */
 router.get(
   "/properties/:id/duplicate-matches",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requirePropertyAccess(),
   findDuplicateMatchesController
 );
 
-
-/**
- * ============================================================
- * Property Archive
- * ============================================================
- */
-
-// آرشیو کردن ملک
+// آرشیو و بازیابی فقط برای مالک مرتبط یا کارکنان هشتی.
 router.patch(
   "/properties/:id/archive",
+  authMiddleware, requireRole(UserRole.OWNER, UserRole.HASHTI), requirePropertyAccess(),
   archivePropertyController
 );
-
-// دریافت اطلاعات آرشیو ملک
 router.get(
   "/properties/:id/archive",
+  authMiddleware, requireRole(UserRole.OWNER, UserRole.HASHTI), requirePropertyAccess(),
   getPropertyArchiveController
 );
-
 router.patch(
   "/properties/:id/restore",
+  authMiddleware, requireRole(UserRole.OWNER, UserRole.HASHTI), requirePropertyAccess(),
   restorePropertyController
 );
 
-/**
- * ============================================================
- * Exact Location Access Log
- * ============================================================
- */
-
-// ثبت سابقه دسترسی به موقعیت دقیق
+// موقعیت دقیق و سوابق دسترسی فقط پس از احراز هویت و بررسی رابطه با ملک.
 router.post(
   "/properties/:id/exact-location-access-logs",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requirePropertyAccess(),
+  (req, res, next) => {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user) return res.status(401).json({ message: "Authentication required" });
+    req.body = { ...(req.body ?? {}), userId: user.id };
+    return next();
+  },
   createExactLocationAccessLogController
 );
-
-// دریافت سوابق دسترسی به موقعیت دقیق
 router.get(
   "/properties/:id/exact-location-access-logs",
+  authMiddleware,
+  requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requirePropertyAccess(),
   getExactLocationAccessLogsController
-);
-
-
-router.patch(
-  "/properties/:id",
-  updatePropertyController
 );
 
 export default router;

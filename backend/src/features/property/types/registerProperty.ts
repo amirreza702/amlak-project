@@ -3,7 +3,7 @@
  * Register Property Input
  * ============================================================
  *
- * Type ورودی Use Case ثبت ملک توسط مشاور.
+ * Type ورودی Use Case ثبت ملک توسط مالک یا مشاور.
  *
  * این فایل نباید مستقیماً به Prisma وابسته باشد.
  * ============================================================
@@ -19,7 +19,7 @@ export type PropertyType =
   | "GARDEN";
 
 /**
- * اطلاعات موردنیاز برای ثبت ملک توسط مشاور
+ * اطلاعات مشترک موردنیاز برای ثبت ملک توسط مالک یا مشاور
  */
 export interface RegisterPropertyInput {
   /**
@@ -58,7 +58,9 @@ export interface RegisterPropertyInput {
   floor?: number | null;
 
   /**
-   * شناسه مشاور
+   * شناسه پروفایل ثبت‌کننده؛ فقط یکی از این دو مقدار تعیین می‌شود.
+   * مقدار معتبر از نشست احراز هویت‌شده در Route تزریق می‌شود.
    */
-  agentId: string;
+  agentId?: string;
+  ownerId?: string;
 }

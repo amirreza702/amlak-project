@@ -1,36 +1,29 @@
-/**
- * ============================================================
- * Owner Routes
- * ============================================================
- *
- * Route فقط مسیر HTTP را به Controller متصل می‌کند.
- *
- * منطق Business در Service قرار دارد.
- * ============================================================
- */
-
 import { Router } from "express";
-
+import { UserRole } from "@prisma/client";
 import {
   getOwnerProfileController,
   updateOwnerProfileController,
 } from "../controller/ownerController";
+import { authMiddleware } from "../../auth/middleware/authMiddleware";
+import { requireRole } from "../../auth/middleware/requireRole";
+import { requireOwnProfile } from "../../auth/middleware/authorizationMiddleware";
 
 const router = Router();
 
-/**
- * دریافت Profile مالک
- */
+// فقط مالک واردشده می‌تواند پروفایل متعلق به خودش را بخواند یا تغییر دهد.
 router.get(
   "/owners/:ownerId/profile",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
   getOwnerProfileController
 );
 
-/**
- * ویرایش Profile مالک
- */
 router.put(
   "/owners/:ownerId/profile",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
   updateOwnerProfileController
 );
 

@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   createVerificationCaseService,
@@ -55,7 +56,6 @@ export async function reviewVerificationCaseController(
     unknown,
     {
       status: "VERIFIED" | "REJECTED";
-      reviewedBy: string;
       notes?: string | null;
     }
   >,
@@ -64,17 +64,18 @@ export async function reviewVerificationCaseController(
   try {
     const verificationCaseId = req.params.id;
 
-    const {
-      status,
-      reviewedBy,
-      notes = null,
-    } = req.body;
+    const user = (req as AuthenticatedRequest).user;
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const { status, notes = null } = req.body;
 
     const verificationCase =
       await reviewVerificationCaseService({
         verificationCaseId,
         status,
-        reviewedBy,
+        reviewedBy: user.id,
         notes,
       });
 
