@@ -68,9 +68,12 @@ interface Property {
 
 
 /**
- * API از مسیر هم‌مبدأ Nginx در Docker عبور می‌کند.
- * بنابراین URL عمومی بک‌اند یا تنظیم CORS مرورگر لازم نیست.
+ * آدرس API در حالت استاتیک هم‌مبدأ است؛ در حالت توسعه می‌توان
+ * NEXT_PUBLIC_API_URL را به آدرس قابل دسترس Backend تنظیم کرد.
  */
+function getPublicApiUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL || "/api";
+}
 
 /**
  * ============================================================
@@ -195,7 +198,7 @@ export default function PropertyDetailClient() {
     async function loadProperty() {
       try {
         const response = await fetch(
-          `/api/properties/${encodeURIComponent(id)}/public`,
+          `${getPublicApiUrl()}/properties/${encodeURIComponent(id)}/public`,
           {
             cache: "no-store",
             signal: controller.signal,
