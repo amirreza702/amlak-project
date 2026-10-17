@@ -39,9 +39,24 @@ const app = express();
 /**
  * تنظیمات CORS برای ارتباط با کلاینت Next.js
  */
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  "http://localhost:3000,http://localhost:3002"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: (origin, callback) => {
+      // درخواست‌های بدون Origin مانند ابزارهای خط فرمان نیز مجازند.
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
     credentials: true,
   })
 );
