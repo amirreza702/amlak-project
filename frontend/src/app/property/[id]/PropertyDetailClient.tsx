@@ -180,7 +180,8 @@ export default function PropertyDetailClient() {
    * ولی URL اصلی مرورگر همچنان /property/:id باقی می‌ماند.
    */
   useEffect(() => {
-    const lastSegment = window.location.pathname.split("/").filter(Boolean).at(-1);
+    const pathSegments = window.location.pathname.split("/").filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1];
     let id = lastSegment || "";
 
     try {
@@ -667,7 +668,7 @@ export default function PropertyDetailClient() {
                 "
               >
                 {property.description ||
-                  "توضیحی برای این ملک ثبت نشده است."}
+                  "جزئیات تکمیلی برای نمایش عمومی در دسترس نیست."}
               </p>
             </div>
 
