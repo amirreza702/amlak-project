@@ -1,7 +1,7 @@
 // src/features/auth/api/authApi.ts
 
 // API هم‌مبدأ؛ Nginx در Docker مسیر /api را به Backend هدایت می‌کند.
-const API_URL = "/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 /**
  * قرارداد عمومی کاربر مطابق پاسخ‌های فعلی بک‌اند.
