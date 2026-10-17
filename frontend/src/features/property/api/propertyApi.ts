@@ -1,7 +1,7 @@
 import type { PropertyFormData } from "../types/property";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+// API هم‌مبدأ؛ از localhost ثابت استفاده نمی‌کنیم.
+const API_URL = "/api";
 
 
 /**
