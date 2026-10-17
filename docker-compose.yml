@@ -40,3 +40,17 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  # PWA استاتیک اختیاری؛ برای توسعهٔ فعلی فعال نیست.
+  # اجرا: docker compose --profile static up --build -d
+  frontend-static:
+    profiles:
+      - static
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.static
+    ports:
+      - "${STATIC_FRONTEND_PORT:-3001}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
