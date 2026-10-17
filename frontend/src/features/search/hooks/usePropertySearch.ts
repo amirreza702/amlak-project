@@ -420,8 +420,9 @@ export function usePropertySearch() {
        */
       const queryString = params.toString();
 
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const response = await fetch(
-        `/api/properties/search${
+        `${apiUrl}/properties/search${
           queryString ? `?${queryString}` : ""
         }`
       );
