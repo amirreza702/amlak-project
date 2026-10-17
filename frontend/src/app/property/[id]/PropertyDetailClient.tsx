@@ -68,14 +68,9 @@ interface Property {
 
 
 /**
- * آدرس API قابل دسترس از مرورگر.
- *
- * BACKEND_INTERNAL_URL عمداً استفاده نمی‌شود؛ نام سرویس Docker
- * از مرورگر کاربر قابل دسترسی نیست.
+ * API از مسیر هم‌مبدأ Nginx در Docker عبور می‌کند.
+ * بنابراین URL عمومی بک‌اند یا تنظیم CORS مرورگر لازم نیست.
  */
-function getPublicApiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-}
 
 /**
  * ============================================================
@@ -200,7 +195,7 @@ export default function PropertyDetailClient() {
     async function loadProperty() {
       try {
         const response = await fetch(
-          `${getPublicApiUrl()}/properties/${encodeURIComponent(id)}/public`,
+          `/api/properties/${encodeURIComponent(id)}/public`,
           {
             cache: "no-store",
             signal: controller.signal,
