@@ -16,7 +16,7 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://postgres:1234@db:5432/amlak
       CHOKIDAR_USEPOLLING: "true"
-      CORS_ORIGINS: "http://localhost:3000,http://localhost:3002"
+      CORS_ORIGINS: "http://localhost:3000"
     ports:
       - "4000:4000"
     volumes:
@@ -26,34 +26,13 @@ services:
       - db
     restart: unless-stopped
 
-  # نسخهٔ پیش‌فرض PWA: خروجی استاتیک با fallback مسیر ملک و پراکسی API.
-  # URL اصلی برنامه روی localhost:3000 باقی می‌ماند.
+  # نسخهٔ استاتیک PWA؛ تنها فرانت‌اند فعال روی پورت 3000.
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.static
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
-
-  # اجرای توسعه‌ای اختیاری با Hot Reload؛ با پروفایل dev و روی پورت 3002.
-  # اجرا: docker compose --profile dev up --build -d frontend-dev
-  frontend-dev:
-    profiles:
-      - dev
-    build: ./frontend
-    command: npm run dev
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      BACKEND_INTERNAL_URL: http://backend:4000
-    ports:
-      - "${FRONTEND_DEV_PORT:-3002}:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - "3000:80"
     depends_on:
       - backend
     restart: unless-stopped
