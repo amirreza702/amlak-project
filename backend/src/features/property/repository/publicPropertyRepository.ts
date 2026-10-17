@@ -28,7 +28,6 @@ export async function findPublishedPublicPropertyById(id: string) {
       rooms: true,
       yearBuilt: true,
       floor: true,
-      description: true,
       latitudePublic: true,
       longitudePublic: true,
       isActive: true,
