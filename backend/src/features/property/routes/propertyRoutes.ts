@@ -2,6 +2,7 @@ import { Router } from "express";
 import { UserRole } from "@prisma/client";
 
 import { getPropertyByIdController, registerPropertyController } from "../controller/propertyController";
+import { getPublicPropertyByIdController } from "../controller/publicPropertyController";
 import { searchPropertyController } from "../controller/propertySearchController";
 import { createPropertyListingController } from "../controller/propertyListingController";
 import { updatePropertyPriceController } from "../controller/propertyPriceController";
@@ -35,6 +36,7 @@ const propertyEditors = [UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI] as con
 
 // اطلاعات عمومی منتشرشده ملک و جست‌وجو عمومی باقی می‌مانند.
 router.get("/properties/search", searchPropertyController);
+router.get("/properties/:id/public", getPublicPropertyByIdController);
 router.get("/properties/:id", authMiddleware, getPropertyByIdController);
 router.get("/properties/:id/media", getPropertyMediaController);
 
