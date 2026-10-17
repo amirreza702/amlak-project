@@ -1,6 +1,7 @@
 // src/features/auth/api/authApi.ts
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+// API هم‌مبدأ؛ Nginx در Docker مسیر /api را به Backend هدایت می‌کند.
+const API_URL = "/api";
 
 /**
  * قرارداد عمومی کاربر مطابق پاسخ‌های فعلی بک‌اند.
