@@ -14,6 +14,9 @@ import { accessCustomerContactController } from "../controller/contactAccessCont
 import {
   createAgentSubscriptionController,
   upgradeAgentSubscriptionController,
+  getSubscriptionPlansController,
+  getAgentCurrentSubscriptionController,
+  getAgentContactUsageController,
 } from "../controller/agentSubscriptionController";
 import {
   getCustomerProfileController,
@@ -22,8 +25,14 @@ import {
 import { authMiddleware } from "../../auth/middleware/authMiddleware";
 import { requireRole } from "../../auth/middleware/requireRole";
 import { requireOwnProfile, requireOwnSearchRequest } from "../../auth/middleware/authorizationMiddleware";
+import { requireVerifiedAgent } from "../../auth/middleware/verifiedAgentMiddleware";
 
 const router = Router();
+
+/**
+ * فهرست پلن‌های فعال عمومی است؛ ساخت و تغییر اشتراک فقط از مسیرهای هشتی انجام می‌شود.
+ */
+router.get("/subscription-plans", getSubscriptionPlansController);
 
 // باید پیش از مسیر پارامتری :customerId ثبت شود؛ فقط پروفایل مشتری نشست فعلی را می‌دهد.
 router.get(
@@ -94,12 +103,14 @@ router.get(
   "/search-requests/active",
   authMiddleware,
   requireRole(UserRole.AGENT),
+  requireVerifiedAgent,
   getActivePropertySearchRequestsController
 );
 router.get(
   "/search-requests/active/:requestId",
   authMiddleware,
   requireRole(UserRole.AGENT),
+  requireVerifiedAgent,
   getActivePropertySearchRequestByIdController
 );
 
@@ -109,20 +120,36 @@ router.post(
   authMiddleware,
   requireRole(UserRole.AGENT),
   requireOwnProfile("agent", "agentId"),
+  requireVerifiedAgent,
   accessCustomerContactController
 );
-router.post(
-  "/agents/:agentId/subscriptions",
+// مشاهده اشتراک و مصرف فقط برای پروفایل خود مشاور مجاز است؛ تأیید مشاور برای مشاهده لازم نیست.
+router.get(
+  "/agents/:agentId/subscriptions/current",
   authMiddleware,
   requireRole(UserRole.AGENT),
   requireOwnProfile("agent", "agentId"),
+  getAgentCurrentSubscriptionController
+);
+router.get(
+  "/agents/:agentId/subscriptions/usage",
+  authMiddleware,
+  requireRole(UserRole.AGENT),
+  requireOwnProfile("agent", "agentId"),
+  getAgentContactUsageController
+);
+
+// چون فعلاً درگاه پرداخت و تأیید پرداخت وجود ندارد، ساخت/ارتقای اشتراک فقط توسط هشتی انجام می‌شود.
+router.post(
+  "/hashti/agents/:agentId/subscriptions",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
   createAgentSubscriptionController
 );
 router.put(
-  "/agents/:agentId/subscriptions",
+  "/hashti/agents/:agentId/subscriptions",
   authMiddleware,
-  requireRole(UserRole.AGENT),
-  requireOwnProfile("agent", "agentId"),
+  requireRole(UserRole.HASHTI),
   upgradeAgentSubscriptionController
 );
 
