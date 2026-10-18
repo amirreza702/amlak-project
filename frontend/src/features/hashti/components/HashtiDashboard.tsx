@@ -14,6 +14,7 @@ import {
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
+import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -852,6 +853,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       </div>
 
       <HashtiUserManagementPanel />
+      <HashtiVerificationQueuePanel />
       <UserNotificationsPanel userId={user.id} />
     </div>
   );

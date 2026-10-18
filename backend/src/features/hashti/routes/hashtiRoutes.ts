@@ -10,6 +10,7 @@ import {
 } from "../controller/agentManagementController";
 import { getAdminAuditLogsController } from "../controller/adminAuditLogController";
 import userManagementRoutes from "./userManagementRoutes";
+import { getVerificationQueueController } from "../controller/verificationQueueController";
 
 const router = Router();
 
@@ -43,6 +44,14 @@ router.get(
   authMiddleware,
   requireRole(UserRole.HASHTI),
   getAdminAuditLogsController
+);
+
+
+router.get(
+  "/hashti/verification-cases",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  getVerificationQueueController
 );
 
 router.use(userManagementRoutes);
