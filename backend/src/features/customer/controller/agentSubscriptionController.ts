@@ -1,4 +1,7 @@
 import { Request, Response } from "express";
+import { UserRole } from "@prisma/client";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
+import { writeAdminAuditLogBestEffort } from "../../hashti/service/adminAuditLogService";
 
 import {
   createAgentSubscriptionService,
@@ -41,19 +44,48 @@ export const createAgentSubscriptionController = async (
       });
     }
 
+    const parsedStartsAt = new Date(startsAt);
+    const parsedExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+    if (
+      typeof startsAt !== "string" ||
+      Number.isNaN(parsedStartsAt.getTime()) ||
+      (expiresAt !== undefined &&
+        (typeof expiresAt !== "string" || !parsedExpiresAt || Number.isNaN(parsedExpiresAt.getTime())))
+    ) {
+      return res.status(400).json({ message: "Invalid subscription dates" });
+    }
+
     const subscription =
       await createAgentSubscriptionService(
         agentId,
         planId,
-        new Date(startsAt),
-        expiresAt
-          ? new Date(expiresAt)
-          : undefined
+        parsedStartsAt,
+        parsedExpiresAt
       );
 
-    return res.status(201).json(
-      subscription
-    );
+    const actor = (req as AuthenticatedRequest).user;
+    if (actor?.role === UserRole.HASHTI) {
+      await writeAdminAuditLogBestEffort({
+        actorUserId: actor.id,
+        actorMobile: actor.mobile,
+        actorRole: UserRole.HASHTI,
+        action: "AGENT_SUBSCRIPTION_CREATED",
+        targetType: "AGENT",
+        targetId: agentId,
+        details: {
+          subscriptionId: subscription.id,
+          planId: subscription.planId,
+          planCode: subscription.subscriptionPlan.code,
+          planName: subscription.subscriptionPlan.name,
+          startsAt: subscription.startsAt.toISOString(),
+          expiresAt: subscription.expiresAt?.toISOString() ?? null,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+    }
+
+    return res.status(201).json(subscription);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -139,9 +171,27 @@ export const upgradeAgentSubscriptionController = async (
         planId
       );
 
-    return res.status(200).json(
-      subscription
-    );
+    const actor = (req as AuthenticatedRequest).user;
+    if (actor?.role === UserRole.HASHTI) {
+      await writeAdminAuditLogBestEffort({
+        actorUserId: actor.id,
+        actorMobile: actor.mobile,
+        actorRole: UserRole.HASHTI,
+        action: "AGENT_SUBSCRIPTION_UPGRADED",
+        targetType: "AGENT",
+        targetId: agentId,
+        details: {
+          subscriptionId: subscription.id,
+          newPlanId: subscription.planId,
+          newPlanCode: subscription.subscriptionPlan.code,
+          newPlanName: subscription.subscriptionPlan.name,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+    }
+
+    return res.status(200).json(subscription);
   } catch (error) {
     if (
       error instanceof Error &&
