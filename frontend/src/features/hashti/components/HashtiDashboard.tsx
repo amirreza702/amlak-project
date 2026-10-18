@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
+import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -850,6 +851,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
         </section>
       </div>
 
+      <HashtiUserManagementPanel />
       <UserNotificationsPanel userId={user.id} />
     </div>
   );

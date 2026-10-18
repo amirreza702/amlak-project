@@ -115,6 +115,31 @@ export const reviewVerificationCaseService = async (
       tx
     );
 
+    
+    const actor = await tx.user.findUnique({
+      where: { id: data.reviewedBy },
+      select: { id: true, mobile: true, role: true },
+    });
+
+    if (actor?.role === "HASHTI") {
+      await tx.adminAuditLog.create({
+        data: {
+          actorUserId: actor.id,
+          actorMobile: actor.mobile,
+          actorRole: actor.role,
+          action: "PROPERTY_VERIFICATION_CASE_REVIEWED",
+          targetType: "PROPERTY_VERIFICATION_CASE",
+          targetId: data.verificationCaseId,
+          details: {
+            propertyId: verificationCase.propertyId,
+            previousStatus: verificationCase.status,
+            newStatus: data.status,
+            notes: data.notes,
+          },
+        },
+      });
+    }
+
     return reviewedCase;
   });
 };

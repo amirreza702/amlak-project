@@ -9,6 +9,7 @@ import {
   setAgentVerificationController,
 } from "../controller/agentManagementController";
 import { getAdminAuditLogsController } from "../controller/adminAuditLogController";
+import userManagementRoutes from "./userManagementRoutes";
 
 const router = Router();
 
@@ -43,5 +44,7 @@ router.get(
   requireRole(UserRole.HASHTI),
   getAdminAuditLogsController
 );
+
+router.use(userManagementRoutes);
 
 export default router;

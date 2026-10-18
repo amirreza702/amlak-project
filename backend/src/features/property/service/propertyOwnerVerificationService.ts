@@ -136,6 +136,34 @@ export async function verifyPropertyOwner(
 
  
 
+    
+    if (data.performedBy) {
+      const actor = await tx.user.findUnique({
+        where: { id: data.performedBy },
+        select: { id: true, mobile: true, role: true },
+      });
+
+      if (actor?.role === "HASHTI") {
+        await tx.adminAuditLog.create({
+          data: {
+            actorUserId: actor.id,
+            actorMobile: actor.mobile,
+            actorRole: actor.role,
+            action: "OWNER_PROPERTY_VERIFICATION_CHANGED",
+            targetType: "OWNER_PROPERTY",
+            targetId: data.ownerId,
+            details: {
+              propertyId: data.propertyId,
+              ownerId: data.ownerId,
+              previousStatus: currentStatus,
+              newStatus: data.status,
+              reason: data.reason ?? null,
+            },
+          },
+        });
+      }
+    }
+
     return updatedPropertyOwner;
   });
 }
