@@ -10,6 +10,7 @@ import { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   getAgentProfile,
+  getCurrentAgentProfile,
   updateAgentProfile,
 } from "../service/agentService";
 
@@ -19,6 +20,32 @@ type AgentRouteParams = {
 
 function getAuthenticatedUserId(req: Request): string | undefined {
   return (req as AuthenticatedRequest).user?.id;
+}
+
+/**
+ * دریافت پروفایل مشاور از روی نشست جاری.
+ * برای حساب‌هایی که شناسه پروفایلشان قبلاً در مرورگر ذخیره نشده است.
+ */
+export async function getCurrentAgentProfileController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const result = await getCurrentAgentProfile(userId);
+    return res.status(200).json(result);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "AGENT_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ message: "Agent profile not found" });
+    }
+
+    console.error("Error getting current agent profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 /**
