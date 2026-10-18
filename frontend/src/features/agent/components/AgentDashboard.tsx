@@ -31,6 +31,29 @@ interface ContactResult {
   customer: { id: string; firstName: string; lastName: string; mobile: string };
 }
 
+interface SubscriptionPlan {
+  id: string;
+  code: string;
+  name: string;
+  level: number;
+  monthlyContactLimit: number;
+}
+interface ActiveAgentSubscription {
+  id: string;
+  status: string;
+  startsAt: string;
+  expiresAt: string | null;
+  plan: SubscriptionPlan;
+}
+interface AgentContactUsage {
+  periodStart: string;
+  usedCount: number;
+  monthlyLimit: number;
+  remainingCount: number;
+  hasActiveSubscription: boolean;
+  subscriptionPlan: { id: string; code: string; name: string; level: number } | null;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
   const body = await response.json().catch(() => ({})) as { message?: string };
@@ -75,41 +98,83 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
   const [contacts, setContacts] = useState<Record<string, ContactResult["customer"]>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [currentSubscription, setCurrentSubscription] = useState<ActiveAgentSubscription | null>(null);
+  const [contactUsage, setContactUsage] = useState<AgentContactUsage | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedProfileId = window.sessionStorage.getItem(`hashti:agentProfileId:${user.mobile}`);
-    setProfileId(storedProfileId);
-    if (!storedProfileId) {
-      setProfileState("unknown");
-      setProfileError("شناسهٔ پروفایل این حساب در مرورگر موجود نیست. API فعلی، پروفایل مشاور را مستقیماً از نشست جاری دریافت نمی‌کند؛ برای بررسی وضعیت تأیید و اتصال کامل حساب، به endpoint سمت سرور نیاز است.");
-      return;
-    }
-
     let active = true;
+    const storageKey = "hashti:agentProfileId:" + user.mobile;
+    const storedProfileId = window.sessionStorage.getItem(storageKey);
+    setProfileId(null);
+    setProfileState("checking");
+    setProfileError(null);
+
     (async () => {
       try {
-        const profile = await requestJson<AgentProfile>(`/agents/${encodeURIComponent(storedProfileId)}/profile`);
+        // برای حساب‌های قدیمی نیز شناسه پروفایل فقط از نشست معتبر سرور گرفته می‌شود.
+        const profile = storedProfileId
+          ? await requestJson<AgentProfile>("/agents/" + encodeURIComponent(storedProfileId) + "/profile")
+          : await requestJson<AgentProfile>("/agents/me/profile");
+
         if (!active) return;
+        window.sessionStorage.setItem(storageKey, profile.id);
+        setProfileId(profile.id);
         setFirstName(profile.firstName);
         setLastName(profile.lastName);
         setAgencyName(profile.agencyName ?? "");
         setAddress(profile.address ?? "");
         if (profile.isVerified) {
           setProfileState("verified");
-          setProfileError(null);
         } else {
           setProfileState("pending");
-          setProfileError(null);
         }
       } catch (error: unknown) {
         if (active) {
-          setProfileState("error");
+          setProfileState(storedProfileId ? "error" : "unknown");
           setProfileError(error instanceof Error ? error.message : "بررسی وضعیت حساب مشاور انجام نشد.");
         }
       }
     })();
+
     return () => { active = false; };
   }, [user.mobile]);
+
+  useEffect(() => {
+    if (!profileId) return;
+    let active = true;
+
+    (async () => {
+      setSubscriptionLoading(true);
+      setSubscriptionError(null);
+      try {
+        const [plansResult, subscriptionResult, usageResult] = await Promise.all([
+          requestJson<{ plans: SubscriptionPlan[] }>("/subscription-plans"),
+          requestJson<{ subscription: ActiveAgentSubscription | null }>(
+            "/agents/" + encodeURIComponent(profileId) + "/subscriptions/current"
+          ),
+          requestJson<{ usage: AgentContactUsage }>(
+            "/agents/" + encodeURIComponent(profileId) + "/subscriptions/usage"
+          ),
+        ]);
+
+        if (!active) return;
+        setSubscriptionPlans(plansResult.plans);
+        setCurrentSubscription(subscriptionResult.subscription);
+        setContactUsage(usageResult.usage);
+      } catch (error: unknown) {
+        if (active) {
+          setSubscriptionError(error instanceof Error ? error.message : "دریافت اطلاعات اشتراک انجام نشد.");
+        }
+      } finally {
+        if (active) setSubscriptionLoading(false);
+      }
+    })();
+
+    return () => { active = false; };
+  }, [profileId]);
 
   const loadRequests = useCallback(async () => {
     setLoadingRequests(true);
@@ -200,7 +265,54 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
               </p>
             </div>
           </div>
-          {profileState !== "pending" && profileError && <p className="mt-3 text-xs leading-6 text-amber-900">محدودیت فعلی: تغییر بک‌اند انجام نشده و برای بازیابی مطمئن پروفایل جاری، endpoint لازم است.</p>}
+          {profileState !== "pending" && profileError && <p className="mt-3 text-xs leading-6 text-amber-900">لطفاً نشست ورود را بررسی کنید؛ اگر خطا ادامه داشت، پاسخ سرور را برای عیب‌یابی نگه دارید.</p>}
+        </section>
+      )}
+
+      {profileId && profileState !== "checking" && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-bold">اشتراک و سهمیهٔ دسترسی به اطلاعات تماس</h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            نمایش اطلاعات این بخش از API سرور انجام می‌شود. تخصیص یا ارتقای اشتراک فعلاً توسط هشتی انجام می‌شود؛ پرداخت آنلاین در این مسیر پیاده‌سازی نشده است.
+          </p>
+          {subscriptionLoading ? (
+            <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" /> در حال دریافت اطلاعات اشتراک...</p>
+          ) : subscriptionError ? (
+            <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{subscriptionError}</p>
+          ) : (
+            <>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500">اشتراک فعلی</p>
+                  <p className="mt-1 font-bold">{currentSubscription?.plan.name ?? "بدون اشتراک فعال"}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500">مصرف ماه جاری</p>
+                  <p className="mt-1 font-bold">{(contactUsage?.usedCount ?? 0).toLocaleString("fa-IR")} از {(contactUsage?.monthlyLimit ?? 0).toLocaleString("fa-IR")}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500">سهمیه باقی‌مانده</p>
+                  <p className="mt-1 font-bold">{(contactUsage?.remainingCount ?? 0).toLocaleString("fa-IR")}</p>
+                </div>
+              </div>
+              <h3 className="mt-5 font-bold">پلن‌های فعال هشتی</h3>
+              {subscriptionPlans.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">در حال حاضر پلن فعالی ثبت نشده است.</p>
+              ) : (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {subscriptionPlans.map((plan) => (
+                    <article key={plan.id} className="rounded-xl border border-slate-200 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-bold">{plan.name}</p>
+                        {currentSubscription?.plan.id === plan.id && <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">پلن فعلی</span>}
+                      </div>
+                      <p className="mt-2 text-sm text-slate-600">سقف دسترسی ماهانه: {plan.monthlyContactLimit.toLocaleString("fa-IR")} درخواست تماس</p>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </section>
       )}
 
@@ -295,10 +407,6 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
           </section>
 
           <div className="grid gap-3 lg:grid-cols-2">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h2 className="font-bold">اشتراک و اعتبار</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-600">سرور هنگام درخواست اطلاعات تماس، اشتراک فعال و سقف مصرف ماهانه را بررسی می‌کند. API خواندن اشتراک فعلی و باقی‌ماندهٔ اعتبار هنوز در دسترس فرانت‌اند نیست؛ بنابراین عددی حدس زده نمی‌شود.</p>
-            </section>
             <UserNotificationsPanel userId={user.id} />
           </div>
         </>
