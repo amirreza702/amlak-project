@@ -233,7 +233,6 @@ model Session {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verificationReviewer User? @relation("AgentVerificationReviewer", fields: [verificationReviewedBy], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([expiresAt])
@@ -368,6 +367,7 @@ model Agent {
   verificationNotes      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationReviewer User? @relation("AgentVerificationReviewer", fields: [verificationReviewedBy], references: [id], onDelete: SetNull)
 
   propertyAgents PropertyAgent[]
   evaluations    Evaluation[]
