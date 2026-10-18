@@ -544,7 +544,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
             <p className="mt-1 text-sm leading-6 text-slate-600">فهرست از پایگاه داده خوانده می‌شود و اطلاعات اشتراک/مصرف نیز از رکوردهای موجود محاسبه می‌شود.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select value={verificationFilter} onChange={(event) => setVerificationFilter(event.target.value as "pending" | "verified" | "all")} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+            <select value={verificationFilter} onChange={(event) => setVerificationFilter(event.target.value as "pending" | "verified" | "rejected" | "all")} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
               <option value="pending">در انتظار بررسی</option>
               <option value="verified">تأییدشده‌ها</option>
               <option value="rejected">ردشده‌ها</option>
@@ -559,6 +559,20 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
           یادداشت تصمیم هشتی (برای رد مشاور الزامی)
           <textarea rows={2} value={agentVerificationNotes} onChange={(event) => setAgentVerificationNotes(event.target.value)} maxLength={2000} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" placeholder="دلیل رد یا توضیح تصمیم را وارد کنید" />
         </label>
+        <div className="mt-4 grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-2">
+          <p className="text-sm leading-6 text-slate-600 sm:col-span-2">
+            تخصیص اشتراک از طرف هشتی انجام می‌شود. پرداخت آنلاین یا ثبت مبلغ در این جریان وجود ندارد. تاریخ شروع فقط هنگام ایجاد اشتراک جدید لازم است؛ برای ارتقا فقط پلن بالاتر انتخاب کنید.
+          </p>
+          <label className="space-y-1 text-sm font-medium">تاریخ شروع اشتراک جدید
+            <input type="datetime-local" value={subscriptionStartsAt} onChange={(event) => setSubscriptionStartsAt(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+          </label>
+          <label className="space-y-1 text-sm font-medium">تاریخ انقضا (اختیاری)
+            <input type="datetime-local" value={subscriptionExpiresAt} onChange={(event) => setSubscriptionExpiresAt(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+          </label>
+          {subscriptionPlansError && <p role="alert" className="sm:col-span-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">{subscriptionPlansError}</p>}
+        </div>
+        {subscriptionActionError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{subscriptionActionError}</p>}
+        {subscriptionActionMessage && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{subscriptionActionMessage}</p>}
         {agentsError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{agentsError}</p>}
         {agentsMessage && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{agentsMessage}</p>}
         {agentsBusy && managedAgents.length === 0 ? (
@@ -604,6 +618,45 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
                 </div>
                 {agent.verificationNotes && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600">یادداشت آخرین تصمیم: {agent.verificationNotes}</p>}
                 {agent.verificationReviewedAt && <p className="mt-2 text-xs text-slate-400">آخرین بررسی: {new Date(agent.verificationReviewedAt).toLocaleString("fa-IR")}</p>}
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    <label className="space-y-1 text-sm font-medium">
+                      پلن اشتراک
+                      <select
+                        value={selectedPlanByAgent[agent.id] ?? ""}
+                        onChange={(event) => setSelectedPlanByAgent((current) => ({ ...current, [agent.id]: event.target.value }))}
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5"
+                      >
+                        <option value="">انتخاب پلن فعال</option>
+                        {adminSubscriptionPlans.map((plan) => (
+                          <option
+                            key={plan.id}
+                            value={plan.id}
+                            disabled={Boolean(agent.subscription && plan.level <= agent.subscription.subscriptionPlan.level)}
+                          >
+                            {plan.name} · {plan.monthlyContactLimit.toLocaleString("fa-IR")} دسترسی ماهانه
+                            {agent.subscription && plan.level <= agent.subscription.subscriptionPlan.level ? " (سطح برابر/پایین‌تر)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void assignOrUpgradeSubscription(agent)}
+                      disabled={
+                        busySubscriptionAgentId === agent.id ||
+                        !selectedPlanByAgent[agent.id] ||
+                        (agent.subscription
+                          ? adminSubscriptionPlans.find((plan) => plan.id === selectedPlanByAgent[agent.id])?.level! <= agent.subscription.subscriptionPlan.level
+                          : !subscriptionStartsAt)
+                      }
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#043873] px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      {busySubscriptionAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                      {agent.subscription ? "ارتقای اشتراک" : "ایجاد اشتراک"}
+                    </button>
+                  </div>
+                </div>
               </article>
             ))}
           </div>
