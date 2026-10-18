@@ -7,6 +7,7 @@
 
 import {
   findAgentProfileById,
+  findAgentProfileByUserId,
   updateAgentProfile as updateAgentProfileRepository,
 } from "../repository/agentRepository";
 
@@ -99,4 +100,21 @@ export const updateAgentProfile = async (
     ...(data.agencyName !== undefined && { agencyName }),
     ...(data.address !== undefined && { address }),
   });
+};
+
+
+/**
+ * دریافت پروفایل از روی نشست جاری، بدون اتکا به profileId ارسال‌شده از مرورگر.
+ */
+export const getCurrentAgentProfile = async (
+  authenticatedUserId: string
+) => {
+  const agent = await findAgentProfileByUserId(authenticatedUserId);
+
+  if (!agent) {
+    throw new Error("AGENT_PROFILE_NOT_FOUND");
+  }
+
+  const { userId: _userId, ...profile } = agent;
+  return profile;
 };
