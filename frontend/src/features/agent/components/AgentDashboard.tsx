@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BadgeCheck, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Building2, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Save, ShieldAlert, UserRound } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 
@@ -11,6 +11,8 @@ interface AgentProfile {
   id: string;
   firstName: string;
   lastName: string;
+  agencyName: string | null;
+  address: string | null;
   isVerified: boolean;
 }
 interface ActiveRequest {
@@ -60,6 +62,13 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [profileState, setProfileState] = useState<"checking" | "verified" | "pending" | "unknown" | "error">("checking");
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [agencyName, setAgencyName] = useState("");
+  const [address, setAddress] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [requests, setRequests] = useState<ActiveRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [requestsError, setRequestsError] = useState<string | null>(null);
@@ -81,6 +90,10 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
       try {
         const profile = await requestJson<AgentProfile>(`/agents/${encodeURIComponent(storedProfileId)}/profile`);
         if (!active) return;
+        setFirstName(profile.firstName);
+        setLastName(profile.lastName);
+        setAgencyName(profile.agencyName ?? "");
+        setAddress(profile.address ?? "");
         if (profile.isVerified) {
           setProfileState("verified");
           setProfileError(null);
@@ -136,6 +149,38 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
     }
   };
 
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!profileId) return;
+    setIsSavingProfile(true);
+    setProfileSaveError(null);
+    setProfileSaveMessage(null);
+    try {
+      const updated = await requestJson<AgentProfile>(
+        `/agents/${encodeURIComponent(profileId)}/profile`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            agencyName: agencyName.trim() || null,
+            address: address.trim() || null,
+          }),
+        }
+      );
+      setFirstName(updated.firstName);
+      setLastName(updated.lastName);
+      setAgencyName(updated.agencyName ?? "");
+      setAddress(updated.address ?? "");
+      setProfileSaveMessage("اطلاعات پروفایل مشاور ذخیره شد.");
+    } catch (error: unknown) {
+      setProfileSaveError(error instanceof Error ? error.message : "ذخیرهٔ پروفایل مشاور انجام نشد.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {profileState === "checking" && (
@@ -166,6 +211,38 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
             <SummaryCard icon={<FileText className="h-5 w-5" />} label="درخواست‌های فعال" value={String(requests.length)} />
             <SummaryCard icon={<Contact className="h-5 w-5" />} label="اطلاعات تماس دریافت‌شده" value={String(Object.keys(contacts).length)} />
           </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-center gap-2">
+              <UserRound className="h-5 w-5 text-[#043873]" />
+              <h2 className="text-lg font-bold">پروفایل مشاور</h2>
+            </div>
+            <form onSubmit={saveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="space-y-1 text-sm font-medium">
+                نام
+                <input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={firstName} onChange={(event) => setFirstName(event.target.value)} required />
+              </label>
+              <label className="space-y-1 text-sm font-medium">
+                نام خانوادگی
+                <input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={lastName} onChange={(event) => setLastName(event.target.value)} required />
+              </label>
+              <label className="space-y-1 text-sm font-medium">
+                نام دفتر یا مجموعه (اختیاری)
+                <input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={agencyName} onChange={(event) => setAgencyName(event.target.value)} />
+              </label>
+              <label className="space-y-1 text-sm font-medium">
+                نشانی دفتر (اختیاری)
+                <input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={address} onChange={(event) => setAddress(event.target.value)} />
+              </label>
+              {profileSaveError && <p role="alert" className="sm:col-span-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">{profileSaveError}</p>}
+              {profileSaveMessage && <p role="status" className="sm:col-span-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{profileSaveMessage}</p>}
+              <div className="sm:col-span-2">
+                <button type="submit" disabled={isSavingProfile} className="inline-flex items-center gap-2 rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+                  {isSavingProfile ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} ذخیرهٔ پروفایل
+                </button>
+              </div>
+            </form>
+          </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
