@@ -139,6 +139,20 @@ router.get(
   getAgentContactUsageController
 );
 
+// مسیرهای قدیمی حفظ شده‌اند تا مصرف‌کننده‌های قبلی نشکنند؛ اکنون فقط هشتی مجاز است.
+router.post(
+  "/agents/:agentId/subscriptions",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  createAgentSubscriptionController
+);
+router.put(
+  "/agents/:agentId/subscriptions",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  upgradeAgentSubscriptionController
+);
+
 // چون فعلاً درگاه پرداخت و تأیید پرداخت وجود ندارد، ساخت/ارتقای اشتراک فقط توسط هشتی انجام می‌شود.
 router.post(
   "/hashti/agents/:agentId/subscriptions",
