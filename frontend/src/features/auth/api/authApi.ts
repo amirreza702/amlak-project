@@ -25,6 +25,23 @@ export interface AuthResponse {
   user: UserPublic;
 }
 
+export interface RegisterUserInput {
+  mobile: string;
+  password: string;
+  role: Exclude<UserRole, "HASHTI">;
+  firstName: string;
+  lastName: string;
+}
+
+/** پاسخ ثبت‌نام فعلی Backend؛ profileId شناسهٔ پروفایل نقش‌محور است. */
+export interface RegisterUserResponse {
+  message: string;
+  user: UserPublic & {
+    profileId: string;
+    createdAt?: string;
+  };
+}
+
 interface CurrentUserResponse {
   user: UserPublic;
 }
@@ -47,6 +64,26 @@ async function getErrorMessage(
   } catch {
     return fallback;
   }
+}
+
+// ثبت‌نام؛ طبق قرارداد Backend ایجاد Session را انجام نمی‌دهد.
+export async function registerUser(
+  input: RegisterUserInput
+): Promise<RegisterUserResponse> {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, "ثبت‌نام انجام نشد. اطلاعات را بررسی کنید.")
+    );
+  }
+
+  return readJson<RegisterUserResponse>(response);
 }
 
 // ورود با نشست و کوکی HttpOnly؛ مسیر دقیق مطابق authRoutes بک‌اند است.

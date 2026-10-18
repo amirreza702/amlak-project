@@ -9,6 +9,7 @@ import {
   getActivePropertySearchRequestsController,
   getActivePropertySearchRequestByIdController,
 } from "../controller/propertySearchRequestController";
+import { getCurrentCustomerProfileController } from "../controller/currentCustomerProfileController";
 import { accessCustomerContactController } from "../controller/contactAccessController";
 import {
   createAgentSubscriptionController,
@@ -23,6 +24,14 @@ import { requireRole } from "../../auth/middleware/requireRole";
 import { requireOwnProfile, requireOwnSearchRequest } from "../../auth/middleware/authorizationMiddleware";
 
 const router = Router();
+
+// باید پیش از مسیر پارامتری :customerId ثبت شود؛ فقط پروفایل مشتری نشست فعلی را می‌دهد.
+router.get(
+  "/customers/me/profile",
+  authMiddleware,
+  requireRole(UserRole.CUSTOMER),
+  getCurrentCustomerProfileController
+);
 
 // پروفایل مشتری: فقط خود مشتری
 router.get(

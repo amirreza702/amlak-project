@@ -1,11 +1,15 @@
 "use client";
 
 import { FileText, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function HomeRequestButton() {
+  const router = useRouter();
+
   return (
     <button
       type="button"
+      onClick={() => router.push("/request")}
       className="group flex w-full items-center justify-between rounded-2xl border border-slate-200/80 bg-white/90 px-5 py-3.5 text-[#043873] shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.98] hover:border-[#4F9CF9]/40 hover:bg-white"
     >
       <div className="flex items-center gap-3">
