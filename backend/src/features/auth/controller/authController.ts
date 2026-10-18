@@ -1,6 +1,8 @@
 
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import type { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { writeAdminAuditLogBestEffort } from "../../hashti/service/adminAuditLogService";
 
 import {
   loginUserService,
@@ -252,6 +254,24 @@ export async function adminResetUserPasswordController(
       userId,
       newPassword
     );
+
+    const actor = (req as AuthenticatedRequest).user;
+    if (actor?.role === UserRole.HASHTI) {
+      await writeAdminAuditLogBestEffort({
+        actorUserId: actor.id,
+        actorMobile: actor.mobile,
+        actorRole: UserRole.HASHTI,
+        action: "ADMIN_USER_PASSWORD_RESET",
+        targetType: "USER",
+        targetId: user.id,
+        details: {
+          targetMobile: user.mobile,
+          targetRole: user.role,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+    }
 
     return res.status(200).json({
       message: "User password reset successfully",
