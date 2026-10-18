@@ -28,7 +28,7 @@ function parseIntegerQuery(
 }
 
 /**
- * GET /hashti/agents?verificationStatus=pending|verified|all&limit=50&offset=0
+ * GET /hashti/agents?verificationStatus=pending|verified|rejected|all&limit=50&offset=0
  */
 export async function getManagedAgentsController(
   req: Request,
