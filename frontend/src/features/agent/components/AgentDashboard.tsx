@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { BadgeCheck, Bell, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Search, ShieldAlert } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { BadgeCheck, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, ShieldAlert } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 
@@ -213,6 +212,11 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
             )}
           </section>
 
+          <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
+            <h2 className="font-bold">املاک مرتبط و درخواست‌های مالکان</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی فهرست املاک مرتبط با مشاور و درخواست‌های جداگانهٔ مالکان را برنمی‌گرداند؛ این بخش تا افزودن API مجاز سمت سرور دادهٔ واقعی ندارد.</p>
+          </section>
+
           <div className="grid gap-3 lg:grid-cols-2">
             <section className="rounded-2xl border border-slate-200 bg-white p-5">
               <h2 className="font-bold">اشتراک و اعتبار</h2>
@@ -226,6 +230,6 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
   );
 }
 
-function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[#043873]">{icon}</div><div><p className="text-sm text-slate-500">{label}</p><p className="mt-1 font-black">{value}</p></div></div>;
 }

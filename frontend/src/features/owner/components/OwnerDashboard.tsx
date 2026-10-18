@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Building2, LoaderCircle, Save, ShieldCheck, UserRound, UserRoundCheck, Users } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
@@ -149,6 +149,6 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
   );
 }
 
-function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SummaryCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center gap-2 text-[#043873]">{icon}<p className="text-sm font-semibold text-slate-500">{label}</p></div><p className="mt-3 text-sm font-black leading-6 text-slate-900">{value}</p></div>;
 }

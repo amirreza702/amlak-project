@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import {
   CheckCircle2,
   FileSearch,
@@ -369,7 +369,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   );
 }
 
-function MiniFeature({ icon, title, detail }: { icon: React.ReactNode; title: string; detail: string }) {
+function MiniFeature({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
   return <div className="rounded-xl border border-slate-200 p-3"><div className="flex items-center gap-2 font-bold">{icon}{title}</div><p className="mt-2 text-xs leading-6 text-slate-600">{detail}</p></div>;
 }
 function DecisionChip({ decision }: { decision: DuplicateReview["decision"] }) {
