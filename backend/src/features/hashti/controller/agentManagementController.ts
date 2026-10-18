@@ -96,6 +96,12 @@ export async function setAgentVerificationController(
     return res.status(400).json({ message: "notes must be a string or null" });
   }
 
+  if (verificationStatus === "REJECTED" && (typeof notes !== "string" || !notes.trim())) {
+    return res.status(400).json({
+      message: "A reason is required when rejecting an agent",
+    });
+  }
+
   if (typeof notes === "string" && notes.length > 2000) {
     return res.status(400).json({ message: "notes must be 2000 characters or fewer" });
   }
