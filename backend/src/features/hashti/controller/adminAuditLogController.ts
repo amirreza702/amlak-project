@@ -18,7 +18,6 @@ function parseIntegerQuery(
 
 function getOptionalString(
   value: unknown,
-  field: string,
   maximumLength = 200
 ): { value?: string; invalid: boolean } {
   if (value === undefined || value === "") return { invalid: false };
@@ -42,10 +41,10 @@ export async function getAdminAuditLogsController(
     return res.status(400).json({ message: "Invalid pagination parameters" });
   }
 
-  const actorUserId = getOptionalString(req.query.actorUserId, "actorUserId");
-  const action = getOptionalString(req.query.action, "action");
-  const targetType = getOptionalString(req.query.targetType, "targetType");
-  const targetId = getOptionalString(req.query.targetId, "targetId");
+  const actorUserId = getOptionalString(req.query.actorUserId);
+  const action = getOptionalString(req.query.action);
+  const targetType = getOptionalString(req.query.targetType);
+  const targetId = getOptionalString(req.query.targetId);
 
   if (actorUserId.invalid || action.invalid || targetType.invalid || targetId.invalid) {
     return res.status(400).json({ message: "Invalid audit log filter" });
