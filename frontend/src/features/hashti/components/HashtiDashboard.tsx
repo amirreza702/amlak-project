@@ -647,7 +647,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
                         busySubscriptionAgentId === agent.id ||
                         !selectedPlanByAgent[agent.id] ||
                         (agent.subscription
-                          ? adminSubscriptionPlans.find((plan) => plan.id === selectedPlanByAgent[agent.id])?.level! <= agent.subscription.subscriptionPlan.level
+                          ? (adminSubscriptionPlans.find((plan) => plan.id === selectedPlanByAgent[agent.id])?.level ?? 0) <= agent.subscription.subscriptionPlan.level
                           : !subscriptionStartsAt)
                       }
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#043873] px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
