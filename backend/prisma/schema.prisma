@@ -214,6 +214,10 @@ model User {
   messages      Message[]
   sessions Session[]
 
+  // رابطه‌های افزوده‌شده برای ردیابی بررسی مشاوران و رویدادهای مدیریتی.
+  reviewedAgents  Agent[]         @relation("AgentVerificationReviewer")
+  adminAuditLogs AdminAuditLog[] @relation("AdminAuditActor")
+
   @@map("users")
 }
 
@@ -229,6 +233,7 @@ model Session {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verificationReviewer User? @relation("AgentVerificationReviewer", fields: [verificationReviewedBy], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([expiresAt])
@@ -356,6 +361,12 @@ model Agent {
   address    String?
   isVerified Boolean @default(false)
 
+  // وضعیت دقیق بررسی افزوده می‌شود؛ isVerified برای سازگاری قبلی حذف نمی‌شود.
+  verificationStatus     VerificationStatus @default(PENDING)
+  verificationReviewedAt DateTime?
+  verificationReviewedBy String?
+  verificationNotes      String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   propertyAgents PropertyAgent[]
@@ -370,6 +381,7 @@ contactAccessUsages ContactAccessUsage[]
 
 
 
+  @@index([verificationStatus])
   @@map("agents")
 }
 
@@ -1118,6 +1130,32 @@ model ContactAccessUsage {
   @@unique([agentId, periodStart])
   @@index([agentId, periodStart])
   @@map("contact_access_usage")
+}
+
+// ============================================================
+// ADMIN AUDIT LOG
+// ============================================================
+// سوابق مدیریتی مستقل نگه داشته می‌شوند؛ حذف کاربر نباید گزارش را حذف کند.
+model AdminAuditLog {
+  id          String    @id @default(uuid())
+  actorUserId String?
+  actorMobile String?
+  actorRole   UserRole?
+  action      String
+  targetType  String
+  targetId    String?
+  details     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  actor User? @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([targetType, targetId, createdAt])
+  @@index([action, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model SubscriptionPlan {
