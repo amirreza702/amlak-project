@@ -31,7 +31,11 @@ export async function requireVerifiedAgent(
   try {
     const agent = await prisma.agent.findUnique({
       where: { userId: user.id },
-      select: { id: true, isVerified: true },
+      select: {
+        id: true,
+        isVerified: true,
+        verificationStatus: true,
+      },
     });
 
     if (!agent) {
@@ -41,7 +45,8 @@ export async function requireVerifiedAgent(
       });
     }
 
-    if (!agent.isVerified) {
+    // هر دو فیلد هم‌زمان حفظ شده‌اند؛ Boolean قدیمی نباید وضعیت ردشده را دور بزند.
+    if (!agent.isVerified || agent.verificationStatus !== "VERIFIED") {
       return res.status(403).json({
         code: "AGENT_NOT_VERIFIED",
         message: "Your agent account must be verified by Hashti before using this feature",
