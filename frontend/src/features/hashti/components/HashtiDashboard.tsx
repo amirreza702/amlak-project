@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   CheckCircle2,
   FileSearch,
@@ -48,6 +48,37 @@ interface ExactLocationLog {
   user?: { mobile?: string; role?: string };
 }
 
+interface ManagedAgent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  agencyName: string | null;
+  address: string | null;
+  isVerified: boolean;
+  user: { id: string; mobile: string; isActive: boolean; createdAt: string };
+  subscription: {
+    id: string;
+    status: string;
+    startsAt: string;
+    expiresAt: string | null;
+    subscriptionPlan: { id: string; code: string; name: string; level: number; monthlyContactLimit: number };
+  } | null;
+  usage: {
+    periodStart: string;
+    usedCount: number;
+    monthlyLimit: number;
+    remainingCount: number;
+    hasActiveSubscription: boolean;
+  };
+}
+interface ContactAccessAuditLog {
+  id: string;
+  accessedAt: string;
+  agent: { id: string; firstName: string; lastName: string; agencyName: string | null; user: { mobile: string } };
+  customer: { id: string; firstName: string; lastName: string; user: { mobile: string } };
+  searchRequest: { id: string; city: string; transactionType: string; propertyType: string; status: string };
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
   const body = await response.json().catch(() => ({})) as { message?: string };
@@ -91,6 +122,84 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   const [accessLogs, setAccessLogs] = useState<ExactLocationLog[]>([]);
   const [logsBusy, setLogsBusy] = useState(false);
   const [logsError, setLogsError] = useState<string | null>(null);
+  const [verificationFilter, setVerificationFilter] = useState<"pending" | "verified" | "all">("pending");
+  const [managedAgents, setManagedAgents] = useState<ManagedAgent[]>([]);
+  const [agentsBusy, setAgentsBusy] = useState(false);
+  const [agentsError, setAgentsError] = useState<string | null>(null);
+  const [agentsMessage, setAgentsMessage] = useState<string | null>(null);
+  const [busyAgentId, setBusyAgentId] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<ContactAccessAuditLog[]>([]);
+  const [auditAgentId, setAuditAgentId] = useState("");
+  const [auditFrom, setAuditFrom] = useState("");
+  const [auditTo, setAuditTo] = useState("");
+  const [auditBusy, setAuditBusy] = useState(false);
+  const [auditError, setAuditError] = useState<string | null>(null);
+
+  const loadManagedAgents = useCallback(async () => {
+    setAgentsBusy(true);
+    setAgentsError(null);
+    try {
+      const result = await requestJson<{
+        agents: ManagedAgent[];
+        pagination: { total: number; limit: number; offset: number };
+      }>("/hashti/agents?verificationStatus=" + verificationFilter + "&limit=100&offset=0");
+      setManagedAgents(result.agents);
+    } catch (error: unknown) {
+      setAgentsError(error instanceof Error ? error.message : "دریافت فهرست مشاوران انجام نشد.");
+      setManagedAgents([]);
+    } finally {
+      setAgentsBusy(false);
+    }
+  }, [verificationFilter]);
+
+  useEffect(() => {
+    void loadManagedAgents();
+  }, [loadManagedAgents]);
+
+  const reviewAgent = async (agentId: string, isVerified: boolean) => {
+    setBusyAgentId(agentId);
+    setAgentsError(null);
+    setAgentsMessage(null);
+    try {
+      await requestJson<{ agent: ManagedAgent }>(
+        "/hashti/agents/" + encodeURIComponent(agentId) + "/verification",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isVerified }),
+        }
+      );
+      setAgentsMessage(isVerified ? "تأیید مشاور ثبت شد." : "تأیید مشاور لغو شد.");
+      await loadManagedAgents();
+    } catch (error: unknown) {
+      setAgentsError(error instanceof Error ? error.message : "تغییر وضعیت تأیید انجام نشد.");
+    } finally {
+      setBusyAgentId(null);
+    }
+  };
+
+  const loadContactAuditLogs = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuditBusy(true);
+    setAuditError(null);
+    try {
+      const params = new URLSearchParams();
+      if (auditAgentId.trim()) params.set("agentId", auditAgentId.trim());
+      if (auditFrom) params.set("from", new Date(auditFrom).toISOString());
+      if (auditTo) params.set("to", new Date(auditTo).toISOString());
+      params.set("limit", "100");
+      params.set("offset", "0");
+      const result = await requestJson<{ logs: ContactAccessAuditLog[] }>(
+        "/hashti/contact-access-logs?" + params.toString()
+      );
+      setAuditLogs(result.logs);
+    } catch (error: unknown) {
+      setAuditError(error instanceof Error ? error.message : "دریافت گزارش دسترسی تماس انجام نشد.");
+      setAuditLogs([]);
+    } finally {
+      setAuditBusy(false);
+    }
+  };
 
   const loadDuplicateWork = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -240,11 +349,94 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
           </div>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <MiniFeature icon={<Users className="h-5 w-5" />} title="حساب‌ها و اعتبار" detail="مدیریت کامل کاربران و اشتراک‌ها به API بیشتر نیاز دارد." />
+          <MiniFeature icon={<Users className="h-5 w-5" />} title="مشاوران و اشتراک" detail="صف تأیید، اشتراک فعال و سهمیه ماهانه از API سرور خوانده می‌شود." />
           <MiniFeature icon={<FileSearch className="h-5 w-5" />} title="مغایرت املاک" detail="بررسی مشابهت، ایجاد پرونده و ثبت تصمیم فعال است." />
           <MiniFeature icon={<LockKeyhole className="h-5 w-5" />} title="بازنشانی رمز" detail="رمز کاربر با شناسهٔ User قابل تغییر است." />
           <MiniFeature icon={<ShieldCheck className="h-5 w-5" />} title="سوابق دسترسی" detail="سوابق دسترسی به موقعیت دقیق ملک قابل مشاهده است." />
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">مدیریت و تأیید مشاوران</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">فهرست از پایگاه داده خوانده می‌شود و اطلاعات اشتراک/مصرف نیز از رکوردهای موجود محاسبه می‌شود.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={verificationFilter} onChange={(event) => setVerificationFilter(event.target.value as "pending" | "verified" | "all")} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+              <option value="pending">در انتظار تأیید</option>
+              <option value="verified">تأییدشده‌ها</option>
+              <option value="all">همهٔ مشاوران</option>
+            </select>
+            <button type="button" onClick={() => void loadManagedAgents()} disabled={agentsBusy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold disabled:opacity-60">
+              {agentsBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} تازه‌سازی
+            </button>
+          </div>
+        </div>
+        {agentsError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{agentsError}</p>}
+        {agentsMessage && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{agentsMessage}</p>}
+        {agentsBusy && managedAgents.length === 0 ? (
+          <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" /> در حال دریافت مشاوران...</p>
+        ) : managedAgents.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">موردی برای این فیلتر وجود ندارد.</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {managedAgents.map((agent) => (
+              <article key={agent.id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-bold">{agent.firstName} {agent.lastName}{agent.agencyName ? " · " + agent.agencyName : ""}</p>
+                    <p className="mt-1 text-sm" dir="ltr">{agent.user.mobile}</p>
+                    <p className="mt-1 text-xs text-slate-500">شناسه مشاور: {idText(agent.id)}</p>
+                    <p className="mt-2 text-sm text-slate-600">وضعیت حساب: {agent.user.isActive ? "فعال" : "غیرفعال"}</p>
+                  </div>
+                  <div className="space-y-1 text-sm sm:text-left">
+                    <p>اشتراک: <b>{agent.subscription?.subscriptionPlan.name ?? "بدون اشتراک فعال"}</b></p>
+                    <p>مصرف ماه جاری: {agent.usage.usedCount.toLocaleString("fa-IR")} از {agent.usage.monthlyLimit.toLocaleString("fa-IR")}</p>
+                    <p>باقی‌مانده: {agent.usage.remainingCount.toLocaleString("fa-IR")}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {!agent.isVerified ? (
+                    <button type="button" onClick={() => void reviewAgent(agent.id, true)} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-60">
+                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} تأیید مشاور
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => void reviewAgent(agent.id, false)} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 disabled:opacity-60">
+                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} لغو تأیید
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h2 className="text-lg font-bold">گزارش دسترسی مشاوران به اطلاعات تماس</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-600">این گزارش، دسترسی‌های ثبت‌شده برای مشاهده شمارهٔ مشتری را نشان می‌دهد؛ گزارش عمومی تمام رویدادهای مدیریتی در مدل فعلی دیتابیس وجود ندارد.</p>
+        <form onSubmit={(event) => void loadContactAuditLogs(event)} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="space-y-1 text-sm">شناسه مشاور (اختیاری)<input value={auditAgentId} onChange={(event) => setAuditAgentId(event.target.value)} dir="ltr" className="w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
+          <label className="space-y-1 text-sm">از زمان<input type="datetime-local" value={auditFrom} onChange={(event) => setAuditFrom(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
+          <label className="space-y-1 text-sm">تا زمان<input type="datetime-local" value={auditTo} onChange={(event) => setAuditTo(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" /></label>
+          <div className="flex items-end"><button type="submit" disabled={auditBusy} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#043873] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">{auditBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} دریافت گزارش</button></div>
+        </form>
+        {auditError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{auditError}</p>}
+        {auditLogs.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {auditLogs.map((log) => (
+              <article key={log.id} className="rounded-xl border border-slate-200 p-4">
+                <p className="font-bold">{log.agent.firstName} {log.agent.lastName} · <span dir="ltr">{log.agent.user.mobile}</span></p>
+                <p className="mt-1 text-sm text-slate-600">مشتری: {log.customer.firstName} {log.customer.lastName} · <span dir="ltr">{log.customer.user.mobile}</span></p>
+                <p className="mt-1 text-sm text-slate-600">درخواست: {log.searchRequest.city} · {log.searchRequest.transactionType} · {log.searchRequest.propertyType}</p>
+                <p className="mt-1 text-xs text-slate-500">زمان: {new Date(log.accessedAt).toLocaleString("fa-IR")}</p>
+                <p className="mt-1 text-xs text-slate-500">کد رویداد: {idText(log.id)}</p>
+              </article>
+            ))}
+          </div>
+        )}
+        {!auditBusy && auditLogs.length === 0 && !auditError && <p className="mt-3 text-sm text-slate-500">برای مشاهده، فیلترها را تنظیم و «دریافت گزارش» را انتخاب کنید.</p>}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -354,13 +546,8 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
         </section>
 
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
-          <h2 className="font-bold text-amber-950">قابلیت‌های مدیریت که API موجود ندارند</h2>
-          <ul className="mt-3 space-y-2 text-sm leading-7 text-amber-900">
-            <li>فهرست و تأیید حساب مشاوران: مسیر خواندن صف انتظار و تغییر امن وضعیت تأیید وجود ندارد.</li>
-            <li>مدیریت اشتراک و ماندهٔ اعتبار: API برای فهرست پلن‌ها، اشتراک مشاور یا سوابق مصرف در اختیار پنل هشتی نیست.</li>
-            <li>فهرست کاربران و سوابق عملیات مدیریتی: نیاز به APIهای خواندن دارد که فعلاً تعریف نشده‌اند.</li>
-          </ul>
-          <p className="mt-3 text-xs leading-6 text-amber-900">این موارد عمداً به شکل دادهٔ ساختگی نمایش داده نمی‌شوند؛ پیاده‌سازی واقعی آن‌ها مستلزم اجازهٔ جداگانه برای تغییر بک‌اند است.</p>
+          <h2 className="font-bold text-amber-950">محدودیت داده‌های فعلی</h2>
+          <p className="mt-3 text-sm leading-7 text-amber-900">وضعیت تأیید مشاور در Schema فقط با isVerified نگهداری می‌شود؛ بنابراین «ردشده» از «در انتظار تأیید» قابل تفکیک نیست. برای وضعیت ردشده، یادداشت بررسی و گزارش عمومی همه رویدادهای مدیریتی، تغییر Schema دیتابیس لازم است.</p>
         </section>
       </div>
 
