@@ -1,0 +1,231 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { BadgeCheck, Bell, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Search, ShieldAlert } from "lucide-react";
+import type { UserPublic } from "@/features/auth/api/authApi";
+import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+
+interface AgentProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  isVerified: boolean;
+}
+interface ActiveRequest {
+  id: string;
+  transactionType: string;
+  propertyType: string;
+  city: string;
+  budget: string | number | null;
+  description: string | null;
+  hashtiVerified: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+interface ContactResult {
+  customer: { id: string; firstName: string; lastName: string; mobile: string };
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
+  const body = await response.json().catch(() => ({})) as { message?: string };
+  if (!response.ok) {
+    const msg = body.message || "درخواست به سرور ناموفق بود.";
+    if (msg === "Active subscription not found") throw new Error("برای مشاهدهٔ اطلاعات تماس، اشتراک فعال لازم است.");
+    if (msg === "Monthly contact access limit reached") throw new Error("سقف ماهانهٔ مشاهدهٔ اطلاعات تماس مصرف شده است.");
+    if (msg === "You do not have permission to access this resource") throw new Error("برای این عملیات مجوز ندارید.");
+    if (msg === "Session is invalid or expired") throw new Error("نشست شما منقضی شده است؛ دوباره وارد شوید.");
+    throw new Error(msg);
+  }
+  return body as T;
+}
+
+function displayMoney(value: string | number | null) {
+  if (value === null || value === "") return "تعیین نشده";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? new Intl.NumberFormat("fa-IR").format(numeric) + " تومان" : String(value);
+}
+function transactionName(value: string) {
+  return value === "SALE" ? "خرید" : value === "FULL_DEPOSIT" ? "رهن کامل" : value === "RENT" ? "اجاره" : value;
+}
+function propertyName(value: string) {
+  const labels: Record<string, string> = { APARTMENT: "آپارتمان", HOUSE: "خانه", VILLA: "ویلا", LAND: "زمین", SHOP: "مغازه", OFFICE: "اداری", GARDEN: "باغ" };
+  return labels[value] ?? value;
+}
+
+export function AgentDashboard({ user }: { user: UserPublic }) {
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [profileState, setProfileState] = useState<"checking" | "verified" | "pending" | "unknown" | "error">("checking");
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [requests, setRequests] = useState<ActiveRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Record<string, ContactResult["customer"]>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedProfileId = window.sessionStorage.getItem(`hashti:agentProfileId:${user.mobile}`);
+    setProfileId(storedProfileId);
+    if (!storedProfileId) {
+      setProfileState("unknown");
+      setProfileError("شناسهٔ پروفایل این حساب در مرورگر موجود نیست. API فعلی، پروفایل مشاور را مستقیماً از نشست جاری دریافت نمی‌کند؛ برای بررسی وضعیت تأیید و اتصال کامل حساب، به endpoint سمت سرور نیاز است.");
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        const profile = await requestJson<AgentProfile>(`/agents/${encodeURIComponent(storedProfileId)}/profile`);
+        if (!active) return;
+        if (profile.isVerified) {
+          setProfileState("verified");
+          setProfileError(null);
+        } else {
+          setProfileState("pending");
+          setProfileError(null);
+        }
+      } catch (error: unknown) {
+        if (active) {
+          setProfileState("error");
+          setProfileError(error instanceof Error ? error.message : "بررسی وضعیت حساب مشاور انجام نشد.");
+        }
+      }
+    })();
+    return () => { active = false; };
+  }, [user.mobile]);
+
+  const loadRequests = useCallback(async () => {
+    setLoadingRequests(true);
+    setRequestsError(null);
+    try {
+      setRequests(await requestJson<ActiveRequest[]>("/search-requests/active"));
+    } catch (error: unknown) {
+      setRequestsError(error instanceof Error ? error.message : "دریافت درخواست‌ها انجام نشد.");
+    } finally {
+      setLoadingRequests(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (profileState === "verified") void loadRequests();
+  }, [profileState, loadRequests]);
+
+  const openContact = async (requestId: string) => {
+    if (!profileId) {
+      setRequestsError("شناسهٔ پروفایل مشاور در دسترس نیست؛ دریافت آن به API سمت سرور نیاز دارد.");
+      return;
+    }
+    setBusyId(requestId);
+    setRequestsError(null);
+    setActionMessage(null);
+    try {
+      const result = await requestJson<ContactResult>(
+        `/agents/${encodeURIComponent(profileId)}/search-requests/${encodeURIComponent(requestId)}/contact`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
+      );
+      setContacts((current) => ({ ...current, [requestId]: result.customer }));
+      setActionMessage("دسترسی به اطلاعات تماس از سرور دریافت شد.");
+    } catch (error: unknown) {
+      setRequestsError(error instanceof Error ? error.message : "دسترسی به اطلاعات تماس انجام نشد.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {profileState === "checking" && (
+        <section className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600"><LoaderCircle className="h-5 w-5 animate-spin" />در حال بررسی تأیید حساب مشاور...</section>
+      )}
+
+      {(profileState === "pending" || profileState === "unknown" || profileState === "error") && (
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="h-6 w-6 text-amber-700" />
+            <div>
+              <h3 className="font-bold text-amber-950">{profileState === "pending" ? "حساب مشاور در انتظار تأیید هشتی است" : profileState === "unknown" ? "وضعیت تأیید حساب قابل بازیابی نیست" : "بررسی حساب مشاور ناموفق بود"}</h3>
+              <p className="mt-2 text-sm leading-7 text-amber-900">
+                {profileState === "pending"
+                  ? "پس از تأیید، امکانات مشاور در این صفحه در دسترس خواهد بود."
+                  : profileError}
+              </p>
+            </div>
+          </div>
+          {profileState !== "pending" && profileError && <p className="mt-3 text-xs leading-6 text-amber-900">محدودیت فعلی: تغییر بک‌اند انجام نشده و برای بازیابی مطمئن پروفایل جاری، endpoint لازم است.</p>}
+        </section>
+      )}
+
+      {profileState === "verified" && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SummaryCard icon={<BadgeCheck className="h-5 w-5" />} label="وضعیت حساب" value="تأیید شده" />
+            <SummaryCard icon={<FileText className="h-5 w-5" />} label="درخواست‌های فعال" value={String(requests.length)} />
+            <SummaryCard icon={<Contact className="h-5 w-5" />} label="اطلاعات تماس دریافت‌شده" value={String(Object.keys(contacts).length)} />
+          </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">درخواست‌های فعال مشتریان</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">اطلاعات تماس تا زمان درخواست و تأیید دسترسی نمایش داده نمی‌شود.</p>
+              </div>
+              <button type="button" onClick={() => void loadRequests()} disabled={loadingRequests} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">
+                {loadingRequests ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} به‌روزرسانی
+              </button>
+            </div>
+            {requestsError && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{requestsError}</p>}
+            {actionMessage && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{actionMessage}</p>}
+            {loadingRequests ? (
+              <div className="mt-5 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" />در حال دریافت درخواست‌ها...</div>
+            ) : requests.length === 0 ? (
+              <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">در حال حاضر درخواست فعالی وجود ندارد.</p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {requests.map((request) => (
+                  <article key={request.id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-bold">{transactionName(request.transactionType)} {propertyName(request.propertyType)} در {request.city}</h3>
+                        <p className="mt-1 text-sm text-slate-600">بودجه: {displayMoney(request.budget)}</p>
+                        {request.description && <p className="mt-2 text-sm leading-7 text-slate-600">{request.description}</p>}
+                        <p className="mt-2 text-xs text-slate-400">کد درخواست: <span dir="ltr" className="font-mono">{request.id}</span></p>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${request.hashtiVerified ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{request.hashtiVerified ? "بررسی هشتی شده" : "در انتظار بررسی هشتی"}</span>
+                    </div>
+                    {contacts[request.id] ? (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm">
+                        <b>{contacts[request.id].firstName} {contacts[request.id].lastName}</b>
+                        <p className="mt-1" dir="ltr">{contacts[request.id].mobile}</p>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => void openContact(request.id)} disabled={busyId === request.id} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#043873] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60">
+                        {busyId === request.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />} درخواست دسترسی به اطلاعات تماس
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <h2 className="font-bold">اشتراک و اعتبار</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-600">سرور هنگام درخواست اطلاعات تماس، اشتراک فعال و سقف مصرف ماهانه را بررسی می‌کند. API خواندن اشتراک فعلی و باقی‌ماندهٔ اعتبار هنوز در دسترس فرانت‌اند نیست؛ بنابراین عددی حدس زده نمی‌شود.</p>
+            </section>
+            <UserNotificationsPanel userId={user.id} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[#043873]">{icon}</div><div><p className="text-sm text-slate-500">{label}</p><p className="mt-1 font-black">{value}</p></div></div>;
+}
