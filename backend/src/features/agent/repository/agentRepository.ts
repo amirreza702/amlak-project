@@ -23,6 +23,26 @@ export const findAgentById = async (agentId: string) => {
 };
 
 /**
+ * دریافت پروفایل حساب جاری از روی شناسه User نشست.
+ * برای ورودهای قدیمی که profileId در sessionStorage ندارند.
+ */
+export const findAgentProfileByUserId = async (userId: string) => {
+  return prisma.agent.findUnique({
+    where: { userId },
+    select: {
+      id: true,
+      userId: true,
+      firstName: true,
+      lastName: true,
+      agencyName: true,
+      address: true,
+      isVerified: true,
+      user: { select: { mobile: true } },
+    },
+  });
+};
+
+/**
  * دریافت پروفایل مشاور همراه با userId
  * برای بررسی مالکیت در Service.
  */
