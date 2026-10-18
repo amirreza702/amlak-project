@@ -3,6 +3,9 @@ import { Request, Response } from "express";
 import {
   createAgentSubscriptionService,
   upgradeAgentSubscriptionService,
+  getActiveSubscriptionPlansService,
+  getAgentCurrentSubscriptionService,
+  getAgentContactUsageService,
 } from "../service/agentSubscriptionService";
 
 /**
@@ -188,5 +191,60 @@ export const upgradeAgentSubscriptionController = async (
     return res.status(500).json({
       message: "Internal server error",
     });
+  }
+};
+
+/**
+ * GET /subscription-plans
+ * فهرست پلن‌های فعال و اطلاعات لازم برای مقایسه آن‌ها.
+ */
+export const getSubscriptionPlansController = async (
+  _req: Request,
+  res: Response
+) => {
+  try {
+    const plans = await getActiveSubscriptionPlansService();
+    return res.status(200).json({ plans });
+  } catch (error) {
+    console.error("Error getting subscription plans:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * GET /agents/:agentId/subscriptions/current
+ * اشتراک فعال مشاور واردشده؛ اگر اشتراکی فعال نباشد، مقدار null است.
+ */
+export const getAgentCurrentSubscriptionController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const subscription = await getAgentCurrentSubscriptionService(
+      req.params.agentId as string
+    );
+    return res.status(200).json({ subscription });
+  } catch (error) {
+    console.error("Error getting agent subscription:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * GET /agents/:agentId/subscriptions/usage
+ * میزان مصرف سهمیه دسترسی به اطلاعات تماس در ماه UTC جاری.
+ */
+export const getAgentContactUsageController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const usage = await getAgentContactUsageService(
+      req.params.agentId as string
+    );
+    return res.status(200).json({ usage });
+  } catch (error) {
+    console.error("Error getting agent contact usage:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
