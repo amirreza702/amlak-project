@@ -43,7 +43,7 @@ router.get(
   authMiddleware,
   requireRole(...propertyManagers),
   requireVerifiedAgent,
-  requirePropertyAccess(),
+  requirePropertyAccess("id", false),
   getPropertyByIdController
 );
 router.get("/properties/:id/media", getPropertyMediaController);
