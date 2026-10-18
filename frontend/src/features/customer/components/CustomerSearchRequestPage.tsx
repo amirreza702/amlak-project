@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, FileText, LoaderCircle, LogOut } from "lucide-react";
+import { ArrowRight, FileText, LoaderCircle } from "lucide-react";
 import { useCustomerSearchRequest } from "../hooks/useCustomerSearchRequest";
 import type {
   CustomerRequestPropertyType,
@@ -80,26 +80,13 @@ export function CustomerSearchRequestPage() {
           <Link href="/" className="text-lg font-black text-[#043873]">
             هشتی
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {authStatus === "customer" && (
-              <button
-                type="button"
-                onClick={() => void signOutAndUseCustomerAccount()}
-                disabled={isAuthSubmitting}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <LogOut className="h-4 w-4" />
-                {isAuthSubmitting ? "در حال خروج..." : "خروج از حساب"}
-              </button>
-            )}
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-[#043873]"
-            >
-              <ArrowRight className="h-4 w-4" />
-              بازگشت به صفحه اصلی
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-[#043873]"
+          >
+            <ArrowRight className="h-4 w-4" />
+            بازگشت به صفحه اصلی
+          </Link>
         </div>
       </header>
 

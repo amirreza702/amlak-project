@@ -3,6 +3,7 @@ import type { Metadata,Viewport } from "next";
 import "./globals.css";
 
 import { PwaRegistrar } from "@/lib/PwaRegistrar";
+import { GlobalSessionControl } from "@/shared/components/GlobalSessionControl";
 
 export const viewport: Viewport = {
   themeColor: "#062a5b",
@@ -46,6 +47,9 @@ export default function RootLayout({
             در نتیجه Development تحت تأثیر Cache قرار نمی‌گیرد.
         ================================================== */}
         <PwaRegistrar />
+
+        {/* کنترل مشترک ورود و خروج در تمام مسیرهای برنامه */}
+        <GlobalSessionControl />
 
         {/* محتوای صفحات */}
         {children}

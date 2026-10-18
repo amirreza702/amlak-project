@@ -3,6 +3,15 @@
 // API هم‌مبدأ؛ Nginx در Docker مسیر /api را به Backend هدایت می‌کند.
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
+// رویداد مشترک برای به‌روزرسانی وضعیت ورود در اجزای سراسری.
+export const AUTH_STATE_CHANGE_EVENT = "hashti:auth-state-changed";
+
+function notifyAuthStateChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_STATE_CHANGE_EVENT));
+  }
+}
+
 /**
  * قرارداد عمومی کاربر مطابق پاسخ‌های فعلی بک‌اند.
  * پاسخ /auth/me فقط id، mobile و role را برمی‌گرداند؛
@@ -107,7 +116,9 @@ export async function loginUser(
     );
   }
 
-  return readJson<AuthResponse>(response);
+  const result = await readJson<AuthResponse>(response);
+  notifyAuthStateChanged();
+  return result;
 }
 
 // بررسی نشست فعلی؛ API بک‌اند پاسخ را داخل فیلد user قرار می‌دهد.
@@ -140,7 +151,9 @@ export async function logoutUser(): Promise<{ message: string }> {
     );
   }
 
-  return readJson<{ message: string }>(response);
+  const result = await readJson<{ message: string }>(response);
+  notifyAuthStateChanged();
+  return result;
 }
 
 /**
