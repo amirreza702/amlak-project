@@ -24,6 +24,7 @@ import { findDuplicateMatchesController } from "../controller/duplicateMatchingC
 
 import { authMiddleware, type AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 import { requireRole } from "../../auth/middleware/requireRole";
+import { requireVerifiedAgent } from "../../auth/middleware/verifiedAgentMiddleware";
 import {
   bindOwnProfileIdToBody,
   requirePropertyAccess,
@@ -37,7 +38,14 @@ const propertyEditors = [UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI] as con
 // اطلاعات عمومی منتشرشده ملک و جست‌وجو عمومی باقی می‌مانند.
 router.get("/properties/search", searchPropertyController);
 router.get("/properties/:id/public", getPublicPropertyByIdController);
-router.get("/properties/:id", authMiddleware, getPropertyByIdController);
+router.get(
+  "/properties/:id",
+  authMiddleware,
+  requireRole(...propertyManagers),
+  requireVerifiedAgent,
+  requirePropertyAccess(),
+  getPropertyByIdController
+);
 router.get("/properties/:id/media", getPropertyMediaController);
 
 // ثبت ملک توسط مالک یا مشاور؛ شناسه پروفایل از نشست استخراج می‌شود.
@@ -45,6 +53,7 @@ router.post(
   "/properties",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT),
+  requireVerifiedAgent,
   (req, res, next) => {
     const role = (req as AuthenticatedRequest).user?.role;
     const bindProfile =
@@ -60,22 +69,22 @@ router.post(
 // Listing، قیمت، وضعیت و ویرایش فقط برای مالک/مشاور مرتبط یا کارکنان هشتی.
 router.post(
   "/properties/:id/listing",
-  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess(),
   createPropertyListingController
 );
 router.put(
   "/properties/:id/price",
-  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyEditors), requireVerifiedAgent, requirePropertyAccess(),
   updatePropertyPriceController
 );
 router.put(
   "/properties/:id/status",
-  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyEditors), requireVerifiedAgent, requirePropertyAccess(),
   updatePropertyListingStatusController
 );
 router.get(
   "/properties/:id/confirmation",
-  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess(),
   checkPropertyConfirmationController
 );
 router.put(
@@ -84,7 +93,7 @@ router.put(
 );
 router.patch(
   "/properties/:id",
-  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyEditors), requireVerifiedAgent, requirePropertyAccess(),
   updatePropertyController
 );
 
@@ -121,20 +130,21 @@ router.patch(
 // رسانه فقط توسط مالک/مشاور مرتبط یا کارکنان هشتی قابل افزودن است.
 router.post(
   "/properties/:id/media",
-  authMiddleware, requireRole(...propertyEditors), requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyEditors), requireVerifiedAgent, requirePropertyAccess(),
   createPropertyMediaController
 );
 
 // پرونده تأیید و مدارک آن: فقط طرف مرتبط با ملک یا کارکنان هشتی.
 router.post(
   "/properties/:id/verification",
-  authMiddleware, requireRole(...propertyManagers), requirePropertyAccess("id", false),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess("id", false),
   createVerificationCaseController
 );
 router.post(
   "/verification-cases/:id/documents",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerifiedAgent,
   requireVerificationCaseAccess(),
   createVerificationDocumentController
 );
@@ -142,6 +152,7 @@ router.get(
   "/verification-cases/:id/documents",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerifiedAgent,
   requireVerificationCaseAccess(),
   getVerificationDocumentsController
 );
@@ -171,6 +182,7 @@ router.get(
   "/properties/:id/duplicate-matches",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerifiedAgent,
   requirePropertyAccess(),
   findDuplicateMatchesController
 );
@@ -197,6 +209,7 @@ router.post(
   "/properties/:id/exact-location-access-logs",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerifiedAgent,
   requirePropertyAccess(),
   (req, res, next) => {
     const user = (req as AuthenticatedRequest).user;
@@ -210,6 +223,7 @@ router.get(
   "/properties/:id/exact-location-access-logs",
   authMiddleware,
   requireRole(UserRole.OWNER, UserRole.AGENT, UserRole.HASHTI),
+  requireVerifiedAgent,
   requirePropertyAccess(),
   getExactLocationAccessLogsController
 );
