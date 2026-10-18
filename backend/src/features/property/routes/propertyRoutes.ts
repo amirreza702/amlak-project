@@ -46,7 +46,14 @@ router.get(
   requirePropertyAccess("id", false),
   getPropertyByIdController
 );
-router.get("/properties/:id/media", getPropertyMediaController);
+router.get(
+  "/properties/:id/media",
+  authMiddleware,
+  requireRole(...propertyManagers),
+  requireVerifiedAgent,
+  requirePropertyAccess("id", false),
+  getPropertyMediaController
+);
 
 // ثبت ملک توسط مالک یا مشاور؛ شناسه پروفایل از نشست استخراج می‌شود.
 router.post(
