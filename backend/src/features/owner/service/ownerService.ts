@@ -13,6 +13,7 @@
 
 import {
   findOwnerProfileById,
+  findOwnerPropertiesByOwnerId,
   updateOwnerProfile,
 } from "../repository/ownerRepository";
 
@@ -93,4 +94,13 @@ export const updateOwnerProfileService = async (
       lastName,
     }),
   });
+};
+
+/**
+ * Lists properties connected to an existing owner profile.
+ */
+export const getOwnerPropertiesService = async (ownerId: string) => {
+  const owner = await findOwnerProfileById(ownerId);
+  if (!owner) throw new Error("Owner not found");
+  return findOwnerPropertiesByOwnerId(ownerId);
 };
