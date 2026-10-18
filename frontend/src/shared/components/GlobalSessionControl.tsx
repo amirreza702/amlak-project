@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { LogOut, LoaderCircle } from "lucide-react";
 import {
   AUTH_STATE_CHANGE_EVENT,
@@ -14,49 +15,42 @@ import {
  * کاربر فقط از روی Session معتبر بک‌اند شناسایی می‌شود.
  */
 export function GlobalSessionControl() {
+  const pathname = usePathname();
+  const latestCheckId = useRef(0);
   const [user, setUser] = useState<UserPublic | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const syncSession = useCallback(async () => {
+    // پاسخ قدیمی نباید وضعیت ورود جدیدتر را بازنویسی کند.
+    const checkId = ++latestCheckId.current;
+
     try {
       const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      setLogoutError(null);
+      if (checkId === latestCheckId.current) {
+        setUser(currentUser);
+        setLogoutError(null);
+      }
     } catch {
-      setUser(null);
+      if (checkId === latestCheckId.current) {
+        setUser(null);
+      }
     }
   }, []);
 
   useEffect(() => {
-    let isActive = true;
-
-    const refreshSession = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        if (isActive) {
-          setUser(currentUser);
-          setLogoutError(null);
-        }
-      } catch {
-        if (isActive) {
-          setUser(null);
-        }
-      }
-    };
-
     const handleAuthStateChange = () => {
       void syncSession();
     };
 
-    void refreshSession();
+    // بازیابی نشست در بارگذاری مستقیم و هنگام جابه‌جایی بین صفحات.
+    void syncSession();
     window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
 
     return () => {
-      isActive = false;
       window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
     };
-  }, [syncSession]);
+  }, [pathname, syncSession]);
 
   const handleLogout = async () => {
     setIsSigningOut(true);
@@ -78,33 +72,35 @@ export function GlobalSessionControl() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-[2000] flex max-w-[calc(100vw-2rem)] flex-col items-start gap-2"
+      className="relative z-[2000] w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur"
       dir="rtl"
     >
-      {logoutError && (
-        <div
-          role="alert"
-          className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-lg"
-        >
-          {logoutError}
-        </div>
-      )}
-      {user && (
-        <button
-          type="button"
-          onClick={() => void handleLogout()}
-          disabled={isSigningOut}
-          aria-label="خروج از حساب کاربری"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-lg transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F9CF9] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSigningOut ? (
-            <LoaderCircle className="h-4 w-4 animate-spin" />
-          ) : (
-            <LogOut className="h-4 w-4" />
-          )}
-          {isSigningOut ? "در حال خروج..." : "خروج از حساب"}
-        </button>
-      )}
+      <div className="mx-auto flex max-w-7xl items-center justify-end gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        {logoutError && (
+          <div
+            role="alert"
+            className="text-sm text-red-700"
+          >
+            {logoutError}
+          </div>
+        )}
+        {user && (
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            disabled={isSigningOut}
+            aria-label="خروج از حساب کاربری"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F9CF9] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSigningOut ? (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="h-4 w-4" />
+            )}
+            {isSigningOut ? "در حال خروج..." : "خروج از حساب"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
