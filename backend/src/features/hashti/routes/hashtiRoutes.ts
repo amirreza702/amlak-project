@@ -8,6 +8,7 @@ import {
   getManagedAgentsController,
   setAgentVerificationController,
 } from "../controller/agentManagementController";
+import { getAdminAuditLogsController } from "../controller/adminAuditLogController";
 
 const router = Router();
 
@@ -33,6 +34,14 @@ router.get(
   authMiddleware,
   requireRole(UserRole.HASHTI),
   getHashtiContactAccessLogsController
+);
+
+// گزارش عمومی رویدادهای مدیریتی ثبت‌شده؛ فقط برای کارکنان هشتی.
+router.get(
+  "/hashti/admin-audit-logs",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  getAdminAuditLogsController
 );
 
 export default router;
