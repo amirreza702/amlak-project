@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   getHashtiContactAccessLogsService,
@@ -38,9 +39,9 @@ export async function getManagedAgentsController(
     typeof rawStatus === "string" ? rawStatus : "pending"
   ).toLowerCase();
 
-  if (!["pending", "verified", "all"].includes(verificationStatus)) {
+  if (!["pending", "verified", "rejected", "all"].includes(verificationStatus)) {
     return res.status(400).json({
-      message: "verificationStatus must be pending, verified, or all",
+      message: "verificationStatus must be pending, verified, rejected, or all",
     });
   }
 
@@ -73,25 +74,40 @@ export async function getManagedAgentsController(
 
 /**
  * PATCH /hashti/agents/:agentId/verification
- * Body: { "isVerified": true | false }
+ * Body: { "verificationStatus": "PENDING" | "VERIFIED" | "REJECTED", "notes"?: string | null }
  */
 export async function setAgentVerificationController(
   req: Request<{ agentId: string }>,
   res: Response
 ) {
-  const { isVerified } = req.body ?? {};
+  const user = (req as AuthenticatedRequest).user;
+  if (!user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
 
-  if (typeof isVerified !== "boolean") {
+  const { verificationStatus, notes = null } = req.body ?? {};
+  if (!["PENDING", "VERIFIED", "REJECTED"].includes(verificationStatus)) {
     return res.status(400).json({
-      message: "isVerified must be a boolean",
+      message: "verificationStatus must be PENDING, VERIFIED, or REJECTED",
     });
   }
 
+  if (notes !== null && typeof notes !== "string") {
+    return res.status(400).json({ message: "notes must be a string or null" });
+  }
+
+  if (typeof notes === "string" && notes.length > 2000) {
+    return res.status(400).json({ message: "notes must be 2000 characters or fewer" });
+  }
+
   try {
-    const agent = await setAgentVerificationService(
-      req.params.agentId,
-      isVerified
-    );
+    const agent = await setAgentVerificationService({
+      agentId: req.params.agentId,
+      verificationStatus: verificationStatus as "PENDING" | "VERIFIED" | "REJECTED",
+      reviewerUserId: user.id,
+      reviewerMobile: user.mobile,
+      notes,
+    });
 
     if (!agent) {
       return res.status(404).json({ message: "Agent not found" });
