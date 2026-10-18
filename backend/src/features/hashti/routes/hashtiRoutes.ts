@@ -12,7 +12,7 @@ import { getAdminAuditLogsController } from "../controller/adminAuditLogControll
 
 const router = Router();
 
-// فهرست مشاوران برای مدیریت هشتی؛ پیش‌فرض فقط مشاوران تأییدنشده است.
+// فهرست مشاوران برای مدیریت هشتی؛ پیش‌فرض فقط وضعیت PENDING است.
 router.get(
   "/hashti/agents",
   authMiddleware,
