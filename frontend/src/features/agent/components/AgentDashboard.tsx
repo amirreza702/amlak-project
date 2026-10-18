@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BadgeCheck, Building2, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Save, ShieldAlert, UserRound } from "lucide-react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { BadgeCheck, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Save, ShieldAlert, UserRound } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 
@@ -149,7 +149,7 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
     }
   };
 
-  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+  const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!profileId) return;
     setIsSavingProfile(true);
