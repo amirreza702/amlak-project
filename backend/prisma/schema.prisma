@@ -208,7 +208,7 @@ model User {
 
   customer Customer?
   owner    Owner?
-  agent    Agent?
+  agent    Agent? @relation("UserAgentProfile")
 
   notifications Notification[]
   messages      Message[]
@@ -366,7 +366,7 @@ model Agent {
   verificationReviewedBy String?
   verificationNotes      String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserAgentProfile", fields: [userId], references: [id], onDelete: Cascade)
   verificationReviewer User? @relation("AgentVerificationReviewer", fields: [verificationReviewedBy], references: [id], onDelete: SetNull)
 
   propertyAgents PropertyAgent[]
