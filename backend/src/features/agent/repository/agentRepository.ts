@@ -37,6 +37,9 @@ export const findAgentProfileByUserId = async (userId: string) => {
       agencyName: true,
       address: true,
       isVerified: true,
+      verificationStatus: true,
+      verificationReviewedAt: true,
+      verificationNotes: true,
       user: { select: { mobile: true } },
     },
   });
@@ -57,6 +60,9 @@ export const findAgentProfileById = async (id: string) => {
       agencyName: true,
       address: true,
       isVerified: true,
+      verificationStatus: true,
+      verificationReviewedAt: true,
+      verificationNotes: true,
       user: {
         select: {
           mobile: true,
@@ -91,6 +97,9 @@ export const updateAgentProfile = async (
       agencyName: true,
       address: true,
       isVerified: true,
+      verificationStatus: true,
+      verificationReviewedAt: true,
+      verificationNotes: true,
     },
   });
 };
