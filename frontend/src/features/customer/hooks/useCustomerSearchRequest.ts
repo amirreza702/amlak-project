@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
+  AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
   logoutUser,
@@ -130,6 +131,55 @@ export function useCustomerSearchRequest() {
     void initializeSession();
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // هماهنگ‌سازی فرم درخواست با خروج سراسری و تغییر نقش حساب.
+  useEffect(() => {
+    let active = true;
+
+    const handleAuthStateChange = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!active) return;
+        setUser(currentUser);
+
+        if (currentUser.role !== "CUSTOMER") {
+          setCustomerProfile(null);
+          setCreatedRequest(null);
+          setRegistrationSuccess(false);
+          setAuthStatus("wrong-role");
+          setAuthError("این بخش فقط برای حساب مشتری در دسترس است.");
+          return;
+        }
+
+        try {
+          const profile = await getCurrentCustomerProfile();
+          if (!active) return;
+          setCustomerProfile(profile);
+          setAuthStatus("customer");
+          setAuthError(null);
+        } catch (error: unknown) {
+          if (!active) return;
+          setCustomerProfile(null);
+          setAuthStatus("profile-error");
+          setAuthError(getErrorMessage(error, "دریافت پروفایل مشتری انجام نشد."));
+        }
+      } catch {
+        if (!active) return;
+        setUser(null);
+        setCustomerProfile(null);
+        setCreatedRequest(null);
+        setRegistrationSuccess(false);
+        setAuthStatus("anonymous");
+        setAuthError(null);
+      }
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      active = false;
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
     };
   }, []);
 

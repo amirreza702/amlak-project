@@ -17,7 +17,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { getCurrentUser, type UserPublic } from "@/features/auth/api/authApi";
+import { AUTH_STATE_CHANGE_EVENT, getCurrentUser, type UserPublic } from "@/features/auth/api/authApi";
 import { getCurrentCustomerProfile } from "../api/customerSearchRequestApi";
 import type {
   CustomerProfileForRequest,
@@ -143,6 +143,44 @@ export function CustomerDashboard() {
       }
     })();
     return () => { active = false; };
+  }, [refreshData]);
+
+  // پاک‌سازی اطلاعات خصوصی صفحه وقتی نشست سراسری خروج کند یا نقش عوض شود.
+  useEffect(() => {
+    let active = true;
+
+    const handleAuthStateChange = async () => {
+      try {
+        const authenticatedUser = await getCurrentUser();
+        if (authenticatedUser.role !== "CUSTOMER") {
+          throw new Error("این صفحه فقط برای حساب مشتری در دسترس است.");
+        }
+        const customerProfile = await getCurrentCustomerProfile();
+        if (!active) return;
+        setUser(authenticatedUser);
+        setProfile(customerProfile);
+        setFirstName(customerProfile.firstName);
+        setLastName(customerProfile.lastName);
+        setPageError(null);
+        await refreshData(customerProfile, authenticatedUser);
+      } catch {
+        if (!active) return;
+        setUser(null);
+        setProfile(null);
+        setRequests([]);
+        setFavorites([]);
+        setNotifications([]);
+        setEditingId(null);
+        setPageError("برای مشاهدهٔ پنل، با حساب مشتری وارد شوید.");
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      active = false;
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    };
   }, [refreshData]);
 
   const activeCount = useMemo(() => requests.filter((request) => request.status === "ACTIVE").length, [requests]);

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Heart, LoaderCircle } from "lucide-react";
-import { getCurrentUser } from "@/features/auth/api/authApi";
+import { AUTH_STATE_CHANGE_EVENT, getCurrentUser } from "@/features/auth/api/authApi";
 import { getCurrentCustomerProfile } from "../api/customerSearchRequestApi";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -20,12 +20,16 @@ export function CustomerFavoriteButton({ propertyId }: { propertyId: string }) {
 
   useEffect(() => {
     let active = true;
-    (async () => {
+
+    const loadFavoriteState = async () => {
+      setState("checking");
+      setCustomerId(null);
       try {
         const user = await getCurrentUser();
         if (!active) return;
         if (user.role !== "CUSTOMER") {
           setState("wrong-role");
+          setIsFavorite(false);
           return;
         }
         const profile = await getCurrentCustomerProfile();
@@ -41,10 +45,23 @@ export function CustomerFavoriteButton({ propertyId }: { propertyId: string }) {
         setIsFavorite(Boolean(data.isFavorite));
         setState("ready");
       } catch {
-        if (active) setState("anonymous");
+        if (active) {
+          setIsFavorite(false);
+          setState("anonymous");
+        }
       }
-    })();
-    return () => { active = false; };
+    };
+
+    const handleAuthStateChange = () => {
+      void loadFavoriteState();
+    };
+
+    void loadFavoriteState();
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      active = false;
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    };
   }, [propertyId]);
 
   const toggleFavorite = async () => {
