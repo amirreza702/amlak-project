@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LogOut, LoaderCircle } from "lucide-react";
+import Link from "next/link";
+import { LogOut, LoaderCircle, LayoutDashboard } from "lucide-react";
 import {
   AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
@@ -76,6 +77,15 @@ export function GlobalSessionControl() {
       dir="rtl"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-end gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        {user && (
+          <Link
+            href={user.role === "CUSTOMER" ? "/customer" : user.role === "OWNER" ? "/owner" : user.role === "AGENT" ? "/agent" : "/hashti"}
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#043873] hover:bg-blue-50"
+          >
+            <LayoutDashboard className="h-4 w-4" />
+            پنل من
+          </Link>
+        )}
         {logoutError && (
           <div
             role="alert"

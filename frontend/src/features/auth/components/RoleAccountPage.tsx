@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { AgentDashboard } from "@/features/agent/components/AgentDashboard";
+import { OwnerDashboard } from "@/features/owner/components/OwnerDashboard";
+import { HashtiDashboard } from "@/features/hashti/components/HashtiDashboard";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -164,13 +167,21 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
     try {
       if (authMode === "register") {
         const registrationRole = role as Exclude<UserRole, "HASHTI">;
-        await registerUser({
+        const registration = await registerUser({
           mobile: normalizedMobile,
           password,
           role: registrationRole,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
         });
+        // شناسهٔ پروفایل فقط برای وصل‌شدن رابط به APIهای موجود نگه داشته می‌شود؛
+        // کنترل دسترسی واقعی همچنان باید از نشست سمت سرور انجام شود.
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            `hashti:${role.toLowerCase()}ProfileId:${normalizedMobile}`,
+            registration.user.profileId
+          );
+        }
       }
 
       const result = await loginUser(normalizedMobile, password, role);
@@ -235,37 +246,27 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
             <LoaderCircle className="h-5 w-5 animate-spin" />
             در حال بررسی وضعیت ورود...
           </div>
-        ) : isAuthenticatedForThisRole ? (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <h2 className="text-xl font-bold">{copy.successTitle}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              {successMessage || copy.successDescription}
-            </p>
-            {role === "HASHTI" && (
-              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center gap-2 font-bold text-[#043873]">
-                  <ShieldCheck className="h-5 w-5" />
-                  دسترسی مدیریتی هشتی
+        ) : isAuthenticatedForThisRole && currentUser ? (
+          <div className="space-y-5">
+            <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  این مسیر برای پنل هشتی محافظت شده است. امکانات مدیریتی در مراحل بعدی به این صفحه اضافه می‌شوند.
-                </p>
-                <p className="mt-3 text-xs text-slate-500">
-                  حساب واردشده: <span dir="ltr">{currentUser?.mobile}</span>
-                </p>
+                <div>
+                  <h2 className="text-xl font-bold">{copy.successTitle}</h2>
+                  <p className="mt-1 text-sm leading-7 text-slate-600">{successMessage || copy.successDescription}</p>
+                  <p className="mt-1 text-xs text-slate-500">حساب فعال: <span dir="ltr">{currentUser.mobile}</span></p>
+                </div>
               </div>
-            )}
-            <Link
-              href="/"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#062a5b]"
-            >
-              <Home className="h-4 w-4" />
-              بازگشت به هشتی
-            </Link>
-          </section>
+              <Link href="/" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#043873] underline">
+                <Home className="h-4 w-4" /> بازگشت به صفحه اصلی
+              </Link>
+            </section>
+            {role === "OWNER" && <OwnerDashboard user={currentUser} />}
+            {role === "AGENT" && <AgentDashboard user={currentUser} />}
+            {role === "HASHTI" && <HashtiDashboard user={currentUser} />}
+          </div>
         ) : (
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             {currentUser && currentUser.role !== role && (
