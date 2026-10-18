@@ -8,6 +8,7 @@ import {
   createUser,
   findUserByMobile,
   findSessionByTokenHash,
+  extendSessionExpiry,
   deleteSessionByTokenHash,
   resetUserPasswordAndSessions,
 } from "../repository/authRepository";
@@ -25,6 +26,9 @@ interface RegisterInput {
  */
 const hashSessionToken = (sessionToken: string) =>
   createHash("sha256").update(sessionToken).digest("hex");
+
+// نشست پس از یک ساعت بدون درخواست معتبر منقضی می‌شود.
+const SESSION_IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 
 /**
  * ثبت‌نام کاربر جدید
@@ -108,14 +112,13 @@ export const loginUserService = async (
   }
 
   // توکن تصادفی برای Session
-  const sessionToken = randomBytes(32).toString("hex");
+  // پیشوند نسخه‌ای باعث می‌شود نشست‌های قدیمی با مهلت هفت‌روزه پذیرفته نشوند.
+  const sessionToken = `h1_${randomBytes(32).toString("hex")}`;
 
   // فقط هش توکن در دیتابیس ذخیره می‌شود.
   const tokenHash = hashSessionToken(sessionToken);
 
-  const expiresAt = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000
-  );
+  const expiresAt = new Date(Date.now() + SESSION_IDLE_TIMEOUT_MS);
 
   await createSession({
     tokenHash,
@@ -142,15 +145,21 @@ export const loginUserService = async (
 export const getAuthenticatedUserService = async (
   sessionToken: string
 ) => {
-  const tokenHash = hashSessionToken(sessionToken);
+  // نشست‌های صادرشده با نسخه قبلی، زمان آخرین فعالیت ثبت‌شده ندارند؛
+  // برای اعمال دقیق مهلت عدم فعالیت، کاربر باید یک بار دوباره وارد شود.
+  if (!sessionToken.startsWith("h1_")) {
+    throw new Error("SESSION_EXPIRED");
+  }
 
+  const tokenHash = hashSessionToken(sessionToken);
   const session = await findSessionByTokenHash(tokenHash);
 
   if (!session) {
     throw new Error("SESSION_INVALID");
   }
 
-  if (session.expiresAt <= new Date()) {
+  const now = new Date();
+  if (session.expiresAt <= now) {
     throw new Error("SESSION_EXPIRED");
   }
 
@@ -158,10 +167,20 @@ export const getAuthenticatedUserService = async (
     throw new Error("USER_INACTIVE");
   }
 
+  // هر درخواست احراز‌شده، مهلت نشست را یک ساعت از نو تمدید می‌کند.
+  const expiresAt = new Date(now.getTime() + SESSION_IDLE_TIMEOUT_MS);
+  const extended = await extendSessionExpiry(tokenHash, now, expiresAt);
+
+  // اگر نشست هم‌زمان حذف یا منقضی شده باشد، ادامه درخواست مجاز نیست.
+  if (!extended) {
+    throw new Error("SESSION_EXPIRED");
+  }
+
   return {
     id: session.user.id,
     mobile: session.user.mobile,
     role: session.user.role,
+    expiresAt,
   };
 };
 

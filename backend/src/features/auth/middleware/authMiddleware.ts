@@ -1,4 +1,3 @@
-
 import { Request, Response, NextFunction } from "express";
 
 import {
@@ -15,7 +14,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 /**
- * بررسی اعتبار Session کاربر
+ * بررسی اعتبار Session و تمدید مهلت پس از هر درخواست معتبر.
  */
 export async function authMiddleware(
   req: AuthenticatedRequest,
@@ -34,11 +33,20 @@ export async function authMiddleware(
       });
     }
 
-    const user = await getAuthenticatedUserService(
+    const { expiresAt, ...user } = await getAuthenticatedUserService(
       sessionToken
     );
 
     req.user = user;
+
+    // کوکی HttpOnly هم‌زمان با مهلت سمت سرور تمدید می‌شود.
+    res.cookie("hashti_session", sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: expiresAt,
+    });
 
     return next();
   } catch (error: unknown) {
@@ -47,6 +55,14 @@ export async function authMiddleware(
         error.message === "SESSION_INVALID" ||
         error.message === "SESSION_EXPIRED"
       ) {
+        // پاک کردن کوکی قدیمی یا منقضی‌شده از مرورگر.
+        res.clearCookie("hashti_session", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        });
+
         return res.status(401).json({
           message: "Session is invalid or expired",
         });

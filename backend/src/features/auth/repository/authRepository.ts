@@ -83,6 +83,26 @@ export async function findSessionByTokenHash(tokenHash: string) {
   });
 }
 
+/**
+ * تمدید مهلت Session هنگام فعالیت معتبر.
+ * نشست منقضی‌شده تمدید نمی‌شود.
+ */
+export async function extendSessionExpiry(
+  tokenHash: string,
+  activeAt: Date,
+  expiresAt: Date
+): Promise<boolean> {
+  const result = await prisma.session.updateMany({
+    where: {
+      tokenHash,
+      expiresAt: { gt: activeAt },
+    },
+    data: { expiresAt },
+  });
+
+  return result.count > 0;
+}
+
 /** حذف Session بر اساس هش توکن */
 export async function deleteSessionByTokenHash(tokenHash: string) {
   return prisma.session.deleteMany({ where: { tokenHash } });

@@ -31,7 +31,7 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 });
 
 // خروج کاربر و حذف نشست فعلی
-router.post("/auth/logout", authMiddleware, logoutUserController);
+router.post("/auth/logout", logoutUserController);
 
 // بازنشانی مدیریتی رمز حساب کاربر؛ فقط کارکنان هشتی
 router.post(
