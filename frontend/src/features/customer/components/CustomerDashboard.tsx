@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Bell,
   Check,
@@ -84,7 +84,6 @@ export function CustomerDashboard() {
   const [favorites, setFavorites] = useState<Array<CustomerFavoriteRecord & { property: PublicPropertyRecord | null }>>([]);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -262,9 +261,9 @@ export function CustomerDashboard() {
                 );
               })}
               <button type="button" onClick={() => profile && user && void runAction("refresh", async () => { await refreshData(profile, user); setActionMessage("اطلاعات به‌روز شد."); })}
-                disabled={refreshing || busyId !== null}
+                disabled={busyId !== null}
                 className="mr-auto inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
-                {refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ChevronLeft className="h-4 w-4 rotate-180" />} به‌روزرسانی
+                {busyId === "refresh" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ChevronLeft className="h-4 w-4 rotate-180" />} به‌روزرسانی
               </button>
             </div>
 
@@ -378,7 +377,7 @@ export function CustomerDashboard() {
               <section className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
                 <h2 className="text-lg font-bold">اطلاعات حساب</h2>
                 <p className="mt-2 text-sm text-slate-600">شماره موبایل حساب: <span dir="ltr" className="font-semibold">{profile.user.mobile}</span></p>
-                <form className="mt-5 space-y-4" onSubmit={(event) => { event.preventDefault(); void runAction("profile", async () => { const updated = await updateCustomerProfile(profile.id, { firstName: firstName.trim(), lastName: lastName.trim() }); setProfile(updated); setActionMessage("اطلاعات پروفایل ذخیره شد."); }); }}>
+                <form className="mt-5 space-y-4" onSubmit={(event) => { event.preventDefault(); void runAction("profile", async () => { const updated = await updateCustomerProfile(profile.id, { firstName: firstName.trim(), lastName: lastName.trim() }); setProfile((current) => current ? { ...current, firstName: updated.firstName, lastName: updated.lastName } : current); setActionMessage("اطلاعات پروفایل ذخیره شد."); }); }}>
                   <label className="block space-y-1 text-sm font-medium">نام
                     <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                   </label>
@@ -397,10 +396,10 @@ export function CustomerDashboard() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function StatCard({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
   return <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[#043873]">{icon}</div><div><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-black tabular-nums">{value}</p></div></div>;
 }
-function EmptyState({ text, action }: { text: string; action?: React.ReactNode }) {
+function EmptyState({ text, action }: { text: string; action?: ReactNode }) {
   return <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p className="text-sm leading-7 text-slate-600">{text}</p>{action && <div className="mt-3">{action}</div>}</div>;
 }
 function StatusChip({ status }: { status: string }) {

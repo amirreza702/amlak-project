@@ -85,7 +85,13 @@ export async function getCustomerSearchRequests(customerId: string): Promise<Cus
 export async function updateCustomerSearchRequest(
   customerId: string,
   requestId: string,
-  input: Partial<Pick<CustomerSearchRequestRecord, "transactionType" | "propertyType" | "city" | "budget" | "description">>
+  input: {
+    transactionType?: CustomerRequestTransactionType;
+    propertyType?: CustomerRequestPropertyType;
+    city?: string;
+    budget?: number | null;
+    description?: string | null;
+  }
 ): Promise<CustomerSearchRequestRecord> {
   const response = await fetch(
     `${API_URL}/customers/${encodeURIComponent(customerId)}/search-requests/${encodeURIComponent(requestId)}`,
@@ -137,7 +143,7 @@ export async function getPublicProperty(propertyId: string): Promise<PublicPrope
 export async function updateCustomerProfile(
   customerId: string,
   input: CustomerProfileUpdate
-): Promise<CustomerProfileForRequest> {
+): Promise<{ id: string; firstName: string; lastName: string }> {
   const response = await fetch(
     `${API_URL}/customers/${encodeURIComponent(customerId)}/profile`,
     {
@@ -147,5 +153,5 @@ export async function updateCustomerProfile(
       body: JSON.stringify(input),
     }
   );
-  return parseResponse<CustomerProfileForRequest>(response, "ویرایش پروفایل انجام نشد.");
+  return parseResponse<{ id: string; firstName: string; lastName: string }>(response, "ویرایش پروفایل انجام نشد.");
 }
