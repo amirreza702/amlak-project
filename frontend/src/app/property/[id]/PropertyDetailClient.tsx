@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CustomerFavoriteButton } from "@/features/customer/components/CustomerFavoriteButton";
 
 /**
  * ============================================================
@@ -681,27 +682,15 @@ export default function PropertyDetailClient() {
                 sm:grid-cols-2
               "
             >
-              <button
-                type="button"
-                className="
-                  h-12
-                  border
-                  border-slate-300
-                  bg-white
-                  text-sm
-                  font-bold
-                  text-slate-800
-                  transition-colors
-                  hover:bg-slate-50
-                "
-              >
-                افزودن به علاقه‌مندی‌ها
-              </button>
+              <CustomerFavoriteButton propertyId={property.id} />
 
-              <button
-                type="button"
+              <Link
+                href="/request"
                 className="
+                  flex
                   h-12
+                  items-center
+                  justify-center
                   bg-slate-900
                   text-sm
                   font-bold
@@ -710,8 +699,8 @@ export default function PropertyDetailClient() {
                   hover:bg-slate-800
                 "
               >
-                درخواست اطلاعات بیشتر
-              </button>
+                سپردن نیاز به هشتی
+              </Link>
             </div>
           </div>
         </section>
