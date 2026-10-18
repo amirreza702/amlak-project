@@ -55,6 +55,10 @@ interface ManagedAgent {
   agencyName: string | null;
   address: string | null;
   isVerified: boolean;
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
+  verificationReviewedAt: string | null;
+  verificationNotes: string | null;
+  verificationReviewedBy: string | null;
   user: { id: string; mobile: string; isActive: boolean; createdAt: string };
   subscription: {
     id: string;
@@ -122,7 +126,8 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   const [accessLogs, setAccessLogs] = useState<ExactLocationLog[]>([]);
   const [logsBusy, setLogsBusy] = useState(false);
   const [logsError, setLogsError] = useState<string | null>(null);
-  const [verificationFilter, setVerificationFilter] = useState<"pending" | "verified" | "all">("pending");
+  const [verificationFilter, setVerificationFilter] = useState<"pending" | "verified" | "rejected" | "all">("pending");
+  const [agentVerificationNotes, setAgentVerificationNotes] = useState("");
   const [managedAgents, setManagedAgents] = useState<ManagedAgent[]>([]);
   const [agentsBusy, setAgentsBusy] = useState(false);
   const [agentsError, setAgentsError] = useState<string | null>(null);
@@ -156,7 +161,14 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     void loadManagedAgents();
   }, [loadManagedAgents]);
 
-  const reviewAgent = async (agentId: string, isVerified: boolean) => {
+  const reviewAgent = async (
+    agentId: string,
+    verificationStatus: "PENDING" | "VERIFIED" | "REJECTED"
+  ) => {
+    if (verificationStatus === "REJECTED" && !agentVerificationNotes.trim()) {
+      setAgentsError("برای رد مشاور، یادداشت دلیل رد را وارد کنید.");
+      return;
+    }
     setBusyAgentId(agentId);
     setAgentsError(null);
     setAgentsMessage(null);
@@ -166,10 +178,19 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isVerified }),
+          body: JSON.stringify({
+            verificationStatus,
+            notes: agentVerificationNotes.trim() || null,
+          }),
         }
       );
-      setAgentsMessage(isVerified ? "تأیید مشاور ثبت شد." : "تأیید مشاور لغو شد.");
+      const labels = {
+        PENDING: "وضعیت مشاور به در انتظار بررسی تغییر کرد.",
+        VERIFIED: "تأیید مشاور ثبت شد.",
+        REJECTED: "رد مشاور همراه با یادداشت تصمیم ثبت شد.",
+      } as const;
+      setAgentsMessage(labels[verificationStatus]);
+      setAgentVerificationNotes("");
       await loadManagedAgents();
     } catch (error: unknown) {
       setAgentsError(error instanceof Error ? error.message : "تغییر وضعیت تأیید انجام نشد.");
@@ -364,8 +385,9 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select value={verificationFilter} onChange={(event) => setVerificationFilter(event.target.value as "pending" | "verified" | "all")} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-              <option value="pending">در انتظار تأیید</option>
+              <option value="pending">در انتظار بررسی</option>
               <option value="verified">تأییدشده‌ها</option>
+              <option value="rejected">ردشده‌ها</option>
               <option value="all">همهٔ مشاوران</option>
             </select>
             <button type="button" onClick={() => void loadManagedAgents()} disabled={agentsBusy} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold disabled:opacity-60">
@@ -373,6 +395,10 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
             </button>
           </div>
         </div>
+        <label className="mt-3 block space-y-1 text-sm font-medium">
+          یادداشت تصمیم هشتی (برای رد مشاور الزامی)
+          <textarea rows={2} value={agentVerificationNotes} onChange={(event) => setAgentVerificationNotes(event.target.value)} maxLength={2000} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" placeholder="دلیل رد یا توضیح تصمیم را وارد کنید" />
+        </label>
         {agentsError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{agentsError}</p>}
         {agentsMessage && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{agentsMessage}</p>}
         {agentsBusy && managedAgents.length === 0 ? (
@@ -396,17 +422,28 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
                     <p>باقی‌مانده: {agent.usage.remainingCount.toLocaleString("fa-IR")}</p>
                   </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {!agent.isVerified ? (
-                    <button type="button" onClick={() => void reviewAgent(agent.id, true)} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-60">
-                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} تأیید مشاور
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${agent.verificationStatus === "VERIFIED" ? "bg-emerald-50 text-emerald-800" : agent.verificationStatus === "REJECTED" ? "bg-red-50 text-red-800" : "bg-amber-50 text-amber-900"}`}>
+                    {agent.verificationStatus === "VERIFIED" ? "تأییدشده" : agent.verificationStatus === "REJECTED" ? "ردشده" : "در انتظار بررسی"}
+                  </span>
+                  {agent.verificationStatus !== "VERIFIED" && (
+                    <button type="button" onClick={() => void reviewAgent(agent.id, "VERIFIED")} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-60">
+                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {agent.verificationStatus === "REJECTED" ? "تأیید مجدد" : "تأیید مشاور"}
                     </button>
-                  ) : (
-                    <button type="button" onClick={() => void reviewAgent(agent.id, false)} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 disabled:opacity-60">
-                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} لغو تأیید
+                  )}
+                  {agent.verificationStatus === "PENDING" && (
+                    <button type="button" onClick={() => void reviewAgent(agent.id, "REJECTED")} disabled={busyAgentId === agent.id || !agentVerificationNotes.trim()} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 disabled:opacity-50">
+                      {busyAgentId === agent.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} رد مشاور
+                    </button>
+                  )}
+                  {agent.verificationStatus !== "PENDING" && (
+                    <button type="button" onClick={() => void reviewAgent(agent.id, "PENDING")} disabled={busyAgentId === agent.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold disabled:opacity-60">
+                      بازگشت به انتظار بررسی
                     </button>
                   )}
                 </div>
+                {agent.verificationNotes && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600">یادداشت آخرین تصمیم: {agent.verificationNotes}</p>}
+                {agent.verificationReviewedAt && <p className="mt-2 text-xs text-slate-400">آخرین بررسی: {new Date(agent.verificationReviewedAt).toLocaleString("fa-IR")}</p>}
               </article>
             ))}
           </div>
