@@ -90,7 +90,9 @@ export const registerUserService = async ({
  */
 export const loginUserService = async (
   mobile: string,
-  password: string
+  password: string,
+  expectedRole?: UserRole,
+  previousSessionToken?: string
 ) => {
   const user = await findUserByMobile(mobile);
 
@@ -109,6 +111,16 @@ export const loginUserService = async (
 
   if (!user.isActive) {
     throw new Error("USER_INACTIVE");
+  }
+
+  // نقش انتخاب‌شده در رابط باید با نقش واقعی حساب یکسان باشد.
+  if (expectedRole && user.role !== expectedRole) {
+    throw new Error("ROLE_MISMATCH");
+  }
+
+  // فقط پس از تأیید رمز، فعال‌بودن حساب و تطابق نقش، نشست قبلی همین مرورگر باطل می‌شود.
+  if (typeof previousSessionToken === "string" && previousSessionToken) {
+    await deleteSessionByTokenHash(hashSessionToken(previousSessionToken));
   }
 
   // توکن تصادفی برای Session

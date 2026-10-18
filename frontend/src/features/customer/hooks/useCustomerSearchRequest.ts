@@ -180,7 +180,7 @@ export function useCustomerSearchRequest() {
         }
 
         // ثبت‌نام Session نمی‌سازد؛ پس بعد از ثبت‌نام همان حساب وارد می‌شود.
-        const result = await loginUser(normalizedMobile, password);
+        const result = await loginUser(normalizedMobile, password, "CUSTOMER");
         if (result.user.role !== "CUSTOMER") {
           try {
             await logoutUser();

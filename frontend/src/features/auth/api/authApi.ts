@@ -98,13 +98,14 @@ export async function registerUser(
 // ورود با نشست و کوکی HttpOnly؛ مسیر دقیق مطابق authRoutes بک‌اند است.
 export async function loginUser(
   mobile: string,
-  password: string
+  password: string,
+  expectedRole?: UserRole
 ): Promise<AuthResponse> {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ mobile, password }),
+    body: JSON.stringify({ mobile, password, ...(expectedRole ? { expectedRole } : {}) }),
   });
 
   if (!response.ok) {

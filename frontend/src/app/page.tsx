@@ -1,7 +1,6 @@
 "use client";
 
-import { AuthModal } from "@/features/auth/components/AuthModal";
-import { useAuthModal } from "@/features/auth/hooks/useAuthModal";
+import { useRouter } from "next/navigation";
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
 import { HomeRequestButton } from "@/shared/components/HomeRequestButton";
@@ -28,12 +27,7 @@ const RealMap = dynamic(
 );
 
 export default function Page() {
-  const {
-    isAuthModalOpen,
-    authRole,
-    openAuthModal,
-    closeAuthModal,
-  } = useAuthModal();
+  const router = useRouter();
 
   return (
     <div
@@ -171,8 +165,8 @@ export default function Page() {
                 <HomeRequestButton />
 
                 <HomeRoleCards
-                  onAgentClick={() => openAuthModal("agent")}
-                  onOwnerClick={() => openAuthModal("owner")}
+                  onAgentClick={() => router.push("/agent")}
+                  onOwnerClick={() => router.push("/owner")}
                 />
               </div>
             </div>
@@ -185,11 +179,6 @@ export default function Page() {
         </main>
       </div>
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        role={authRole}
-        onClose={closeAuthModal}
-      />
     </div>
   );
 }

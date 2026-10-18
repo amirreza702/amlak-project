@@ -106,7 +106,7 @@ export async function loginUserController(
   res: Response
 ) {
   try {
-    const { mobile, password } = req.body;
+    const { mobile, password, expectedRole: requestedRole } = req.body;
 
     if (
       typeof mobile !== "string" ||
@@ -119,9 +119,21 @@ export async function loginUserController(
       });
     }
 
+    const validRoles = Object.values(UserRole) as UserRole[];
+    if (requestedRole !== undefined && (
+      typeof requestedRole !== "string" ||
+      !validRoles.includes(requestedRole as UserRole)
+    )) {
+      return res.status(400).json({
+        message: "Invalid selected role",
+      });
+    }
+
     const result = await loginUserService(
       mobile.trim(),
-      password
+      password,
+      requestedRole as UserRole | undefined,
+      req.cookies?.hashti_session
     );
 
     const isProduction = process.env.NODE_ENV === "production";
@@ -143,6 +155,12 @@ export async function loginUserController(
       if (error.message === "INVALID_CREDENTIALS") {
         return res.status(401).json({
           message: "Mobile number or password is incorrect",
+        });
+      }
+
+      if (error.message === "ROLE_MISMATCH") {
+        return res.status(403).json({
+          message: "This account does not match the selected role",
         });
       }
 
