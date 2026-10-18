@@ -14,6 +14,9 @@ interface AgentProfile {
   agencyName: string | null;
   address: string | null;
   isVerified: boolean;
+  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
+  verificationReviewedAt: string | null;
+  verificationNotes: string | null;
 }
 interface ActiveRequest {
   id: string;
@@ -83,8 +86,9 @@ function propertyName(value: string) {
 
 export function AgentDashboard({ user }: { user: UserPublic }) {
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [profileState, setProfileState] = useState<"checking" | "verified" | "pending" | "unknown" | "error">("checking");
+  const [profileState, setProfileState] = useState<"checking" | "verified" | "pending" | "rejected" | "unknown" | "error">("checking");
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileReviewNotes, setProfileReviewNotes] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [agencyName, setAgencyName] = useState("");
@@ -126,8 +130,11 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
         setLastName(profile.lastName);
         setAgencyName(profile.agencyName ?? "");
         setAddress(profile.address ?? "");
-        if (profile.isVerified) {
+        setProfileReviewNotes(profile.verificationNotes ?? null);
+        if (profile.verificationStatus === "VERIFIED" && profile.isVerified) {
           setProfileState("verified");
+        } else if (profile.verificationStatus === "REJECTED") {
+          setProfileState("rejected");
         } else {
           setProfileState("pending");
         }
@@ -252,20 +259,30 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
         <section className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600"><LoaderCircle className="h-5 w-5 animate-spin" />در حال بررسی تأیید حساب مشاور...</section>
       )}
 
-      {(profileState === "pending" || profileState === "unknown" || profileState === "error") && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+      {(profileState === "pending" || profileState === "rejected" || profileState === "unknown" || profileState === "error") && (
+        <section className={`rounded-2xl border p-5 ${profileState === "rejected" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
           <div className="flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-amber-700" />
+            <ShieldAlert className={`h-6 w-6 ${profileState === "rejected" ? "text-red-700" : "text-amber-700"}`} />
             <div>
-              <h3 className="font-bold text-amber-950">{profileState === "pending" ? "حساب مشاور در انتظار تأیید هشتی است" : profileState === "unknown" ? "وضعیت تأیید حساب قابل بازیابی نیست" : "بررسی حساب مشاور ناموفق بود"}</h3>
-              <p className="mt-2 text-sm leading-7 text-amber-900">
+              <h3 className={`font-bold ${profileState === "rejected" ? "text-red-950" : "text-amber-950"}`}>
                 {profileState === "pending"
-                  ? "پس از تأیید، امکانات مشاور در این صفحه در دسترس خواهد بود."
-                  : profileError}
+                  ? "حساب مشاور در انتظار بررسی هشتی است"
+                  : profileState === "rejected"
+                    ? "درخواست تأیید مشاور رد شده است"
+                    : profileState === "unknown"
+                      ? "وضعیت تأیید حساب قابل بازیابی نیست"
+                      : "بررسی حساب مشاور ناموفق بود"}
+              </h3>
+              <p className={`mt-2 text-sm leading-7 ${profileState === "rejected" ? "text-red-900" : "text-amber-900"}`}>
+                {profileState === "pending"
+                  ? "پس از بررسی و تأیید هشتی، امکانات عملیاتی مشاور در دسترس خواهد بود."
+                  : profileState === "rejected"
+                    ? profileReviewNotes || "هشتی حساب را تأیید نکرده است. برای پیگیری، با پشتیبانی هشتی تماس بگیرید."
+                    : profileError}
               </p>
             </div>
           </div>
-          {profileState !== "pending" && profileError && <p className="mt-3 text-xs leading-6 text-amber-900">لطفاً نشست ورود را بررسی کنید؛ اگر خطا ادامه داشت، پاسخ سرور را برای عیب‌یابی نگه دارید.</p>}
+          {(profileState === "unknown" || profileState === "error") && profileError && <p className="mt-3 text-xs leading-6 text-amber-900">لطفاً نشست ورود را بررسی کنید؛ اگر خطا ادامه داشت، پاسخ سرور را برای عیب‌یابی نگه دارید.</p>}
         </section>
       )}
 
