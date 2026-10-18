@@ -75,6 +75,14 @@ interface ManagedAgent {
     hasActiveSubscription: boolean;
   };
 }
+
+interface AdminSubscriptionPlan {
+  id: string;
+  code: string;
+  name: string;
+  level: number;
+  monthlyContactLimit: number;
+}
 interface ContactAccessAuditLog {
   id: string;
   accessedAt: string;
@@ -143,6 +151,14 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   const [verificationFilter, setVerificationFilter] = useState<"pending" | "verified" | "rejected" | "all">("pending");
   const [agentVerificationNotes, setAgentVerificationNotes] = useState("");
   const [managedAgents, setManagedAgents] = useState<ManagedAgent[]>([]);
+  const [adminSubscriptionPlans, setAdminSubscriptionPlans] = useState<AdminSubscriptionPlan[]>([]);
+  const [subscriptionPlansError, setSubscriptionPlansError] = useState<string | null>(null);
+  const [selectedPlanByAgent, setSelectedPlanByAgent] = useState<Record<string, string>>({});
+  const [subscriptionStartsAt, setSubscriptionStartsAt] = useState("");
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState("");
+  const [busySubscriptionAgentId, setBusySubscriptionAgentId] = useState<string | null>(null);
+  const [subscriptionActionError, setSubscriptionActionError] = useState<string | null>(null);
+  const [subscriptionActionMessage, setSubscriptionActionMessage] = useState<string | null>(null);
   const [agentsBusy, setAgentsBusy] = useState(false);
   const [agentsError, setAgentsError] = useState<string | null>(null);
   const [agentsMessage, setAgentsMessage] = useState<string | null>(null);
@@ -179,6 +195,22 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   useEffect(() => {
     void loadManagedAgents();
   }, [loadManagedAgents]);
+
+  useEffect(() => {
+    let active = true;
+    requestJson<{ plans: AdminSubscriptionPlan[] }>("/subscription-plans")
+      .then((result) => {
+        if (active) setAdminSubscriptionPlans(result.plans);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setSubscriptionPlansError(
+            error instanceof Error ? error.message : "دریافت پلن‌های اشتراک انجام نشد."
+          );
+        }
+      });
+    return () => { active = false; };
+  }, []);
 
   const reviewAgent = async (
     agentId: string,
@@ -237,6 +269,93 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       setAdminAuditLogs([]);
     } finally {
       setAdminAuditBusy(false);
+    }
+  };
+
+  const assignOrUpgradeSubscription = async (agent: ManagedAgent) => {
+    const planId = selectedPlanByAgent[agent.id];
+    const selectedPlan = adminSubscriptionPlans.find((plan) => plan.id === planId);
+    setSubscriptionActionError(null);
+    setSubscriptionActionMessage(null);
+
+    if (!selectedPlan) {
+      setSubscriptionActionError("یک پلن فعال انتخاب کنید.");
+      return;
+    }
+
+    if (
+      agent.subscription &&
+      selectedPlan.level <= agent.subscription.subscriptionPlan.level
+    ) {
+      setSubscriptionActionError("برای ارتقا، پلنی با سطح بالاتر از پلن فعلی انتخاب کنید.");
+      return;
+    }
+
+    const isUpgrade = Boolean(agent.subscription);
+    let startsAt: string | undefined;
+    let expiresAt: string | undefined;
+
+    if (!isUpgrade) {
+      if (!subscriptionStartsAt) {
+        setSubscriptionActionError("برای ایجاد اشتراک جدید، تاریخ شروع را مشخص کنید.");
+        return;
+      }
+      const startDate = new Date(subscriptionStartsAt);
+      if (Number.isNaN(startDate.getTime())) {
+        setSubscriptionActionError("تاریخ شروع معتبر نیست.");
+        return;
+      }
+      startsAt = startDate.toISOString();
+
+      if (subscriptionExpiresAt) {
+        const expiryDate = new Date(subscriptionExpiresAt);
+        if (Number.isNaN(expiryDate.getTime()) || expiryDate < startDate) {
+          setSubscriptionActionError("تاریخ انقضا باید معتبر و بعد از تاریخ شروع باشد.");
+          return;
+        }
+        expiresAt = expiryDate.toISOString();
+      }
+    }
+
+    setBusySubscriptionAgentId(agent.id);
+    try {
+      const path = "/hashti/agents/" + encodeURIComponent(agent.id) + "/subscriptions";
+      await requestJson(
+        path,
+        isUpgrade
+          ? {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ planId }),
+            }
+          : {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                planId,
+                startsAt,
+                ...(expiresAt ? { expiresAt } : {}),
+              }),
+            }
+      );
+
+      setSubscriptionActionMessage(
+        isUpgrade
+          ? "ارتقای اشتراک مشاور ثبت شد."
+          : "اشتراک جدید مشاور ثبت شد."
+      );
+      setSelectedPlanByAgent((current) => {
+        const next = { ...current };
+        delete next[agent.id];
+        return next;
+      });
+      await loadManagedAgents();
+    } catch (error: unknown) {
+      setSubscriptionActionError(
+        error instanceof Error ? error.message : "تغییر اشتراک مشاور انجام نشد."
+      );
+    } finally {
+      setBusySubscriptionAgentId(null);
     }
   };
 
