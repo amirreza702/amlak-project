@@ -75,6 +75,8 @@ export function useCustomerSearchRequest() {
   const [lastName, setLastName] = useState("");
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  // فقط در ثبت‌نام موفق فعال می‌شود؛ ورود عادی پیام ثبت‌نام نشان نمی‌دهد.
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const [requestValues, setRequestValues] =
     useState<CustomerSearchRequestFormValues>(initialRequestValues);
@@ -134,12 +136,14 @@ export function useCustomerSearchRequest() {
   const changeAuthMode = useCallback((mode: CustomerRequestAuthMode) => {
     setAuthMode(mode);
     setAuthError(null);
+    setRegistrationSuccess(false);
   }, []);
 
   const submitAuthentication = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       setAuthError(null);
+      setRegistrationSuccess(false);
 
       const normalizedMobile = mobile.trim();
       if (!normalizedMobile || !password) {
@@ -193,6 +197,9 @@ export function useCustomerSearchRequest() {
         authenticatedCustomer = result.user;
         setUser(result.user);
         await loadCustomerProfile();
+        if (authMode === "register") {
+          setRegistrationSuccess(true);
+        }
         setPassword("");
       } catch (error: unknown) {
         if (authenticatedCustomer) {
@@ -315,6 +322,7 @@ export function useCustomerSearchRequest() {
     setRequestValues(initialRequestValues);
     setRequestError(null);
     setCreatedRequest(null);
+    setRegistrationSuccess(false);
   }, []);
 
   return {
@@ -332,6 +340,7 @@ export function useCustomerSearchRequest() {
     setLastName,
     isAuthSubmitting,
     authError,
+    registrationSuccess,
     submitAuthentication,
     signOutAndUseCustomerAccount,
     retryLoadCustomerProfile,

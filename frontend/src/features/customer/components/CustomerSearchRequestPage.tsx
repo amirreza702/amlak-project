@@ -60,6 +60,7 @@ export function CustomerSearchRequestPage() {
     setLastName,
     isAuthSubmitting,
     authError,
+    registrationSuccess,
     submitAuthentication,
     signOutAndUseCustomerAccount,
     retryLoadCustomerProfile,
@@ -250,6 +251,16 @@ export function CustomerSearchRequestPage() {
               </button>
             </form>
           </section>
+        )}
+
+        {authStatus === "customer" && registrationSuccess && !createdRequest && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-800"
+          >
+            ثبت‌نام شما با موفقیت انجام شد و وارد حساب مشتری شده‌اید. اکنون می‌توانید مشخصات ملک موردنظرتان را وارد کنید.
+          </div>
         )}
 
         {authStatus === "customer" && !createdRequest && (
