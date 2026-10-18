@@ -83,6 +83,20 @@ interface ContactAccessAuditLog {
   searchRequest: { id: string; city: string; transactionType: string; propertyType: string; status: string };
 }
 
+interface AdminAuditLog {
+  id: string;
+  actorUserId: string | null;
+  actorMobile: string | null;
+  actorRole: string | null;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  details: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
   const body = await response.json().catch(() => ({})) as { message?: string };
@@ -139,6 +153,11 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   const [auditTo, setAuditTo] = useState("");
   const [auditBusy, setAuditBusy] = useState(false);
   const [auditError, setAuditError] = useState<string | null>(null);
+  const [adminAuditAction, setAdminAuditAction] = useState("");
+  const [adminAuditTargetId, setAdminAuditTargetId] = useState("");
+  const [adminAuditLogs, setAdminAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [adminAuditBusy, setAdminAuditBusy] = useState(false);
+  const [adminAuditError, setAdminAuditError] = useState<string | null>(null);
 
   const loadManagedAgents = useCallback(async () => {
     setAgentsBusy(true);
@@ -196,6 +215,28 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       setAgentsError(error instanceof Error ? error.message : "تغییر وضعیت تأیید انجام نشد.");
     } finally {
       setBusyAgentId(null);
+    }
+  };
+
+  const loadAdminAuditLogs = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAdminAuditBusy(true);
+    setAdminAuditError(null);
+    try {
+      const params = new URLSearchParams();
+      if (adminAuditAction.trim()) params.set("action", adminAuditAction.trim());
+      if (adminAuditTargetId.trim()) params.set("targetId", adminAuditTargetId.trim());
+      params.set("limit", "100");
+      params.set("offset", "0");
+      const result = await requestJson<{ logs: AdminAuditLog[] }>(
+        "/hashti/admin-audit-logs?" + params.toString()
+      );
+      setAdminAuditLogs(result.logs);
+    } catch (error: unknown) {
+      setAdminAuditError(error instanceof Error ? error.message : "دریافت سوابق مدیریتی انجام نشد.");
+      setAdminAuditLogs([]);
+    } finally {
+      setAdminAuditBusy(false);
     }
   };
 
@@ -580,6 +621,55 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
           {logsError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{logsError}</p>}
           {accessLogs.length > 0 && <div className="mt-3 space-y-2">{accessLogs.map((log) => <article key={log.id} className="rounded-lg bg-slate-50 p-3 text-sm"><p>کاربر: {log.user?.mobile ?? log.userId}</p><p>نقش: {log.user?.role ?? "نامشخص"}</p><p>زمان: {new Date(log.accessedAt).toLocaleString("fa-IR")}</p><p>دلیل: {log.reason || "ثبت نشده"}</p></article>)}</div>}
           {!logsBusy && accessLogs.length === 0 && !logsError && <p className="mt-3 text-sm text-slate-500">شناسهٔ ملک را وارد کنید تا سوابق آن نمایش داده شود.</p>}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div>
+            <h2 className="text-lg font-bold">سوابق عملیات مدیریتی هشتی</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-600">در این قسمت رویدادهایی مانند تغییر وضعیت تأیید مشاور، ایجاد/ارتقای اشتراک و بازنشانی رمز ثبت‌شده نمایش داده می‌شود. گذرواژه یا هش آن در گزارش ذخیره نمی‌شود.</p>
+          </div>
+          <form onSubmit={(event) => void loadAdminAuditLogs(event)} className="mt-4 grid gap-3 sm:grid-cols-3">
+            <label className="space-y-1 text-sm font-medium">نوع رویداد (اختیاری)
+              <input value={adminAuditAction} onChange={(event) => setAdminAuditAction(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2.5" placeholder="AGENT_VERIFICATION" />
+            </label>
+            <label className="space-y-1 text-sm font-medium">شناسه هدف (اختیاری)
+              <input value={adminAuditTargetId} onChange={(event) => setAdminAuditTargetId(event.target.value)} dir="ltr" className="w-full rounded-xl border border-slate-300 px-3 py-2.5" />
+            </label>
+            <div className="flex items-end">
+              <button type="submit" disabled={adminAuditBusy} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#043873] px-4 py-3 text-sm font-bold text-white disabled:opacity-60">
+                {adminAuditBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} دریافت سوابق
+              </button>
+            </div>
+          </form>
+          {adminAuditError && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{adminAuditError}</p>}
+          {adminAuditLogs.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {adminAuditLogs.map((log) => (
+                <article key={log.id} className="rounded-xl border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold">{log.action}</p>
+                      <p className="mt-1 text-sm text-slate-600">عامل: {log.actorMobile ?? "حساب حذف‌شده یا نامشخص"} · نقش: {log.actorRole ?? "نامشخص"}</p>
+                      <p className="mt-1 text-sm text-slate-600">هدف: {log.targetType} · {log.targetId ? idText(log.targetId) : "بدون شناسه"}</p>
+                    </div>
+                    <p className="text-xs text-slate-500">{new Date(log.createdAt).toLocaleString("fa-IR")}</p>
+                  </div>
+                  {log.details !== null && log.details !== undefined && (
+                    <pre dir="ltr" className="mt-3 overflow-x-auto rounded-lg bg-slate-50 p-3 text-xs leading-6 text-slate-700 whitespace-pre-wrap">{JSON.stringify(log.details, null, 2)}</pre>
+                  )}
+                  {(log.ipAddress || log.userAgent) && (
+                    <details className="mt-2 text-xs text-slate-500">
+                      <summary className="cursor-pointer">اطلاعات فنی رویداد</summary>
+                      {log.ipAddress && <p dir="ltr" className="mt-2">IP: {log.ipAddress}</p>}
+                      {log.userAgent && <p dir="ltr" className="mt-1 break-all">User-Agent: {log.userAgent}</p>}
+                    </details>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            !adminAuditBusy && !adminAuditError && <p className="mt-3 text-sm text-slate-500">برای نمایش سوابق، فیلترها را تنظیم و دریافت سوابق را انتخاب کنید.</p>
+          )}
         </section>
 
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
