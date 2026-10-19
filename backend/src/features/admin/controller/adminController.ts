@@ -125,3 +125,20 @@ export async function createStaffAccountController(req: Request, res: Response) 
     return res.status(201).json({ item });
   } catch (error) { return sendError(res, error); }
 }
+
+
+export async function ownerHistoryController(req: Request, res: Response) {
+  try {
+    const owner = await adminOwnerDetails(req.params.ownerId);
+    const result = await adminAudit({ targetUserId: owner.user.id, ...pagination(req) });
+    return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
+  } catch (error) { return sendError(res, error); }
+}
+
+export async function agentHistoryController(req: Request, res: Response) {
+  try {
+    const agent = await adminAgentDetails(req.params.agentId);
+    const result = await adminAudit({ targetUserId: agent.user.id, ...pagination(req) });
+    return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
+  } catch (error) { return sendError(res, error); }
+}
