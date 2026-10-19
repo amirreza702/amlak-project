@@ -7,6 +7,7 @@ import {
   loginUserController,
   logoutUserController,
   adminResetUserPasswordController,
+  listAdminUsersController,
 } from "../controller/authController";
 
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -32,6 +33,14 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 
 // خروج کاربر و حذف نشست فعلی
 router.post("/auth/logout", authMiddleware, logoutUserController);
+
+// فهرست کاربران با جست‌وجو و فیلتر؛ فقط کارکنان هشتی
+router.get(
+  "/auth/admin/users",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  listAdminUsersController
+);
 
 // بازنشانی مدیریتی رمز حساب کاربر؛ فقط کارکنان هشتی
 router.post(
