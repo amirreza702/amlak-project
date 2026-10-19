@@ -31,7 +31,7 @@ export async function createInitialSuperAdmin(data: { mobile: string; passwordHa
       select: { id: true, mobile: true, role: true, isSuperAdmin: true, createdAt: true },
     });
     await tx.adminAuditLog.create({
-      data: { actorUserId: user.id, targetUserId: user.id, targetType: "USER", targetId: user.id,
+      data: { actorUserId: user.id, action: "BOOTSTRAP_SUPER_ADMIN", targetUserId: user.id, targetType: "USER", targetId: user.id,
         operation: "BOOTSTRAP_SUPER_ADMIN", reason: "Initial secure bootstrap", before: Prisma.JsonNull,
         after: { mobile: user.mobile, role: user.role, isSuperAdmin: true } },
     });
@@ -114,7 +114,7 @@ async function writeAudit(tx: Prisma.TransactionClient, data: {
 }) {
   await tx.adminAuditLog.create({
     data: {
-      actorUserId: data.actorUserId, targetUserId: data.targetUserId ?? null,
+      actorUserId: data.actorUserId, action: data.operation, targetUserId: data.targetUserId ?? null,
       targetType: data.targetType, targetId: data.targetId, operation: data.operation, reason: data.reason,
       before: data.before === null ? Prisma.JsonNull : data.before as Prisma.InputJsonValue,
       after: data.after === null ? Prisma.JsonNull : data.after as Prisma.InputJsonValue,
