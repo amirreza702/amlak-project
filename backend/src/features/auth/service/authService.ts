@@ -274,3 +274,24 @@ export const adminResetUserPasswordWithAuditService = async (input: {
     reason: input.reason,
   });
 };
+
+
+/**
+ * دریافت فهرست مدیریتی کاربران.
+ * اعتبارسنجی ورودی HTTP در Controller انجام می‌شود.
+ */
+export const listAdminUsersService = async (data: {
+  search?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  page: number;
+  limit: number;
+}) => {
+  return listAdminUsers({
+    search: data.search,
+    role: data.role,
+    isActive: data.isActive,
+    skip: (data.page - 1) * data.limit,
+    take: data.limit,
+  });
+};
