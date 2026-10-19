@@ -13,6 +13,7 @@ import {
 import { authMiddleware } from "../middleware/authMiddleware";
 import { requireRole } from "../middleware/requireRole";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { requireAdminPermission } from "../../admin/middleware/requireAdminPermission";
 
 const router = Router();
 
@@ -34,7 +35,8 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 // خروج کاربر و حذف نشست فعلی
 router.post("/auth/logout", authMiddleware, logoutUserController);
 
-// فهرست کاربران با جست‌وجو و فیلتر؛ فقط کارکنان هشتی
+// فهرست کاربران با جست‌وجو و فیلتر؛ فقط کارکنان دارای مجوز هشتی
+router.use("/auth/admin/users", requireAdminPermission("USERS_READ"));
 router.get(
   "/auth/admin/users",
   authMiddleware,
