@@ -173,10 +173,11 @@ export async function updateStaffPermissions(data: { actorUserId: string; userId
   });
 }
 
-export async function listAudit(data: { targetType?: string; targetId?: string; actorUserId?: string; page: number; limit: number }) {
+export async function listAudit(data: { targetType?: string; targetId?: string; targetUserId?: string; actorUserId?: string; page: number; limit: number }) {
   const where: Prisma.AdminAuditLogWhereInput = {};
   if (data.targetType) where.targetType = data.targetType;
   if (data.targetId) where.targetId = data.targetId;
+  if (data.targetUserId) where.targetUserId = data.targetUserId;
   if (data.actorUserId) where.actorUserId = data.actorUserId;
   const [items, total] = await prisma.$transaction([
     prisma.adminAuditLog.findMany({ where, include: { actor: { select: { id: true, mobile: true } }, target: { select: { id: true, mobile: true, role: true } } }, orderBy: { createdAt: "desc" }, skip: (data.page - 1) * data.limit, take: data.limit }),
