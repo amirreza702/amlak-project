@@ -847,7 +847,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
         </section>
 
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
-          <h2 className="font-bold text-amber-950">محدودیت داده‌های فعلی</h2>
+          <h2 className="font-bold text-amber-950">وضعیت ثبت و تاریخچه تأیید مشاور</h2>
           <p className="mt-3 text-sm leading-7 text-amber-900">برای سازگاری با کد قدیمی، isVerified حفظ شده و وضعیت دقیق بررسی با verificationStatus نگهداری می‌شود. تغییر وضعیت مشاور، دلیل تصمیم و رویدادهای مدیریتی در تاریخچه ثبت می‌شوند.</p>
         </section>
       </div>
