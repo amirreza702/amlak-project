@@ -91,9 +91,7 @@ export async function deleteSessionByTokenHash(tokenHash: string) {
 /** بازنشانی رمز عبور و حذف تمام Sessionهای کاربر در یک تراکنش */
 export async function resetUserPasswordAndSessions(
   userId: string,
-  passwordHash: string,
-  actorUserId: string,
-  reason: string
+  passwordHash: string
 ) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -109,11 +107,6 @@ export async function resetUserPasswordAndSessions(
     });
 
     await tx.session.deleteMany({ where: { userId } });
-    await tx.adminAuditLog.create({ data: {
-      actorUserId, targetUserId: userId, targetType: "USER", targetId: userId,
-      operation: "ADMIN_RESET_PASSWORD", reason,
-      before: { passwordReset: false }, after: { passwordReset: true, sessionsRevoked: true },
-    } });
     return user;
   });
 }
