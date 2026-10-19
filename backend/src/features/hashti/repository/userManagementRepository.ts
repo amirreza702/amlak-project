@@ -216,7 +216,7 @@ export async function updateManagedProfile(input: ManagedProfileUpdate) {
     }
 
     if (input.profileType === "owner") {
-      const current = await tx.owner.findUnique({ where: { id: input.profileId }, select: { id: true, firstName: true, lastName: true } });
+      const current = await tx.owner.findUnique({ where: { id: input.profileId }, select: { id: true, userId: true, firstName: true, lastName: true } });
       if (!current) throw new Error("PROFILE_NOT_FOUND");
       const updated = await tx.owner.update({
         where: { id: input.profileId }, data: { firstName: input.firstName, lastName: input.lastName },
@@ -225,7 +225,10 @@ export async function updateManagedProfile(input: ManagedProfileUpdate) {
       await tx.adminAuditLog.create({
         data: {
           actorUserId: input.actorUserId, actorMobile: input.actorMobile, actorRole: UserRole.HASHTI,
-          action: "OWNER_PROFILE_UPDATED_BY_HASHTI", targetType: "OWNER_PROFILE", targetId: current.id,
+          action: "OWNER_PROFILE_UPDATED_BY_HASHTI", targetType: "OWNER", targetId: current.id, targetUserId: current.userId,
+          operation: "UPDATE_OWNER_PROFILE", reason: input.reason,
+          before: { firstName: current.firstName, lastName: current.lastName },
+          after: { firstName: updated.firstName, lastName: updated.lastName },
           details: { reason: input.reason, before: { firstName: current.firstName, lastName: current.lastName }, after: { firstName: updated.firstName, lastName: updated.lastName } },
         },
       });
@@ -266,7 +269,7 @@ export async function updateManagedProfile(input: ManagedProfileUpdate) {
     }
 
     const current = await tx.agent.findUnique({
-      where: { id: input.profileId }, select: { id: true, firstName: true, lastName: true, agencyName: true, address: true },
+      where: { id: input.profileId }, select: { id: true, userId: true, firstName: true, lastName: true, agencyName: true, address: true },
     });
     if (!current) throw new Error("PROFILE_NOT_FOUND");
     const updated = await tx.agent.update({
@@ -281,7 +284,10 @@ export async function updateManagedProfile(input: ManagedProfileUpdate) {
     await tx.adminAuditLog.create({
       data: {
         actorUserId: input.actorUserId, actorMobile: input.actorMobile, actorRole: UserRole.HASHTI,
-        action: "AGENT_PROFILE_UPDATED_BY_HASHTI", targetType: "AGENT_PROFILE", targetId: current.id,
+        action: "AGENT_PROFILE_UPDATED_BY_HASHTI", targetType: "AGENT", targetId: current.id, targetUserId: current.userId,
+        operation: "UPDATE_AGENT_PROFILE", reason: input.reason,
+        before: { firstName: current.firstName, lastName: current.lastName, agencyName: current.agencyName, address: current.address },
+        after: { firstName: updated.firstName, lastName: updated.lastName, agencyName: updated.agencyName, address: updated.address },
         details: {
           reason: input.reason,
           before: { firstName: current.firstName, lastName: current.lastName, agencyName: current.agencyName, address: current.address },
