@@ -234,7 +234,7 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
         </div>
       </header>
 
-      <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <section className={role === "HASHTI" ? "w-full max-w-none px-0 py-4" : "mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12"}>
         <div className="mb-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
             {role === "OWNER" ? (
