@@ -21,6 +21,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function OwnerDashboard({ user }: { user: UserPublic }) {
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [firstName, setFirstName] = useState("");
@@ -103,14 +104,22 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
+    <div dir="rtl" className="min-h-screen mr-20 space-y-5 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
+      <aside aria-label="ابزارهای پنل مالک" className="fixed inset-y-0 right-0 z-20 w-20 overflow-y-auto border-l border-slate-200 bg-white p-2 shadow-sm lg:w-64 lg:p-3">
+        <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">پنل مالک</h2>
+        <nav className="grid grid-cols-1 gap-2" aria-label="ابزارهای مالک">
+          {[["profile", "اطلاعات مالک"], ["agent-access", "دسترسی مشاوران"], ["properties", "املاک من"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
+            <button key={target} type="button" title={label} aria-current={selectedTool === target ? "page" : undefined} onClick={() => setSelectedTool(target)} className={`break-words rounded-lg border px-2 py-2.5 text-right text-xs font-semibold leading-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:px-3 lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}>{label}</button>
+          ))}
+        </nav>
+      </aside>
+      <div hidden={selectedTool !== "profile"} className="grid gap-3 sm:grid-cols-3">
         <SummaryCard icon={<Building2 className="h-5 w-5" />} label="املاک ثبت‌شده" value="از طریق API فعلی قابل فهرست‌کردن نیست" />
         <SummaryCard icon={<UserRoundCheck className="h-5 w-5" />} label="مشاوران مجاز" value="فهرست کامل در دسترس نیست" />
         <SummaryCard icon={<ShieldCheck className="h-5 w-5" />} label="دسترسی‌ها" value="کنترل سرورمحور" />
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section hidden={selectedTool !== "profile"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2"><UserRound className="h-5 w-5 text-[#043873]" /><h2 className="text-lg font-bold">اطلاعات مالک</h2></div>
         {loadingProfile ? <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" />در حال دریافت پروفایل...</p> : profile ? (
           <form onSubmit={saveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -126,7 +135,7 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
         {profileError && profile && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{profileError}</p>}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section hidden={selectedTool !== "agent-access"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2"><Users className="h-5 w-5 text-[#043873]" /><h2 className="text-lg font-bold">تأیید یا لغو دسترسی مشاور برای یک ملک</h2></div>
         <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی عملیات تأیید/لغو را دارد، اما فهرست املاک مالک و مشاوران مرتبط را برنمی‌گرداند. تا تکمیل آن API، شناسه‌های موجود را وارد کنید. سرور همچنان مالکیت و دسترسی را کنترل می‌کند.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -141,12 +150,12 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
+      <section hidden={selectedTool !== "properties"} className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
         <h2 className="font-bold">املاک من و تاریخچهٔ تغییرات</h2>
         <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی برای مالک، فهرست همهٔ املاک متعلق به حساب و تاریخچهٔ آن‌ها را ارائه نمی‌کند. این بخش بدون API سمت سرور نمی‌تواند اطلاعات واقعی را نمایش دهد؛ هیچ فهرست حدسی از آگهی‌های عمومی جایگزین آن نمی‌شود.</p>
       </section>
-      <OwnerPropertiesPanel user={user} />
-      <UserNotificationsPanel userId={user.id} />
+      <div hidden={selectedTool !== "properties"}><OwnerPropertiesPanel user={user} /></div>
+      <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
     </div>
   );
 }
