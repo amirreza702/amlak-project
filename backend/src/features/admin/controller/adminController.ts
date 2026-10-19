@@ -142,3 +142,15 @@ export async function agentHistoryController(req: Request, res: Response) {
     return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
   } catch (error) { return sendError(res, error); }
 }
+
+
+export async function setOwnerStatusController(req: Request, res: Response) {
+  try {
+    const actorUserId = actorId(req);
+    if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
+    if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
+    const owner = await adminOwnerDetails(req.params.ownerId);
+    const item = await adminSetUserStatus({ actorUserId, userId: owner.user.id, isActive: req.body.isActive, reason: req.body.reason });
+    return res.status(200).json({ item });
+  } catch (error) { return sendError(res, error); }
+}
