@@ -10,6 +10,10 @@ import {
   getAgentCurrentSubscriptionService,
   getAgentContactUsageService,
 } from "../service/agentSubscriptionService";
+import {
+  createManagedAgentSubscriptionService,
+  upgradeManagedAgentSubscriptionService,
+} from "../../hashti/service/agentSubscriptionManagementService";
 
 /**
  * ایجاد Subscription
@@ -55,6 +59,21 @@ export const createAgentSubscriptionController = async (
       return res.status(400).json({ message: "Invalid subscription dates" });
     }
 
+    const actor = (req as AuthenticatedRequest).user;
+    if (actor?.role === UserRole.HASHTI) {
+      const subscription = await createManagedAgentSubscriptionService({
+        agentId,
+        planId,
+        startsAt: parsedStartsAt,
+        expiresAt: parsedExpiresAt,
+        actorUserId: actor.id,
+        actorMobile: actor.mobile,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+      return res.status(201).json(subscription);
+    }
+
     const subscription =
       await createAgentSubscriptionService(
         agentId,
@@ -87,6 +106,10 @@ export const createAgentSubscriptionController = async (
 
     return res.status(201).json(subscription);
   } catch (error) {
+    if (error instanceof Error && error.message === "Agent not found") {
+      return res.status(404).json({ message: error.message });
+    }
+
     if (
       error instanceof Error &&
       error.message ===
@@ -165,6 +188,19 @@ export const upgradeAgentSubscriptionController = async (
       });
     }
 
+    const actor = (req as AuthenticatedRequest).user;
+    if (actor?.role === UserRole.HASHTI) {
+      const subscription = await upgradeManagedAgentSubscriptionService({
+        agentId,
+        planId,
+        actorUserId: actor.id,
+        actorMobile: actor.mobile,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+      return res.status(200).json(subscription);
+    }
+
     const subscription =
       await upgradeAgentSubscriptionService(
         agentId,
@@ -193,6 +229,10 @@ export const upgradeAgentSubscriptionController = async (
 
     return res.status(200).json(subscription);
   } catch (error) {
+    if (error instanceof Error && error.message === "Agent not found") {
+      return res.status(404).json({ message: error.message });
+    }
+
     if (
       error instanceof Error &&
       error.message ===
