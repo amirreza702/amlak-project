@@ -7,7 +7,7 @@ import {
   bootstrapSuperAdminController, listUsersController, userDetailsController, setUserStatusController,
   listOwnersController, ownerDetailsController, listAgentsController, agentDetailsController,
   setAgentVerificationController, setAgentSubscriptionController, updateStaffPermissionsController,
-  auditController, plansController, createStaffAccountController, ownerHistoryController, agentHistoryController,
+  auditController, plansController, createStaffAccountController, ownerHistoryController, agentHistoryController, setOwnerStatusController,
 } from "../controller/adminController";
 
 const router = Router();
@@ -21,6 +21,7 @@ router.patch("/admin/users/:userId/status", authMiddleware, requireRole(UserRole
 
 router.get("/admin/owners", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), listOwnersController);
 router.get("/admin/owners/:ownerId", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), ownerDetailsController);
+router.patch("/admin/owners/:ownerId/status", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), setOwnerStatusController);
 router.get("/admin/owners/:ownerId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), ownerHistoryController);
 
 router.get("/admin/agents", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), listAgentsController);
