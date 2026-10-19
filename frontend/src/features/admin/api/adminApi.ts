@@ -50,3 +50,16 @@ export const setAdminAgentSubscription = (agentId: string, input: { planId: stri
   request<{ item: AdminAgent["subscriptions"][number] }>(`/admin/agents/${encodeURIComponent(agentId)}/subscription`, { method: "POST", body: JSON.stringify(input) });
 export const getAdminAudit = (filters: { targetType?: string; targetId?: string; targetUserId?: string; actorUserId?: string; page?: number; limit?: number } = {}) =>
   request<AdminPage<AdminAuditEntry>>(`/admin/audit?${query(filters)}`);
+
+export const ADMIN_PERMISSION_OPTIONS = [
+  { value: "USERS_READ", label: "مشاهده کاربران" },
+  { value: "USERS_MANAGE", label: "مدیریت وضعیت حساب‌ها" },
+  { value: "OWNERS_MANAGE", label: "مدیریت مالکان" },
+  { value: "AGENTS_MANAGE", label: "مدیریت مشاوران و اشتراک" },
+  { value: "STAFF_MANAGE", label: "مدیریت کارکنان" },
+  { value: "AUDIT_READ", label: "مشاهده سوابق مدیریتی" },
+] as const;
+export const createAdminStaff = (input: { mobile: string; password: string; permissions: string[]; reason: string }) =>
+  request<{ item: { id: string; mobile: string; adminPermissions: string[] } }>("/admin/staff", { method: "POST", body: JSON.stringify(input) });
+export const updateAdminStaffPermissions = (userId: string, permissions: string[], reason: string) =>
+  request<{ item: { id: string; mobile: string; adminPermissions: string[] } }>(`/admin/staff/${encodeURIComponent(userId)}/permissions`, { method: "PATCH", body: JSON.stringify({ permissions, reason }) });
