@@ -59,15 +59,15 @@ export const createAgentSubscriptionController = async (
       return res.status(400).json({ message: "Invalid subscription dates" });
     }
 
-    const actor = (req as AuthenticatedRequest).user;
-    if (actor?.role === UserRole.HASHTI) {
+    const hashtiActor = (req as AuthenticatedRequest).user;
+    if (hashtiActor?.role === UserRole.HASHTI) {
       const subscription = await createManagedAgentSubscriptionService({
         agentId,
         planId,
         startsAt: parsedStartsAt,
         expiresAt: parsedExpiresAt,
-        actorUserId: actor.id,
-        actorMobile: actor.mobile,
+        actorUserId: hashtiActor.id,
+        actorMobile: hashtiActor.mobile,
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
       });
@@ -188,13 +188,13 @@ export const upgradeAgentSubscriptionController = async (
       });
     }
 
-    const actor = (req as AuthenticatedRequest).user;
-    if (actor?.role === UserRole.HASHTI) {
+    const hashtiActor = (req as AuthenticatedRequest).user;
+    if (hashtiActor?.role === UserRole.HASHTI) {
       const subscription = await upgradeManagedAgentSubscriptionService({
         agentId,
         planId,
-        actorUserId: actor.id,
-        actorMobile: actor.mobile,
+        actorUserId: hashtiActor.id,
+        actorMobile: hashtiActor.mobile,
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
       });
