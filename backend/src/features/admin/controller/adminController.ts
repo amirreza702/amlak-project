@@ -105,7 +105,7 @@ export async function updateStaffPermissionsController(req: Request, res: Respon
 }
 export async function auditController(req: Request, res: Response) {
   try {
-    const result = await adminAudit({ targetType: queryString(req.query.targetType), targetId: queryString(req.query.targetId), actorUserId: queryString(req.query.actorUserId), ...pagination(req) });
+    const result = await adminAudit({ targetType: queryString(req.query.targetType), targetId: queryString(req.query.targetId), targetUserId: queryString(req.query.targetUserId), actorUserId: queryString(req.query.actorUserId), ...pagination(req) });
     return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
   } catch (error) { return sendError(res, error); }
 }
