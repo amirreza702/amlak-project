@@ -29,6 +29,8 @@ export async function createUser(data: {
         mobile: true,
         role: true,
         isActive: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
         createdAt: true,
       },
     });
