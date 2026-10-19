@@ -7,7 +7,7 @@ import {
   bootstrapSuperAdminController, listUsersController, userDetailsController, setUserStatusController,
   listOwnersController, ownerDetailsController, listAgentsController, agentDetailsController,
   setAgentVerificationController, setAgentSubscriptionController, updateStaffPermissionsController,
-  auditController, plansController, createStaffAccountController,
+  auditController, plansController, createStaffAccountController, ownerHistoryController, agentHistoryController,
 } from "../controller/adminController";
 
 const router = Router();
@@ -21,13 +21,13 @@ router.patch("/admin/users/:userId/status", authMiddleware, requireRole(UserRole
 
 router.get("/admin/owners", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), listOwnersController);
 router.get("/admin/owners/:ownerId", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), ownerDetailsController);
-router.get("/admin/owners/:ownerId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), auditController);
+router.get("/admin/owners/:ownerId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("OWNERS_MANAGE"), ownerHistoryController);
 
 router.get("/admin/agents", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), listAgentsController);
 router.get("/admin/agents/:agentId", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), agentDetailsController);
 router.patch("/admin/agents/:agentId/verification", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), setAgentVerificationController);
 router.post("/admin/agents/:agentId/subscription", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), setAgentSubscriptionController);
-router.get("/admin/agents/:agentId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), auditController);
+router.get("/admin/agents/:agentId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), agentHistoryController);
 router.get("/admin/subscription-plans", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), plansController);
 
 router.post("/admin/staff", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("STAFF_MANAGE"), createStaffAccountController);
