@@ -26,6 +26,7 @@ function sendError(res: Response, error: unknown) {
     INVALID_SUBSCRIPTION_DATE: [400, "Invalid subscription dates"], INVALID_SUBSCRIPTION_STATUS: [400, "Invalid subscription status"],
     INVALID_PERMISSIONS: [400, "One or more permissions are invalid"], NOT_STAFF_ACCOUNT: [400, "Target account is not a Hashti staff account"],
     CANNOT_EDIT_SUPER_ADMIN: [403, "The super-admin account cannot be edited here"],
+    CANNOT_EDIT_OWN_PERMISSIONS: [403, "Staff cannot change their own permissions"],
     SUPER_ADMIN_CANNOT_BE_DISABLED: [400, "The super-admin account cannot be disabled"],
     SUPER_ADMIN_ALREADY_EXISTS: [409, "The initial super-admin has already been created"],
     STAFF_MOBILE_EXISTS: [409, "A user with this mobile number already exists"],
