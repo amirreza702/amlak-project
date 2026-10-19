@@ -44,6 +44,7 @@ router.get(
   listAdminUsersController
 );
 
+// بازنشانی مدیریتی رمز حساب کاربر؛ فقط کارکنان هشتی
 // بازنشانی رمز فقط برای کارکنانی که مجوز مدیریت کارکنان دارند؛ این مسیر زیرمجموعه مسیر کاربران است.
 router.use("/auth/admin/users/:userId/reset-password", authMiddleware, requireAdminPermission("STAFF_MANAGE"));
 router.post(
