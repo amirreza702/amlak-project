@@ -25,9 +25,6 @@ CREATE INDEX IF NOT EXISTS "admin_audit_logs_actorUserId_createdAt_idx"
 CREATE INDEX IF NOT EXISTS "admin_audit_logs_createdAt_idx"
   ON "admin_audit_logs"("createdAt");
 
-CREATE UNIQUE INDEX IF NOT EXISTS "users_single_super_admin_idx"
-  ON "users"("isSuperAdmin") WHERE "isSuperAdmin" = true;
-
 DO $
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'admin_audit_logs_actorUserId_fkey') THEN
