@@ -7,6 +7,10 @@ import {
 } from "../service/adminService";
 
 function actorId(req: Request) { return (req as AuthenticatedRequest).user?.id; }
+function routeParam(req: Request, name: string): string {
+  const value = req.params[name];
+  return typeof value === "string" ? value : Array.isArray(value) ? value[0] ?? "" : "";
+}
 function queryString(value: unknown): string | undefined { return typeof value === "string" && value.trim() ? value.trim() : undefined; }
 function queryBool(value: unknown): boolean | undefined {
   if (value === "true") return true;
@@ -52,14 +56,14 @@ export async function listUsersController(req: Request, res: Response) {
   } catch (error) { return sendError(res, error); }
 }
 export async function userDetailsController(req: Request, res: Response) {
-  try { return res.status(200).json({ item: await adminUserDetails(req.params.userId) }); } catch (error) { return sendError(res, error); }
+  try { return res.status(200).json({ item: await adminUserDetails(routeParam(req, "userId")) }); } catch (error) { return sendError(res, error); }
 }
 export async function setUserStatusController(req: Request, res: Response) {
   try {
     const actorUserId = actorId(req);
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
     if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
-    return res.status(200).json({ item: await adminSetUserStatus({ actorUserId, userId: req.params.userId, isActive: req.body.isActive, reason: req.body.reason }) });
+    return res.status(200).json({ item: await adminSetUserStatus({ actorUserId, userId: routeParam(req, "userId"), isActive: req.body.isActive, reason: req.body.reason }) });
   } catch (error) { return sendError(res, error); }
 }
 export async function listOwnersController(req: Request, res: Response) {
@@ -69,7 +73,7 @@ export async function listOwnersController(req: Request, res: Response) {
   } catch (error) { return sendError(res, error); }
 }
 export async function ownerDetailsController(req: Request, res: Response) {
-  try { return res.status(200).json({ item: await adminOwnerDetails(req.params.ownerId) }); } catch (error) { return sendError(res, error); }
+  try { return res.status(200).json({ item: await adminOwnerDetails(routeParam(req, "ownerId")) }); } catch (error) { return sendError(res, error); }
 }
 export async function listAgentsController(req: Request, res: Response) {
   try {
@@ -78,14 +82,14 @@ export async function listAgentsController(req: Request, res: Response) {
   } catch (error) { return sendError(res, error); }
 }
 export async function agentDetailsController(req: Request, res: Response) {
-  try { return res.status(200).json({ item: await adminAgentDetails(req.params.agentId) }); } catch (error) { return sendError(res, error); }
+  try { return res.status(200).json({ item: await adminAgentDetails(routeParam(req, "agentId")) }); } catch (error) { return sendError(res, error); }
 }
 export async function setAgentVerificationController(req: Request, res: Response) {
   try {
     const actorUserId = actorId(req);
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
     if (typeof req.body?.isVerified !== "boolean") return res.status(400).json({ message: "isVerified must be a boolean" });
-    return res.status(200).json({ item: await adminSetAgentVerification({ actorUserId, agentId: req.params.agentId, isVerified: req.body.isVerified, reason: req.body.reason }) });
+    return res.status(200).json({ item: await adminSetAgentVerification({ actorUserId, agentId: routeParam(req, "agentId"), isVerified: req.body.isVerified, reason: req.body.reason }) });
   } catch (error) { return sendError(res, error); }
 }
 export async function setAgentSubscriptionController(req: Request, res: Response) {
@@ -94,14 +98,14 @@ export async function setAgentSubscriptionController(req: Request, res: Response
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
     const { planId, status, startsAt, expiresAt, reason } = req.body ?? {};
     if (typeof planId !== "string" || typeof status !== "string" || typeof startsAt !== "string") return res.status(400).json({ message: "planId, status and startsAt are required" });
-    return res.status(201).json({ item: await adminSetAgentSubscription({ actorUserId, agentId: req.params.agentId, planId, status, startsAt, expiresAt, reason }) });
+    return res.status(201).json({ item: await adminSetAgentSubscription({ actorUserId, agentId: routeParam(req, "agentId"), planId, status, startsAt, expiresAt, reason }) });
   } catch (error) { return sendError(res, error); }
 }
 export async function updateStaffPermissionsController(req: Request, res: Response) {
   try {
     const actorUserId = actorId(req);
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
-    return res.status(200).json({ item: await adminUpdateStaffPermissions({ actorUserId, userId: req.params.userId, permissions: req.body?.permissions, reason: req.body?.reason }) });
+    return res.status(200).json({ item: await adminUpdateStaffPermissions({ actorUserId, userId: routeParam(req, "userId"), permissions: req.body?.permissions, reason: req.body?.reason }) });
   } catch (error) { return sendError(res, error); }
 }
 export async function auditController(req: Request, res: Response) {
@@ -130,7 +134,7 @@ export async function createStaffAccountController(req: Request, res: Response) 
 
 export async function ownerHistoryController(req: Request, res: Response) {
   try {
-    const owner = await adminOwnerDetails(req.params.ownerId);
+    const owner = await adminOwnerDetails(routeParam(req, "ownerId"));
     const result = await adminAudit({ targetUserId: owner.user.id, ...pagination(req) });
     return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
   } catch (error) { return sendError(res, error); }
@@ -138,7 +142,7 @@ export async function ownerHistoryController(req: Request, res: Response) {
 
 export async function agentHistoryController(req: Request, res: Response) {
   try {
-    const agent = await adminAgentDetails(req.params.agentId);
+    const agent = await adminAgentDetails(routeParam(req, "agentId"));
     const result = await adminAudit({ targetUserId: agent.user.id, ...pagination(req) });
     return res.status(200).json({ items: result.items, pagination: { ...pagination(req), total: result.total, totalPages: Math.ceil(result.total / pagination(req).limit) } });
   } catch (error) { return sendError(res, error); }
@@ -150,7 +154,7 @@ export async function setOwnerStatusController(req: Request, res: Response) {
     const actorUserId = actorId(req);
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
     if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
-    const owner = await adminOwnerDetails(req.params.ownerId);
+    const owner = await adminOwnerDetails(routeParam(req, "ownerId"));
     const item = await adminSetUserStatus({ actorUserId, userId: owner.user.id, isActive: req.body.isActive, reason: req.body.reason });
     return res.status(200).json({ item });
   } catch (error) { return sendError(res, error); }
@@ -168,7 +172,7 @@ export async function setAgentStatusController(req: Request, res: Response) {
     const actorUserId = actorId(req);
     if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
     if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
-    const agent = await adminAgentDetails(req.params.agentId);
+    const agent = await adminAgentDetails(routeParam(req, "agentId"));
     const item = await adminSetUserStatus({ actorUserId, userId: agent.user.id, isActive: req.body.isActive, reason: req.body.reason });
     return res.status(200).json({ item });
   } catch (error) { return sendError(res, error); }
