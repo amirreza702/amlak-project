@@ -3,7 +3,7 @@ import {
   ADMIN_PERMISSIONS, createInitialSuperAdmin, getAdminUser, listAdminUsers,
   listOwners, getOwner, listAgents, getAgent, setUserStatus, setAgentVerification,
   setAgentSubscription, updateStaffPermissions, listAudit, listSubscriptionPlans,
-  type AdminPermission,
+  type AdminPermission, createStaffAccount,
 } from "../repository/adminRepository";
 import { UserRole } from "@prisma/client";
 
@@ -81,3 +81,14 @@ export async function adminAudit(input: { targetType?: string; targetId?: string
   pageArgs(input.page, input.limit); return listAudit(input);
 }
 export const adminPlans = listSubscriptionPlans;
+
+
+export async function adminCreateStaffAccount(input: { actorUserId: string; mobile: unknown; password: unknown; permissions: unknown; reason: unknown }) {
+  if (!Array.isArray(input.permissions) || input.permissions.some(p => typeof p !== "string" || !(ADMIN_PERMISSIONS as readonly string[]).includes(p))) throw new Error("INVALID_PERMISSIONS");
+  const mobile = safeMobile(input.mobile);
+  const passwordHash = await bcrypt.hash(safePassword(input.password), 12);
+  return createStaffAccount({
+    actorUserId: input.actorUserId, mobile, passwordHash,
+    permissions: input.permissions as AdminPermission[], reason: reasonValue(input.reason),
+  });
+}
