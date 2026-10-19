@@ -5,7 +5,7 @@ import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Search, ShieldCheck, Use
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 type Role = "CUSTOMER" | "OWNER" | "AGENT" | "HASHTI";
-type ProfileType = "customer" | "owner" | "agent";
+type ProfileType = "customer" | "owner" | "agent" | "hashti";
 interface ProfileName { id: string; firstName: string; lastName: string; }
 interface ManagedUser {
   id: string; mobile: string; role: Role; isActive: boolean; isSuperAdmin: boolean; createdAt: string; updatedAt: string;
@@ -37,6 +37,7 @@ function profileOf(user: ManagedUser): { type: ProfileType; id: string; firstNam
   if (user.agent) return { type: "agent", id: user.agent.id, firstName: user.agent.firstName, lastName: user.agent.lastName, agencyName: user.agent.agencyName, address: user.agent.address };
   if (user.owner) return { type: "owner", id: user.owner.id, firstName: user.owner.firstName, lastName: user.owner.lastName };
   if (user.customer) return { type: "customer", id: user.customer.id, firstName: user.customer.firstName, lastName: user.customer.lastName };
+  if (user.staffProfile) return { type: "hashti", id: user.staffProfile.id, firstName: user.staffProfile.firstName, lastName: user.staffProfile.lastName };
   return null;
 }
 
@@ -268,7 +269,7 @@ export function HashtiUserManagementPanel() {
                   </form>
                 )}
                 {editUser?.id === item.id && profile && <form onSubmit={saveProfile} className="grid gap-3 rounded-lg bg-slate-50 p-3 sm:grid-cols-2">
-                  <h4 className="font-bold sm:col-span-2">ویرایش پروفایل {profile.type === "agent" ? "مشاور" : profile.type === "owner" ? "مالک" : "مشتری"}</h4>
+                  <h4 className="font-bold sm:col-span-2">ویرایش پروفایل {profile.type === "agent" ? "مشاور" : profile.type === "owner" ? "مالک" : profile.type === "hashti" ? "کارمند هشتی" : "مشتری"}</h4>
                   <label className="space-y-1 text-sm">نام<input required maxLength={120} value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2" /></label>
                   <label className="space-y-1 text-sm">نام خانوادگی<input required maxLength={120} value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2" /></label>
                   {profile.type === "agent" && <><label className="space-y-1 text-sm">نام آژانس<input maxLength={200} value={editAgencyName} onChange={(e) => setEditAgencyName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2" /></label><label className="space-y-1 text-sm">نشانی<input maxLength={500} value={editAddress} onChange={(e) => setEditAddress(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2" /></label></>}
