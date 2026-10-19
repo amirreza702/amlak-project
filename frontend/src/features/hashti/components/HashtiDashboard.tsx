@@ -526,9 +526,9 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
 
   return (
     <div className="min-h-screen w-full" dir="rtl">
-      <aside aria-label="منوی ابزارهای هشتی" className="fixed inset-y-0 right-0 z-20 w-20 min-w-0 overflow-y-auto border-l border-slate-200 bg-white p-2 shadow-sm lg:w-64 lg:p-3">
+      <aside aria-label="منوی ابزارهای هشتی" className="fixed inset-y-0 right-0 z-30 w-16 min-w-0 overflow-x-hidden overflow-y-auto border-l border-slate-200 bg-white p-1.5 shadow-sm sm:p-2 lg:w-64 lg:p-3">
         <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">ابزارهای هشتی</h2>
-        <nav className="grid grid-cols-1 gap-2" aria-label="بخش‌های پنل هشتی">
+        <nav className="grid grid-cols-1 gap-1.5 lg:gap-2" aria-label="بخش‌های پنل هشتی">
           {[
             ["dashboard-home", "نمای کلی"], ["agent-management", "مدیریت مشاوران و اشتراک"],
             ["duplicate-management", "مغایرت املاک"], ["password-reset", "بازنشانی رمز"],
@@ -537,11 +537,11 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
             ["property-tools", "ابزارهای مدیریت ملک"], ["user-management", "مدیریت کاربران"],
             ["verification-queue", "صف تأیید"], ["notifications", "اعلان‌ها"],
           ].map(([target, label]) => (
-            <button key={target} type="button" aria-current={selectedTool === target ? "page" : undefined} onClick={() => setSelectedTool(target)} title={label} className={`break-words rounded-lg border px-2 py-2.5 text-right text-xs font-semibold leading-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:px-3 lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}>{label}</button>
+            <button key={target} type="button" aria-current={selectedTool === target ? "page" : undefined} onClick={() => setSelectedTool(target)} title={label} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
           ))}
         </nav>
       </aside>
-      <main className="relative z-0 mr-20 min-w-0 space-y-5 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
+      <main className="relative z-0 mr-16 min-h-screen min-w-0 space-y-5 overflow-x-hidden bg-slate-50 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
       <section id="dashboard-home" hidden={selectedTool !== "dashboard-home"} className="scroll-mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-[#043873]"><ShieldCheck className="h-6 w-6" /></div>
