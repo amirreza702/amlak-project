@@ -1,6 +1,8 @@
 import {
   ListingStatus,
 } from "@prisma/client";
+import { PropertyHistoryAction, UserRole } from "@prisma/client";
+import { prisma } from "../../../lib/prisma";
 
 import {
   findPropertyById,
@@ -26,7 +28,8 @@ import {
  * Listing → EXPIRED
  */
 export async function expirePropertyListing(
-  propertyId: string
+  propertyId: string,
+  performedBy?: string
 ) {
   const property =
     await findPropertyById(propertyId);
@@ -90,6 +93,64 @@ export async function expirePropertyListing(
       listing,
       confirmUntil: property.confirmUntil,
     };
+  }
+
+  if (performedBy) {
+    return prisma.$transaction(async (tx) => {
+      const actor = await tx.user.findUnique({
+        where: { id: performedBy },
+        select: { id: true, mobile: true, role: true, isActive: true },
+      });
+      if (!actor || actor.role !== UserRole.HASHTI || !actor.isActive) {
+        throw new Error("HASHTI_PERMISSION_REQUIRED");
+      }
+
+      const updatedListing = await tx.propertyListing.update({
+        where: { id: listing.id },
+        data: {
+          status: ListingStatus.EXPIRED,
+          expiredAt: now,
+        },
+      });
+
+      await tx.propertyHistory.create({
+        data: {
+          propertyId,
+          action: PropertyHistoryAction.LISTING_CHANGED,
+          field: "listing.status",
+          oldValue: listing.status,
+          newValue: ListingStatus.EXPIRED,
+          performedBy: actor.id,
+          reason: "انقضای آگهی توسط هشتی پس از پایان مهلت تأیید ملک",
+        },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorUserId: actor.id,
+          actorMobile: actor.mobile,
+          actorRole: UserRole.HASHTI,
+          action: "PROPERTY_LISTING_EXPIRED_BY_HASHTI",
+          targetType: "PROPERTY_LISTING",
+          targetId: listing.id,
+          details: {
+            propertyId,
+            previousStatus: listing.status,
+            newStatus: ListingStatus.EXPIRED,
+            confirmUntil: property.confirmUntil?.toISOString() ?? null,
+            previousExpiredAt: listing.expiredAt?.toISOString() ?? null,
+            newExpiredAt: now.toISOString(),
+          },
+        },
+      });
+
+      return {
+        expired: true,
+        statusChanged: true,
+        listing: updatedListing,
+        confirmUntil: property.confirmUntil,
+      };
+    }, { isolationLevel: "Serializable" });
   }
 
   const updatedListing =
