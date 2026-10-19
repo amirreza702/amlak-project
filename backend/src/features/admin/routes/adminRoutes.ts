@@ -7,7 +7,7 @@ import {
   bootstrapSuperAdminController, listUsersController, userDetailsController, setUserStatusController,
   listOwnersController, ownerDetailsController, listAgentsController, agentDetailsController,
   setAgentVerificationController, setAgentSubscriptionController, updateStaffPermissionsController,
-  auditController, plansController, createStaffAccountController, ownerHistoryController, agentHistoryController, setOwnerStatusController, listStaffAccountsController,
+  auditController, plansController, createStaffAccountController, ownerHistoryController, agentHistoryController, setOwnerStatusController, listStaffAccountsController, setAgentStatusController,
 } from "../controller/adminController";
 
 const router = Router();
@@ -26,6 +26,7 @@ router.get("/admin/owners/:ownerId/history", authMiddleware, requireRole(UserRol
 
 router.get("/admin/agents", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), listAgentsController);
 router.get("/admin/agents/:agentId", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), agentDetailsController);
+router.patch("/admin/agents/:agentId/status", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), setAgentStatusController);
 router.patch("/admin/agents/:agentId/verification", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), setAgentVerificationController);
 router.post("/admin/agents/:agentId/subscription", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), setAgentSubscriptionController);
 router.get("/admin/agents/:agentId/history", authMiddleware, requireRole(UserRole.HASHTI), requireAdminPermission("AGENTS_MANAGE"), agentHistoryController);
