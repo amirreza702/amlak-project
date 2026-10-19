@@ -10,6 +10,10 @@ import {
 import type { ManagedProfileType } from "../repository/userManagementRepository";
 
 function getActor(req: Request) { return (req as AuthenticatedRequest).user; }
+function routeParam(req: Request, name: string): string {
+  const value = req.params[name];
+  return typeof value === "string" ? value : Array.isArray(value) ? value[0] ?? "" : "";
+}
 function parseIntegerQuery(value: unknown, fallback: number, min: number, max: number): number | null {
   if (value === undefined) return fallback;
   if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
@@ -72,7 +76,7 @@ export async function setManagedUserStatusController(req: Request, res: Response
 
   try {
     const result = await setManagedUserStatusService({
-      userId: req.params.userId, isActive, reason, actorUserId: actor.id, actorMobile: actor.mobile,
+      userId: routeParam(req, "userId"), isActive, reason, actorUserId: actor.id, actorMobile: actor.mobile,
     });
     return res.status(200).json(result);
   } catch (error) {
@@ -114,7 +118,7 @@ export async function createManagedHashtiUserController(req: Request, res: Respo
 export async function updateManagedProfileController(req: Request, res: Response) {
   const actor = getActor(req);
   if (!actor) return res.status(401).json({ message: "Authentication required" });
-  const profileType = req.params.profileType;
+  const profileType = routeParam(req, "profileType");
   if (!["customer", "owner", "agent", "hashti"].includes(profileType)) return res.status(400).json({ message: "profileType must be customer, owner, agent, or hashti" });
 
   const { firstName, lastName, agencyName, address } = req.body ?? {};
@@ -130,7 +134,7 @@ export async function updateManagedProfileController(req: Request, res: Response
 
   try {
     const profile = await updateManagedProfileService({
-      profileType: profileType as ManagedProfileType, profileId: req.params.profileId,
+      profileType: profileType as ManagedProfileType, profileId: routeParam(req, "profileId"),
       firstName: firstName.trim(), lastName: lastName.trim(),
       ...(profileType === "agent" && agencyName !== undefined ? { agencyName: typeof agencyName === "string" ? agencyName.trim() || null : null } : {}),
       ...(profileType === "agent" && address !== undefined ? { address: typeof address === "string" ? address.trim() || null : null } : {}),
