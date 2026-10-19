@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { getAdminUsers, getCurrentUser, type AdminUser, type UserRole } from "@/features/auth/api/authApi";
 import { getAdminUserDetails } from "@/features/admin/api/adminApi";
 
@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => { void loadUsers(); }, [loadUsers]);
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPage(1);
     setSearch(searchInput.trim());
