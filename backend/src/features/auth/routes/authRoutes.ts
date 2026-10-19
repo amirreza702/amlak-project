@@ -36,7 +36,7 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 router.post("/auth/logout", authMiddleware, logoutUserController);
 
 // فهرست کاربران با جست‌وجو و فیلتر؛ فقط کارکنان دارای مجوز هشتی
-router.use("/auth/admin/users", requireAdminPermission("USERS_READ"));
+router.use("/auth/admin/users", authMiddleware, requireAdminPermission("USERS_READ"));
 router.get(
   "/auth/admin/users",
   authMiddleware,
