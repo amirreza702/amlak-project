@@ -87,3 +87,35 @@ export const updateOwnerProfile = async (
     data,
   });
 };
+
+/**
+ * Return property ownership links for one owner profile.
+ */
+export const findOwnerPropertiesByOwnerId = async (ownerId: string) =>
+  prisma.propertyOwner.findMany({
+    where: { ownerId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      propertyId: true,
+      ownerId: true,
+      share: true,
+      isPrimary: true,
+      verificationStatus: true,
+      verifiedAt: true,
+      property: {
+        select: {
+          id: true, propertyType: true, city: true, district: true, address: true,
+          area: true, rooms: true, isActive: true, occupancyStatus: true,
+          listing: {
+            select: { transactionType: true, salePrice: true, depositAmount: true, rentAmount: true, status: true, publishedAt: true },
+          },
+          agents: {
+            select: {
+              agentId: true, status: true, approvedByOwner: true,
+              agent: { select: { firstName: true, lastName: true, agencyName: true } },
+            },
+          },
+        },
+      },
+    },
+  });

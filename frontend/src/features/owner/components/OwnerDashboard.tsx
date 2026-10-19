@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Building2, LoaderCircle, Save, ShieldCheck, UserRound, UserRoundCheck, Users } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
+import { OwnerPropertiesPanel } from "./OwnerPropertiesPanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 interface OwnerProfile {
@@ -144,6 +145,7 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
         <h2 className="font-bold">املاک من و تاریخچهٔ تغییرات</h2>
         <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی برای مالک، فهرست همهٔ املاک متعلق به حساب و تاریخچهٔ آن‌ها را ارائه نمی‌کند. این بخش بدون API سمت سرور نمی‌تواند اطلاعات واقعی را نمایش دهد؛ هیچ فهرست حدسی از آگهی‌های عمومی جایگزین آن نمی‌شود.</p>
       </section>
+      <OwnerPropertiesPanel user={user} />
       <UserNotificationsPanel userId={user.id} />
     </div>
   );

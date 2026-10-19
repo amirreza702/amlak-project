@@ -11,6 +11,7 @@ import {
   extendSessionExpiry,
   deleteSessionByTokenHash,
   resetUserPasswordAndSessions,
+  resetUserPasswordAndSessionsWithAudit,
 } from "../repository/authRepository";
 
 interface RegisterInput {
@@ -240,3 +241,36 @@ export const adminResetUserPasswordService = async (
   };
 };
 
+
+
+/**
+ * Administrative password reset that records the event atomically with the
+ * password/session change. Sensitive password material is never audited.
+ */
+export const adminResetUserPasswordWithAuditService = async (input: {
+  userId: string;
+  newPassword: string;
+  actorUserId: string;
+  actorMobile: string;
+  ipAddress?: string;
+  userAgent?: string;
+  reason?: string | null;
+}) => {
+  if (!input.userId.trim()) {
+    throw new Error("INVALID_USER_ID");
+  }
+  if (input.newPassword.length < 8) {
+    throw new Error("PASSWORD_TOO_SHORT");
+  }
+
+  const passwordHash = await bcrypt.hash(input.newPassword, 12);
+  return resetUserPasswordAndSessionsWithAudit({
+    userId: input.userId,
+    passwordHash,
+    actorUserId: input.actorUserId,
+    actorMobile: input.actorMobile,
+    ipAddress: input.ipAddress,
+    userAgent: input.userAgent,
+    reason: input.reason,
+  });
+};

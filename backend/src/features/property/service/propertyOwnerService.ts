@@ -12,6 +12,7 @@ export interface AddPropertyOwnerInput {
   ownerId: string;
   share: number;
   isPrimary?: boolean;
+  performedBy?: string;
 }
 
 export async function addPropertyOwner(
@@ -136,6 +137,7 @@ export async function addPropertyOwner(
       propertyId: data.propertyId,
       action: PropertyHistoryAction.OWNERSHIP_CHANGED,
       field: "propertyOwner",
+      performedBy: data.performedBy ?? null,
       newValue: JSON.stringify({
         ownerId: data.ownerId,
         share: data.share,
@@ -147,6 +149,34 @@ export async function addPropertyOwner(
   );
 
   
+
+  
+  if (data.performedBy) {
+    const actor = await tx.user.findUnique({
+      where: { id: data.performedBy },
+      select: { id: true, mobile: true, role: true },
+    });
+
+    if (actor?.role === "HASHTI") {
+      await tx.adminAuditLog.create({
+        data: {
+          actorUserId: actor.id,
+          actorMobile: actor.mobile,
+          actorRole: actor.role,
+          action: "OWNER_PROPERTY_RELATION_CREATED",
+          targetType: "OWNER_PROPERTY",
+          targetId: data.ownerId,
+          details: {
+            propertyId: data.propertyId,
+            ownerId: data.ownerId,
+            share: data.share,
+            isPrimary: data.isPrimary ?? false,
+            reason: "Added property ownership relation by Hashti staff",
+          },
+        },
+      });
+    }
+  }
 
   return propertyOwner;
 });

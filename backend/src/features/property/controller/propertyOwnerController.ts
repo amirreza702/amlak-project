@@ -17,6 +17,7 @@
  */
 
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   addPropertyOwner,
@@ -55,6 +56,11 @@ export async function addPropertyOwnerController(
      */
     const propertyId = req.params.id;
 
+    const actor = (req as AuthenticatedRequest).user;
+    if (!actor) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
     /**
      * اطلاعات مالک از Body
      */
@@ -72,6 +78,7 @@ export async function addPropertyOwnerController(
         propertyId,
         ownerId,
         share,
+        performedBy: actor.id,
         isPrimary,
       });
 

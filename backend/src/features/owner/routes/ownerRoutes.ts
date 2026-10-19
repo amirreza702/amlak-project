@@ -2,6 +2,7 @@ import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import {
   getOwnerProfileController,
+  getOwnerPropertiesController,
   updateOwnerProfileController,
 } from "../controller/ownerController";
 import { authMiddleware } from "../../auth/middleware/authMiddleware";
@@ -25,6 +26,15 @@ router.put(
   requireRole(UserRole.OWNER),
   requireOwnProfile("owner", "ownerId"),
   updateOwnerProfileController
+);
+
+
+router.get(
+  "/owners/:ownerId/properties",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
+  getOwnerPropertiesController
 );
 
 export default router;

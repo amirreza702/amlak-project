@@ -18,6 +18,7 @@
 import { Request, Response } from "express";
 import {
   getOwnerProfile,
+  getOwnerPropertiesService,
   updateOwnerProfileService,
 } from "../service/ownerService";
 
@@ -113,5 +114,22 @@ export async function updateOwnerProfileController(
     return res.status(500).json({
       message: "Internal server error",
     });
+  }
+}
+
+/**
+ * GET /owners/:ownerId/properties
+ */
+export async function getOwnerPropertiesController(
+  req: Request<OwnerRouteParams>,
+  res: Response
+) {
+  try {
+    const properties = await getOwnerPropertiesService(req.params.ownerId);
+    return res.status(200).json({ properties });
+  } catch (error: any) {
+    if (error.message === "Owner not found") return res.status(404).json({ message: error.message });
+    console.error("Error getting owner properties:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 }

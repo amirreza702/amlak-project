@@ -202,6 +202,8 @@ model User {
   passwordHash String?
   role         UserRole
   isActive     Boolean  @default(true)
+  // Elevated access is separate from the HASHTI role and defaults to disabled.
+  isSuperAdmin Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

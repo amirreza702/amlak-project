@@ -11,6 +11,7 @@ import {
 
 import { authMiddleware } from "../middleware/authMiddleware";
 import { requireRole } from "../middleware/requireRole";
+import { requireSuperAdmin } from "../middleware/requireSuperAdmin";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -38,6 +39,7 @@ router.post(
   "/auth/admin/users/:userId/reset-password",
   authMiddleware,
   requireRole(UserRole.HASHTI),
+  requireSuperAdmin,
   adminResetUserPasswordController
 );
 

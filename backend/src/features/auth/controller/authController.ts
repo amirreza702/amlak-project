@@ -9,6 +9,7 @@ import {
   registerUserService,
   logoutUserService,
   adminResetUserPasswordService,
+  adminResetUserPasswordWithAuditService,
 } from "../service/authService";
 
 /**
@@ -250,6 +251,31 @@ export async function adminResetUserPasswordController(
       });
     }
 
+    const resetActor = (req as AuthenticatedRequest).user;
+    if (resetActor?.role === UserRole.HASHTI) {
+      const reason = req.body?.reason;
+      if (typeof reason !== "string" || reason.trim().length < 3 || reason.trim().length > 1000) {
+        return res.status(400).json({
+          message: "A reset reason between 3 and 1000 characters is required",
+        });
+      }
+
+      const user = await adminResetUserPasswordWithAuditService({
+        userId,
+        newPassword,
+        actorUserId: resetActor.id,
+        actorMobile: resetActor.mobile,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+        reason: reason.trim(),
+      });
+
+      return res.status(200).json({
+        message: "User password reset successfully",
+        user,
+      });
+    }
+
     const user = await adminResetUserPasswordService(
       userId,
       newPassword
@@ -279,6 +305,14 @@ export async function adminResetUserPasswordController(
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
+      if (error.message === "CANNOT_RESET_OWN_PASSWORD") {
+        return res.status(409).json({ message: "You cannot reset your own password through user management" });
+      }
+
+      if (error.message === "SUPER_ADMIN_PERMISSION_REQUIRED") {
+        return res.status(403).json({ message: "Super-admin permission required" });
+      }
+
       if (error.message === "USER_NOT_FOUND") {
         return res.status(404).json({
           message: "User not found",
