@@ -120,6 +120,8 @@ export interface AdminUser {
   mobile: string;
   role: UserRole;
   isActive: boolean;
+  isSuperAdmin?: boolean;
+  adminPermissions?: string[];
   createdAt: string;
   updatedAt: string;
   customer: { id: string; firstName: string; lastName: string } | null;
