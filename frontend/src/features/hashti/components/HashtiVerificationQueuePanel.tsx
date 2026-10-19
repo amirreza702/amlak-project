@@ -27,6 +27,7 @@ export function HashtiVerificationQueuePanel() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [busyOwnerId, setBusyOwnerId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -67,6 +68,46 @@ export function HashtiVerificationQueuePanel() {
     finally { setBusyId(null); }
   };
 
+  const reviewOwner = async (
+    propertyId: string,
+    ownerId: string,
+    nextStatus: "PENDING" | "VERIFIED" | "REJECTED"
+  ) => {
+    const labels = {
+      PENDING: "بازگرداندن مالک به وضعیت در انتظار",
+      VERIFIED: "تأیید مالک",
+      REJECTED: "رد مالک",
+    } as const;
+    const reason = window.prompt(`دلیل یا توضیح برای «${labels[nextStatus]}» را وارد کنید:`);
+    if (reason === null) return;
+    if (reason.trim().length < 3) {
+      setError("برای ثبت تصمیم درباره مالک، دلیل حداقل ۳ کاراکتری لازم است.");
+      return;
+    }
+
+    const key = `${propertyId}:${ownerId}`;
+    setBusyOwnerId(key);
+    setError(null);
+    setMessage(null);
+    try {
+      await requestJson(
+        `/properties/${encodeURIComponent(propertyId)}/owners/${encodeURIComponent(ownerId)}/verification`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus, reason: reason.trim() }),
+        }
+      );
+      setMessage(`${labels[nextStatus]} انجام شد؛ عامل، زمان، دلیل و تغییر وضعیت در تاریخچه ثبت شد.`);
+      setOffset(0);
+      setReload((value) => value + 1);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "تغییر وضعیت مالک ناموفق بود.");
+    } finally {
+      setBusyOwnerId(null);
+    }
+  };
+
   return (
     <section className="space-y-4 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -102,6 +143,49 @@ export function HashtiVerificationQueuePanel() {
               </div>}
             </div>
             {item.property.owners.length > 0 && <div className="border-t border-slate-100 pt-3"><p className="mb-2 text-sm font-semibold">مالکان مرتبط</p><div className="flex flex-wrap gap-2">{item.property.owners.map((owner) => <span key={owner.ownerId} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">{owner.owner.firstName} {owner.owner.lastName} · {owner.verificationStatus}</span>)}</div></div>}
+            {item.property.owners.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {item.property.owners.map((owner) => {
+                  const ownerBusyKey = `${item.propertyId}:${owner.ownerId}`;
+                  if (owner.verificationStatus === "VERIFIED") return null;
+                  return (
+                    <div key={owner.ownerId} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
+                      <span className="text-sm font-semibold">{owner.owner.firstName} {owner.owner.lastName}</span>
+                      {owner.verificationStatus === "PENDING" && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={busyOwnerId === ownerBusyKey}
+                            onClick={() => void reviewOwner(item.propertyId, owner.ownerId, "VERIFIED")}
+                            className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                          >
+                            {busyOwnerId === ownerBusyKey ? "در حال ثبت..." : "تأیید مالک"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyOwnerId === ownerBusyKey}
+                            onClick={() => void reviewOwner(item.propertyId, owner.ownerId, "REJECTED")}
+                            className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 disabled:opacity-50"
+                          >
+                            رد مالک
+                          </button>
+                        </>
+                      )}
+                      {owner.verificationStatus === "REJECTED" && (
+                        <button
+                          type="button"
+                          disabled={busyOwnerId === ownerBusyKey}
+                          onClick={() => void reviewOwner(item.propertyId, owner.ownerId, "PENDING")}
+                          className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-50"
+                        >
+                          بازگرداندن به انتظار
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {item.notes && <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">یادداشت: {item.notes}</p>}
           </article>
         ))}</div>}
