@@ -3,6 +3,7 @@ import { prisma } from "../../../lib/prisma";
 
 export const ADMIN_PERMISSIONS = [
   "USERS_READ",
+  "USERS_MANAGE",
   "OWNERS_MANAGE",
   "AGENTS_MANAGE",
   "STAFF_MANAGE",
