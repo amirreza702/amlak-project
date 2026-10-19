@@ -130,3 +130,66 @@ export async function resetUserPasswordAndSessions(
     return user;
   });
 }
+
+
+/**
+ * Administrative password reset with an audit record in the same transaction.
+ * The password itself and its hash are never written to the audit details.
+ */
+export async function resetUserPasswordAndSessionsWithAudit(input: {
+  userId: string;
+  passwordHash: string;
+  actorUserId: string;
+  actorMobile: string;
+  ipAddress?: string;
+  userAgent?: string;
+  reason?: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.user.findUnique({
+      where: { id: input.userId },
+      select: { id: true, mobile: true, role: true, isActive: true },
+    });
+
+    if (!target) throw new Error("USER_NOT_FOUND");
+    if (target.id === input.actorUserId) throw new Error("CANNOT_RESET_OWN_PASSWORD");
+
+    await tx.user.update({
+      where: { id: target.id },
+      data: { passwordHash: input.passwordHash },
+    });
+
+    // Invalidate every existing session for the target account.
+    await tx.session.deleteMany({ where: { userId: target.id } });
+
+    const actor = await tx.user.findUnique({
+      where: { id: input.actorUserId },
+      select: { id: true, mobile: true, role: true, isActive: true, isSuperAdmin: true },
+    });
+    if (!actor || actor.role !== UserRole.HASHTI || !actor.isActive || !actor.isSuperAdmin) {
+      throw new Error("SUPER_ADMIN_PERMISSION_REQUIRED");
+    }
+
+    await tx.adminAuditLog.create({
+      data: {
+        actorUserId: actor.id,
+        actorMobile: input.actorMobile,
+        actorRole: UserRole.HASHTI,
+        action: "ADMIN_USER_PASSWORD_RESET",
+        targetType: "USER",
+        targetId: target.id,
+        details: {
+          targetMobile: target.mobile,
+          targetRole: target.role,
+          targetWasActive: target.isActive,
+          sessionsRevoked: true,
+          reason: input.reason ?? null,
+        },
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      },
+    });
+
+    return { id: target.id, mobile: target.mobile, role: target.role };
+  }, { isolationLevel: "Serializable" });
+}
