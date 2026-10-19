@@ -524,7 +524,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
 
   return (
     <div className="min-h-screen w-full" dir="rtl">
-      <aside aria-label="منوی ابزارهای هشتی" className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white p-3 shadow-sm lg:fixed lg:inset-y-0 lg:right-0 lg:h-screen lg:w-64 lg:overflow-y-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0">
+      <aside aria-label="منوی ابزارهای هشتی" className="relative z-10 mb-4 w-full min-w-0 border border-slate-200 bg-white p-3 shadow-sm lg:fixed lg:inset-y-0 lg:right-0 lg:mb-0 lg:h-screen lg:w-64 lg:overflow-y-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0">
         <h2 className="px-3 py-2 text-base font-black text-slate-900">ابزارهای هشتی</h2>
         <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1" aria-label="بخش‌های پنل هشتی">
           {[
@@ -539,7 +539,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
           ))}
         </nav>
       </aside>
-      <main className="min-w-0 space-y-5 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
+      <main className="relative z-0 min-w-0 space-y-5 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
       <section id="dashboard-home" className="scroll-mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-[#043873]"><ShieldCheck className="h-6 w-6" /></div>
