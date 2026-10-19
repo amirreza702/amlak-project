@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAdminOwners, getAdminOwnerHistory, setAdminUserStatus, type AdminOwner, type AdminAuditEntry } from "@/features/admin/api/adminApi";
+import { getAdminOwners, getAdminOwnerHistory, setAdminOwnerStatus, type AdminOwner, type AdminAuditEntry } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
 export default function AdminOwnersPage() {
@@ -33,7 +33,7 @@ export default function AdminOwnersPage() {
   async function changeStatus(owner: AdminOwner) {
     if (reason.trim().length < 3) { setError("برای تغییر وضعیت، دلیل حداقل ۳ حرفی وارد کنید."); return; }
     try {
-      await setAdminUserStatus(owner.user.id, !owner.user.isActive, reason.trim());
+      await setAdminOwnerStatus(owner.id, !owner.user.isActive, reason.trim());
       setReason("");
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "تغییر وضعیت ناموفق بود."); }
