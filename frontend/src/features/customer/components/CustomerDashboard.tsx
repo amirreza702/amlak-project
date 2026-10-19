@@ -77,7 +77,7 @@ function propertyLabel(value: string): string {
 }
 
 export function CustomerDashboard() {
-  const [tab, setTab] = useState<DashboardTab>("requests");
+  const [tab, setTab] = useState<DashboardTab | null>(null);
   const [user, setUser] = useState<UserPublic | null>(null);
   const [profile, setProfile] = useState<CustomerProfileForRequest | null>(null);
   const [requests, setRequests] = useState<CustomerSearchRequestRecord[]>([]);
@@ -250,7 +250,15 @@ export function CustomerDashboard() {
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+      <aside aria-label="ابزارهای پنل مشتری" className="fixed inset-y-0 right-0 z-20 w-20 overflow-y-auto border-l border-slate-200 bg-white p-2 shadow-sm lg:w-64 lg:p-3">
+        <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">پنل مشتری</h2>
+        <nav className="grid grid-cols-1 gap-2" aria-label="ابزارهای مشتری">
+          {tabItems.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" title={item.label} aria-current={tab === item.id ? "page" : undefined} onClick={() => setTab(item.id)} className={`flex min-w-0 items-center gap-2 rounded-lg border px-2 py-2.5 text-right text-xs font-semibold leading-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:px-3 lg:text-sm ${tab === item.id ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><Icon className="h-4 w-4 shrink-0" /><span className="hidden break-words lg:inline">{item.label}</span><span className="lg:hidden">{item.count ?? ""}</span></button>; })}
+          <Link href="/search" title="جست‌وجوی ملک" className="rounded-lg border border-slate-200 px-2 py-2.5 text-center text-xs font-semibold text-slate-700 hover:bg-blue-50 lg:px-3 lg:text-right">جست‌وجو</Link>
+          <Link href="/request" title="درخواست جدید" className="rounded-lg bg-[#043873] px-2 py-2.5 text-center text-xs font-semibold text-white lg:px-3 lg:text-right">درخواست جدید</Link>
+        </nav>
+      </aside>
+      <header hidden={tab === null} className="mr-20 border-b border-slate-200 bg-white lg:mr-64">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Link href="/" className="text-lg font-black text-[#043873]">هشتی</Link>
           <div className="flex items-center gap-2">
@@ -264,7 +272,7 @@ export function CustomerDashboard() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <section hidden={tab === null} className="mr-20 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
         <div className="mb-6">
           <p className="text-sm font-semibold text-[#2563eb]">پنل مشتری</p>
           <h1 className="mt-2 text-2xl font-black sm:text-3xl">{profile ? `سلام ${profile.firstName}` : "حساب مشتری"}</h1>
@@ -281,13 +289,13 @@ export function CustomerDashboard() {
           </div>
         ) : (
           <>
-            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div hidden={tab !== "requests"} className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <StatCard label="همه درخواست‌ها" value={String(requests.length)} icon={<FileText className="h-5 w-5" />} />
               <StatCard label="درخواست فعال" value={String(activeCount)} icon={<Search className="h-5 w-5" />} />
               <StatCard label="اعلان خوانده‌نشده" value={String(unreadCount)} icon={<Bell className="h-5 w-5" />} />
             </div>
 
-            <div className="mb-5 flex flex-wrap gap-2">
+            <div className="mb-5 hidden flex-wrap gap-2">
               {tabItems.map((item) => {
                 const Icon = item.icon;
                 return (
