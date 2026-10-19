@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { getAdminUsers, getCurrentUser, type AdminUser, type UserRole } from "@/features/auth/api/authApi";
-import { getAdminUserDetails } from "@/features/admin/api/adminApi";
+import { getAdminUserDetails, setAdminUserStatus } from "@/features/admin/api/adminApi";
 
 const roles: Record<UserRole, string> = { CUSTOMER: "مشتری", OWNER: "مالک", AGENT: "مشاور", HASHTI: "کارمند هشتی" };
 const profileName = (user: AdminUser) => {
@@ -12,9 +12,11 @@ const profileName = (user: AdminUser) => {
 
 export default function AdminUsersPage() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
+  const [currentUserId, setCurrentUserId] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [reason, setReason] = useState("");
   const [role, setRole] = useState<UserRole | "">("");
   const [active, setActive] = useState<"true" | "false" | "">("");
   const [page, setPage] = useState(1);
@@ -27,7 +29,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     let cancelled = false;
     getCurrentUser().then(user => {
-      if (!cancelled) setCurrentRole(user.role);
+      if (!cancelled) { setCurrentRole(user.role); setCurrentUserId(user.id); }
     }).catch((cause: unknown) => {
       if (!cancelled) {
         setError(cause instanceof Error ? cause.message : "ابتدا وارد حساب شوید.");
@@ -67,6 +69,24 @@ export default function AdminUsersPage() {
     setSearch(searchInput.trim());
   }
 
+  async function changeUserStatus(user: AdminUser) {
+    if (user.id === currentUserId) {
+      setError("نمی‌توانید وضعیت حساب خودتان را از این بخش تغییر دهید.");
+      return;
+    }
+    if (reason.trim().length < 3) {
+      setError("برای تغییر وضعیت حساب، دلیل حداقل ۳ حرفی وارد کنید.");
+      return;
+    }
+    try {
+      await setAdminUserStatus(user.id, !user.isActive, reason.trim());
+      setReason("");
+      await loadUsers();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : "تغییر وضعیت حساب ناموفق بود.");
+    }
+  }
+
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -98,15 +118,16 @@ export default function AdminUsersPage() {
             </label>
             <div className="flex items-end"><button type="submit" className="w-full rounded-lg bg-[#062a5b] px-5 py-2.5 font-semibold text-white hover:bg-[#0b3b79] md:w-auto">جست‌وجو</button></div>
           </form>
+          <label className="block space-y-1 text-sm font-medium">دلیل تغییر وضعیت حساب<input value={reason} onChange={event => setReason(event.target.value)} maxLength={1000} placeholder="دلیل تغییر باید حداقل ۳ حرف داشته باشد" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-normal" /></label>
 
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             {loading ? <p className="p-8 text-center text-sm text-slate-600">در حال دریافت اطلاعات…</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-slate-600">کاربری با این مشخصات پیدا نشد.</p> : (
-              <div className="overflow-x-auto"><table className="w-full min-w-[760px] border-collapse text-right text-sm">
-                <thead className="bg-slate-100 text-slate-700"><tr><th className="px-4 py-3">نام و نام خانوادگی</th><th className="px-4 py-3">شماره موبایل</th><th className="px-4 py-3">نقش</th><th className="px-4 py-3">وضعیت حساب</th><th className="px-4 py-3">تأیید مشاور</th><th className="px-4 py-3">تاریخ ثبت</th><th className="px-4 py-3">جزئیات</th></tr></thead>
+              <div className="overflow-x-auto"><table className="w-full min-w-[900px] border-collapse text-right text-sm">
+                <thead className="bg-slate-100 text-slate-700"><tr><th className="px-4 py-3">نام و نام خانوادگی</th><th className="px-4 py-3">شماره موبایل</th><th className="px-4 py-3">نقش</th><th className="px-4 py-3">وضعیت حساب</th><th className="px-4 py-3">تأیید مشاور</th><th className="px-4 py-3">تاریخ ثبت</th><th className="px-4 py-3">جزئیات</th><th className="px-4 py-3">مدیریت حساب</th></tr></thead>
                 <tbody>{users.map(user => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium">{profileName(user)}</td><td dir="ltr" className="px-4 py-3 text-right">{user.mobile}</td><td className="px-4 py-3">{roles[user.role]}</td>
                   <td className="px-4 py-3"><span className={user.isActive ? "rounded-md bg-emerald-50 px-2 py-1 text-emerald-800" : "rounded-md bg-red-50 px-2 py-1 text-red-800"}>{user.isActive ? "فعال" : "غیرفعال"}</span></td>
-                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td><td className="px-4 py-3"><button onClick={async () => { try { const result = await getAdminUserDetails(user.id); setSelectedUser(result.item); } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت جزئیات ناموفق بود."); } }} className="rounded-md border px-3 py-1.5">مشاهده</button></td>
+                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td><td className="px-4 py-3"><button onClick={async () => { try { const result = await getAdminUserDetails(user.id); setSelectedUser(result.item); } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت جزئیات ناموفق بود."); } }} className="rounded-md border px-3 py-1.5">مشاهده</button></td><td className="px-4 py-3"><button disabled={loading || user.id === currentUserId || Boolean(user.isSuperAdmin)} onClick={() => void changeUserStatus(user)} className="rounded-md border px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-40">{user.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}</button></td>
                 </tr>)}</tbody>
               </table></div>
             )}
