@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAdminAgents, getAdminAgentDetails, getAdminAgentHistory, getAdminSubscriptionPlans, setAdminAgentVerification, setAdminAgentSubscription, setAdminUserStatus, type AdminAgent, type AdminAgentDetails, type AdminAuditEntry, type SubscriptionPlan } from "@/features/admin/api/adminApi";
+import { getAdminAgents, getAdminAgentDetails, getAdminAgentHistory, getAdminSubscriptionPlans, setAdminAgentVerification, setAdminAgentSubscription, setAdminAgentStatus, type AdminAgent, type AdminAgentDetails, type AdminAuditEntry, type SubscriptionPlan } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
 export default function AdminAgentsPage() {
@@ -47,7 +47,7 @@ export default function AdminAgentsPage() {
   }
   async function accountStatus(agent: AdminAgent) {
     if (reason.trim().length < 3) { setError("برای تغییر وضعیت حساب، دلیل وارد کنید."); return; }
-    try { await setAdminUserStatus(agent.user.id, !agent.user.isActive, reason.trim()); setReason(""); await load(); }
+    try { await setAdminAgentStatus(agent.id, !agent.user.isActive, reason.trim()); setReason(""); await load(); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "تغییر وضعیت حساب ناموفق بود."); }
   }
   async function saveSubscription() {
