@@ -112,3 +112,62 @@ export async function logoutUser(): Promise<{ message: string }> {
 export const loginAgent = loginUser;
 export const getCurrentAgent = getCurrentUser;
 export const logoutAgent = logoutUser;
+
+
+/** اطلاعات امن کاربر برای فهرست مدیریت هشتی */
+export interface AdminUser {
+  id: string;
+  mobile: string;
+  role: UserRole;
+  isActive: boolean;
+  isSuperAdmin?: boolean;
+  adminPermissions?: string[];
+  createdAt: string;
+  updatedAt: string;
+  customer: { id: string; firstName: string; lastName: string } | null;
+  owner: { id: string; firstName: string; lastName: string } | null;
+  agent: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    agencyName: string | null;
+    isVerified: boolean;
+  } | null;
+}
+
+export interface AdminUsersResponse {
+  items: AdminUser[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/** دریافت فهرست مدیریتی؛ مجوز HASHTI در بک‌اند کنترل می‌شود. */
+export async function getAdminUsers(filters: {
+  search?: string;
+  role?: UserRole | "";
+  isActive?: "true" | "false" | "";
+  page?: number;
+  limit?: number;
+} = {}): Promise<AdminUsersResponse> {
+  const params = new URLSearchParams();
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  if (filters.role) params.set("role", filters.role);
+  if (filters.isActive) params.set("isActive", filters.isActive);
+  params.set("page", String(filters.page ?? 1));
+  params.set("limit", String(filters.limit ?? 20));
+
+  const response = await fetch(`${API_URL}/auth/admin/users?${params.toString()}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response, "دریافت فهرست کاربران ناموفق بود."));
+  }
+
+  return readJson<AdminUsersResponse>(response);
+}

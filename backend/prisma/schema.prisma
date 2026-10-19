@@ -213,8 +213,39 @@ model User {
   notifications Notification[]
   messages      Message[]
   sessions Session[]
+  // مجوزهای مدیریتی به‌صورت افزایشی نگهداری می‌شوند؛ حساب ارشد همه مجوزها را دارد.
+  isSuperAdmin    Boolean  @default(false)
+  adminPermissions String[] @default([])
+  auditActions    AdminAuditLog[] @relation("AdminAuditActor")
+  auditTargets    AdminAuditLog[] @relation("AdminAuditTarget")
 
   @@map("users")
+}
+
+// ============================================================
+// HASHTI ADMIN AUDIT LOG
+// هر تغییر مدیریتی همراه با عامل، زمان، دلیل و مقادیر قبل/بعد ثبت می‌شود.
+// ============================================================
+
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  targetUserId String?
+  targetType   String
+  targetId     String
+  operation    String
+  reason       String
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now())
+
+  actor  User  @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  target User? @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }
 
 // ============================================================
