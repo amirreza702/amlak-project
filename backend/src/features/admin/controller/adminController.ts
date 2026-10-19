@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware"
 import {
   bootstrapSuperAdmin, adminUsers, adminUserDetails, adminOwners, adminOwnerDetails,
   adminAgents, adminAgentDetails, adminSetUserStatus, adminSetAgentVerification,
-  adminSetAgentSubscription, adminUpdateStaffPermissions, adminAudit, adminPlans, adminCreateStaffAccount,
+  adminSetAgentSubscription, adminUpdateStaffPermissions, adminAudit, adminPlans, adminCreateStaffAccount, adminStaffAccounts,
 } from "../service/adminService";
 
 function actorId(req: Request) { return (req as AuthenticatedRequest).user?.id; }
@@ -153,4 +153,10 @@ export async function setOwnerStatusController(req: Request, res: Response) {
     const item = await adminSetUserStatus({ actorUserId, userId: owner.user.id, isActive: req.body.isActive, reason: req.body.reason });
     return res.status(200).json({ item });
   } catch (error) { return sendError(res, error); }
+}
+
+
+export async function listStaffAccountsController(_req: Request, res: Response) {
+  try { return res.status(200).json({ items: await adminStaffAccounts() }); }
+  catch (error) { return sendError(res, error); }
 }
