@@ -160,3 +160,15 @@ export async function listStaffAccountsController(_req: Request, res: Response) 
   try { return res.status(200).json({ items: await adminStaffAccounts() }); }
   catch (error) { return sendError(res, error); }
 }
+
+
+export async function setAgentStatusController(req: Request, res: Response) {
+  try {
+    const actorUserId = actorId(req);
+    if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
+    if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "isActive must be a boolean" });
+    const agent = await adminAgentDetails(req.params.agentId);
+    const item = await adminSetUserStatus({ actorUserId, userId: agent.user.id, isActive: req.body.isActive, reason: req.body.reason });
+    return res.status(200).json({ item });
+  } catch (error) { return sendError(res, error); }
+}
