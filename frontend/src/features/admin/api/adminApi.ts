@@ -86,3 +86,6 @@ export const getAdminAgentDetails = (agentId: string) =>
 
 export const getAdminUserDetails = (userId: string) =>
   request<{ item: import("@/features/auth/api/authApi").AdminUser }>(`/admin/users/${encodeURIComponent(userId)}`);
+
+export const setAdminAgentStatus = (agentId: string, isActive: boolean, reason: string) =>
+  request<{ item: { id: string; isActive: boolean } }>(`/admin/agents/${encodeURIComponent(agentId)}/status`, { method: "PATCH", body: JSON.stringify({ isActive, reason }) });
