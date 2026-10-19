@@ -29,7 +29,7 @@ function safePassword(password: unknown) {
 
 export async function bootstrapSuperAdmin(input: { mobile: unknown; password: unknown; secret: unknown }) {
   const expected = process.env.HASHTI_BOOTSTRAP_SECRET;
-  if (!expected || typeof input.secret !== "string" || input.secret.length !== expected.length) throw new Error("BOOTSTRAP_FORBIDDEN");
+  if (!expected || expected.length < 32 || typeof input.secret !== "string" || input.secret.length !== expected.length) throw new Error("BOOTSTRAP_FORBIDDEN");
   const { timingSafeEqual } = await import("crypto");
   if (!timingSafeEqual(Buffer.from(input.secret), Buffer.from(expected))) throw new Error("BOOTSTRAP_FORBIDDEN");
   const mobile = safeMobile(input.mobile);
