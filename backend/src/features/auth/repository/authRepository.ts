@@ -29,8 +29,6 @@ export async function createUser(data: {
         mobile: true,
         role: true,
         isActive: true,
-        isSuperAdmin: true,
-        adminPermissions: true,
         createdAt: true,
       },
     });
@@ -160,6 +158,8 @@ export async function listAdminUsers(data: {
         mobile: true,
         role: true,
         isActive: true,
+        isSuperAdmin: true,
+        adminPermissions: true,
         createdAt: true,
         updatedAt: true,
         customer: { select: { id: true, firstName: true, lastName: true } },
