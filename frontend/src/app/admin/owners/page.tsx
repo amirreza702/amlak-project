@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAdminOwners, getAdminOwnerDetails, getAdminOwnerHistory, setAdminOwnerStatus, type AdminOwner, type AdminOwnerDetails, type AdminAuditEntry } from "@/features/admin/api/adminApi";
+import { getAdminOwners, getAdminOwnerDetails, getAdminOwnerHistory, setAdminOwnerStatus, updateAdminManagedProfile, type AdminOwner, type AdminOwnerDetails, type AdminAuditEntry } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
 export default function AdminOwnersPage() {
@@ -18,6 +18,10 @@ export default function AdminOwnersPage() {
   const [history, setHistory] = useState<AdminAuditEntry[]>([]);
   const [historyOwner, setHistoryOwner] = useState("");
   const [profile, setProfile] = useState<AdminOwnerDetails | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editReason, setEditReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -50,6 +54,34 @@ export default function AdminOwnersPage() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت سوابق ناموفق بود."); }
   }
 
+  function beginProfileEdit() {
+    if (!profile) return;
+    setEditFirstName(profile.firstName);
+    setEditLastName(profile.lastName);
+    setEditReason("");
+    setEditingProfile(true);
+  }
+
+  async function saveProfileEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!profile || editReason.trim().length < 3) {
+      setError("برای ویرایش پروفایل، دلیل حداقل ۳ حرفی وارد کنید.");
+      return;
+    }
+    try {
+      await updateAdminManagedProfile("owner", profile.id, {
+        firstName: editFirstName.trim(), lastName: editLastName.trim(), reason: editReason.trim(),
+      });
+      const result = await getAdminOwnerDetails(profile.id);
+      setProfile(result.item);
+      setEditingProfile(false);
+      setEditReason("");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "ویرایش پروفایل مالک ناموفق بود.");
+    }
+  }
+
   return <main dir="rtl" className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 sm:px-8">
     <div className="mx-auto max-w-7xl space-y-5">
       <header className="border-b border-slate-200 pb-5"><p className="text-sm font-semibold text-amber-700">هشتی / مدیریت</p><h1 className="mt-1 text-3xl font-black">مدیریت مالکان</h1><p className="mt-2 text-sm text-slate-600">جست‌وجو، وضعیت حساب، پروفایل و سوابق ثبت‌شدهٔ تغییرات</p></header>
@@ -64,7 +96,7 @@ export default function AdminOwnersPage() {
         {loading ? <p className="p-8 text-center">در حال دریافت اطلاعات…</p> : <table className="w-full min-w-[760px] text-right text-sm"><thead className="bg-slate-100"><tr><th className="p-3">نام</th><th className="p-3">موبایل</th><th className="p-3">املاک مرتبط</th><th className="p-3">وضعیت</th><th className="p-3">تاریخ ثبت</th><th className="p-3">عملیات</th></tr></thead><tbody>{items.map(owner => <tr key={owner.id} className="border-t border-slate-100"><td className="p-3 font-medium">{owner.firstName} {owner.lastName}</td><td dir="ltr" className="p-3 text-right">{owner.user.mobile}</td><td className="p-3">{owner._count.properties.toLocaleString("fa-IR")}</td><td className="p-3">{owner.user.isActive ? "فعال" : "غیرفعال"}</td><td className="p-3">{new Date(owner.user.createdAt).toLocaleDateString("fa-IR")}</td><td className="flex gap-2 p-3"><button onClick={() => void showProfile(owner)} className="rounded-md border px-3 py-1.5">پروفایل</button><button onClick={() => void changeStatus(owner)} className="rounded-md border px-3 py-1.5">{owner.user.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}</button><button onClick={() => void showHistory(owner)} className="rounded-md border px-3 py-1.5">سوابق</button></td></tr>)}</tbody></table>}
         <footer className="flex items-center justify-between border-t p-3 text-sm"><span>تعداد: {total.toLocaleString("fa-IR")} — صفحه {page.toLocaleString("fa-IR")} از {totalPages.toLocaleString("fa-IR")}</span><div className="flex gap-2"><button disabled={page <= 1 || loading} onClick={() => setPage(p => p - 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-40">قبلی</button><button disabled={page >= totalPages || loading} onClick={() => setPage(p => p + 1)} className="rounded-md border px-3 py-1.5 disabled:opacity-40">بعدی</button></div></footer>
       </section>
-      {profile && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="font-bold">پروفایل {profile.firstName} {profile.lastName}</h2><button onClick={() => setProfile(null)} className="rounded border px-3 py-1">بستن</button></div><p className="mt-3 text-sm">شماره موبایل: <span dir="ltr">{profile.user.mobile}</span> | وضعیت حساب: {profile.user.isActive ? "فعال" : "غیرفعال"}</p><p className="mt-1 text-sm">تعداد املاک مرتبط: {profile._count.properties.toLocaleString("fa-IR")} | ارزیابی‌ها: {profile._count.evaluations.toLocaleString("fa-IR")}</p><h3 className="mt-4 font-semibold">املاک مرتبط</h3>{profile.properties.length ? <ul className="mt-2 space-y-2">{profile.properties.map(link => <li key={link.property.id} className="rounded-lg bg-slate-50 p-3 text-sm">{link.property.city}، {link.property.district} — {link.property.address} ({link.property.status})</li>)}</ul> : <p className="mt-2 text-sm text-slate-500">ملکی به این پروفایل متصل نیست.</p>}</section>}
+      {profile && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="font-bold">پروفایل {profile.firstName} {profile.lastName}</h2><div className="flex gap-2"><button onClick={beginProfileEdit} className="rounded border px-3 py-1">ویرایش مشخصات</button><button onClick={() => { setProfile(null); setEditingProfile(false); }} className="rounded border px-3 py-1">بستن</button></div></div><p className="mt-3 text-sm">شماره موبایل: <span dir="ltr">{profile.user.mobile}</span> | وضعیت حساب: {profile.user.isActive ? "فعال" : "غیرفعال"}</p><p className="mt-1 text-sm">تعداد املاک مرتبط: {profile._count.properties.toLocaleString("fa-IR")} | ارزیابی‌ها: {profile._count.evaluations.toLocaleString("fa-IR")}</p><h3 className="mt-4 font-semibold">املاک مرتبط</h3>{profile.properties.length ? <ul className="mt-2 space-y-2">{profile.properties.map(link => <li key={link.property.id} className="rounded-lg bg-slate-50 p-3 text-sm">{link.property.city}، {link.property.district} — {link.property.address} ({link.property.status})</li>)}</ul> : <p className="mt-2 text-sm text-slate-500">ملکی به این پروفایل متصل نیست.</p>}{editingProfile && <form onSubmit={saveProfileEdit} className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2"><label className="text-sm">نام<input required maxLength={120} value={editFirstName} onChange={e => setEditFirstName(e.target.value)} className="mt-1 w-full rounded border bg-white px-3 py-2" /></label><label className="text-sm">نام خانوادگی<input required maxLength={120} value={editLastName} onChange={e => setEditLastName(e.target.value)} className="mt-1 w-full rounded border bg-white px-3 py-2" /></label><label className="text-sm sm:col-span-2">دلیل تغییر<input required minLength={3} maxLength={1000} value={editReason} onChange={e => setEditReason(e.target.value)} className="mt-1 w-full rounded border bg-white px-3 py-2" /></label><div className="flex gap-2 sm:col-span-2"><button type="submit" className="rounded-lg bg-[#062a5b] px-4 py-2 text-white">ذخیره تغییرات</button><button type="button" onClick={() => setEditingProfile(false)} className="rounded-lg border px-4 py-2">انصراف</button></div></form>}</section>}
       {historyOwner && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="font-bold">سوابق {historyOwner}</h2><button onClick={() => { setHistoryOwner(""); setHistory([]); }} className="rounded border px-3 py-1">بستن</button></div>{history.length ? <ul className="mt-3 space-y-3">{history.map(item => <li key={item.id} className="border-t pt-3 text-sm"><p className="font-semibold">{item.operation} — {new Date(item.createdAt).toLocaleString("fa-IR")}</p><p className="text-slate-600">عامل: {item.actor.mobile} | دلیل: {item.reason}</p><pre className="mt-1 overflow-x-auto rounded bg-slate-50 p-2 text-xs">{JSON.stringify({ before: item.before, after: item.after }, null, 2)}</pre></li>)}</ul> : <p className="mt-3 text-sm text-slate-500">هنوز سابقه‌ای ثبت نشده است.</p>}</section>}
     </div>
   </main>;
