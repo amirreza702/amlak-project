@@ -77,6 +77,7 @@ export async function setManagedUserStatusController(req: Request, res: Response
     return res.status(200).json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
+    if (code === "HASHTI_PERMISSION_REQUIRED" || code === "SUPER_ADMIN_PERMISSION_REQUIRED") return res.status(403).json({ message: "You do not have permission to manage this account" });
     if (code === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
     if (code === "CANNOT_CHANGE_OWN_STATUS") return res.status(409).json({ message: "You cannot change your own account status" });
     if (code === "LAST_SUPER_ADMIN_REQUIRED") return res.status(409).json({ message: "At least one active super admin must remain" });
@@ -103,6 +104,7 @@ export async function createManagedHashtiUserController(req: Request, res: Respo
     });
     return res.status(201).json(result);
   } catch (error) {
+    if (error instanceof Error && error.message === "SUPER_ADMIN_PERMISSION_REQUIRED") return res.status(403).json({ message: "Super-admin permission required" });
     if (error instanceof Error && error.message === "USER_ALREADY_EXISTS") return res.status(409).json({ message: "This mobile number already belongs to a user" });
     console.error("Failed to create Hashti staff account:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -136,6 +138,7 @@ export async function updateManagedProfileController(req: Request, res: Response
     });
     return res.status(200).json({ profile });
   } catch (error) {
+    if (error instanceof Error && (error.message === "HASHTI_PERMISSION_REQUIRED" || error.message === "SUPER_ADMIN_PERMISSION_REQUIRED")) return res.status(403).json({ message: "You do not have permission to manage this profile" });
     if (error instanceof Error && error.message === "PROFILE_NOT_FOUND") return res.status(404).json({ message: "Profile not found" });
     console.error("Failed to update managed profile:", error);
     return res.status(500).json({ message: "Internal server error" });
