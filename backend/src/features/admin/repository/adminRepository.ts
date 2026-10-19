@@ -131,7 +131,7 @@ export async function setUserStatus(data: { actorUserId: string; userId: string;
       if (superAdmin?.isSuperAdmin) throw new Error("SUPER_ADMIN_CANNOT_BE_DISABLED");
     }
     const after = await tx.user.update({ where: { id: data.userId }, data: { isActive: data.isActive }, select: { id: true, mobile: true, role: true, isActive: true } });
-    if (data.actorUserId !== data.userId && data.isActive === false) await tx.session.deleteMany({ where: { userId: data.userId } });
+    if (data.isActive === false) await tx.session.deleteMany({ where: { userId: data.userId } });
     await writeAudit(tx, { actorUserId: data.actorUserId, targetUserId: data.userId, targetType: "USER", targetId: data.userId, operation: "SET_ACCOUNT_STATUS", reason: data.reason, before, after });
     return after;
   });
