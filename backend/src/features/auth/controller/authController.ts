@@ -1,6 +1,7 @@
 
 import { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import type { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 import {
   loginUserService,
@@ -218,22 +219,26 @@ export async function adminResetUserPasswordController(
 ) {
   try {
     const { userId } = req.params;
-    const { newPassword } = req.body;
+    const { newPassword, reason } = req.body;
+    const actorUserId = (req as AuthenticatedRequest).user?.id;
 
     if (
       typeof userId !== "string" ||
       !userId.trim() ||
       typeof newPassword !== "string" ||
-      !newPassword
+      !newPassword ||
+      typeof reason !== "string" || reason.trim().length < 3 || !actorUserId
     ) {
       return res.status(400).json({
-        message: "User ID and new password are required",
+        message: "User ID, new password, authenticated actor and reason are required",
       });
     }
 
     const user = await adminResetUserPasswordService(
       userId,
-      newPassword
+      newPassword,
+      actorUserId,
+      reason.trim()
     );
 
     return res.status(200).json({
@@ -252,6 +257,10 @@ export async function adminResetUserPasswordController(
         return res.status(400).json({
           message: "Password must be at least 8 characters long",
         });
+      }
+
+      if (error.message === "REASON_REQUIRED") {
+        return res.status(400).json({ message: "A reason of at least 3 characters is required" });
       }
 
       if (error.message === "INVALID_USER_ID") {
