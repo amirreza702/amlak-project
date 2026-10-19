@@ -3,7 +3,7 @@ import {
   ADMIN_PERMISSIONS, createInitialSuperAdmin, getAdminUser, listAdminUsers,
   listOwners, getOwner, listAgents, getAgent, setUserStatus, setAgentVerification,
   setAgentSubscription, updateStaffPermissions, listAudit, listSubscriptionPlans,
-  type AdminPermission, createStaffAccount,
+  type AdminPermission, createStaffAccount, listStaffAccounts,
 } from "../repository/adminRepository";
 import { UserRole } from "@prisma/client";
 
@@ -92,3 +92,6 @@ export async function adminCreateStaffAccount(input: { actorUserId: string; mobi
     permissions: input.permissions as AdminPermission[], reason: reasonValue(input.reason),
   });
 }
+
+
+export const adminStaffAccounts = listStaffAccounts;
