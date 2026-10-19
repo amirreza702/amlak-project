@@ -8,7 +8,7 @@ export interface ManagedUserQuery {
   limit: number;
   offset: number;
 }
-export type ManagedProfileType = "customer" | "owner" | "agent";
+export type ManagedProfileType = "customer" | "owner" | "agent" | "hashti";
 export interface ManagedProfileUpdate {
   profileType: ManagedProfileType;
   profileId: string;
@@ -200,6 +200,39 @@ export async function updateManagedProfile(input: ManagedProfileUpdate) {
           details: { reason: input.reason, before: { firstName: current.firstName, lastName: current.lastName }, after: { firstName: updated.firstName, lastName: updated.lastName } },
         },
       });
+      return { profileType: input.profileType, ...updated };
+    }
+
+    if (input.profileType === "hashti") {
+      const current = await tx.hashtiStaff.findUnique({
+        where: { id: input.profileId },
+        select: { id: true, mobile: true, firstName: true, lastName: true, isActive: true },
+      });
+      if (!current) throw new Error("PROFILE_NOT_FOUND");
+
+      const updated = await tx.hashtiStaff.update({
+        where: { id: input.profileId },
+        data: { firstName: input.firstName, lastName: input.lastName },
+        select: { id: true, mobile: true, firstName: true, lastName: true, isActive: true },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorUserId: input.actorUserId,
+          actorMobile: input.actorMobile,
+          actorRole: UserRole.HASHTI,
+          action: "HASHTI_STAFF_PROFILE_UPDATED_BY_SUPER_ADMIN",
+          targetType: "HASHTI_STAFF_PROFILE",
+          targetId: current.id,
+          details: {
+            reason: input.reason,
+            targetMobile: current.mobile,
+            before: { firstName: current.firstName, lastName: current.lastName, isActive: current.isActive },
+            after: { firstName: updated.firstName, lastName: updated.lastName, isActive: updated.isActive },
+          },
+        },
+      });
+
       return { profileType: input.profileType, ...updated };
     }
 
