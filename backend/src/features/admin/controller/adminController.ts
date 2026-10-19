@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware"
 import {
   bootstrapSuperAdmin, adminUsers, adminUserDetails, adminOwners, adminOwnerDetails,
   adminAgents, adminAgentDetails, adminSetUserStatus, adminSetAgentVerification,
-  adminSetAgentSubscription, adminUpdateStaffPermissions, adminAudit, adminPlans,
+  adminSetAgentSubscription, adminUpdateStaffPermissions, adminAudit, adminPlans, adminCreateStaffAccount,
 } from "../service/adminService";
 
 function actorId(req: Request) { return (req as AuthenticatedRequest).user?.id; }
@@ -28,6 +28,7 @@ function sendError(res: Response, error: unknown) {
     CANNOT_EDIT_SUPER_ADMIN: [403, "The super-admin account cannot be edited here"],
     SUPER_ADMIN_CANNOT_BE_DISABLED: [400, "The super-admin account cannot be disabled"],
     SUPER_ADMIN_ALREADY_EXISTS: [409, "The initial super-admin has already been created"],
+    STAFF_MOBILE_EXISTS: [409, "A user with this mobile number already exists"],
     BOOTSTRAP_FORBIDDEN: [403, "Bootstrap secret is invalid or bootstrap is disabled"],
   };
   const found = known[message];
@@ -110,4 +111,17 @@ export async function auditController(req: Request, res: Response) {
 }
 export async function plansController(_req: Request, res: Response) {
   try { return res.status(200).json({ items: await adminPlans() }); } catch (error) { return sendError(res, error); }
+}
+
+
+export async function createStaffAccountController(req: Request, res: Response) {
+  try {
+    const actorUserId = actorId(req);
+    if (!actorUserId) return res.status(401).json({ message: "Authentication required" });
+    const item = await adminCreateStaffAccount({
+      actorUserId, mobile: req.body?.mobile, password: req.body?.password,
+      permissions: req.body?.permissions, reason: req.body?.reason,
+    });
+    return res.status(201).json({ item });
+  } catch (error) { return sendError(res, error); }
 }
