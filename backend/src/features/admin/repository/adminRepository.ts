@@ -167,6 +167,7 @@ export async function updateStaffPermissions(data: { actorUserId: string; userId
     if (!before) throw new Error("USER_NOT_FOUND");
     if (before.role !== UserRole.HASHTI) throw new Error("NOT_STAFF_ACCOUNT");
     if (before.isSuperAdmin) throw new Error("CANNOT_EDIT_SUPER_ADMIN");
+    if (data.actorUserId === data.userId) throw new Error("CANNOT_EDIT_OWN_PERMISSIONS");
     const after = await tx.user.update({ where: { id: data.userId }, data: { adminPermissions: data.permissions }, select: { id: true, mobile: true, role: true, isSuperAdmin: true, adminPermissions: true } });
     await writeAudit(tx, { actorUserId: data.actorUserId, targetUserId: data.userId, targetType: "STAFF", targetId: data.userId, operation: "UPDATE_STAFF_PERMISSIONS", reason: data.reason, before, after });
     return after;
