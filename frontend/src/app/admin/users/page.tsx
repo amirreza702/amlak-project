@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, getCurrentUser, type AdminUser, type UserRole } from "@/features/auth/api/authApi";
+import { getAdminUserDetails } from "@/features/admin/api/adminApi";
 
 const roles: Record<UserRole, string> = { CUSTOMER: "مشتری", OWNER: "مالک", AGENT: "مشاور", HASHTI: "کارمند هشتی" };
 const profileName = (user: AdminUser) => {
@@ -21,6 +22,7 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,11 +102,11 @@ export default function AdminUsersPage() {
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             {loading ? <p className="p-8 text-center text-sm text-slate-600">در حال دریافت اطلاعات…</p> : users.length === 0 ? <p className="p-8 text-center text-sm text-slate-600">کاربری با این مشخصات پیدا نشد.</p> : (
               <div className="overflow-x-auto"><table className="w-full min-w-[760px] border-collapse text-right text-sm">
-                <thead className="bg-slate-100 text-slate-700"><tr><th className="px-4 py-3">نام و نام خانوادگی</th><th className="px-4 py-3">شماره موبایل</th><th className="px-4 py-3">نقش</th><th className="px-4 py-3">وضعیت حساب</th><th className="px-4 py-3">تأیید مشاور</th><th className="px-4 py-3">تاریخ ثبت</th></tr></thead>
+                <thead className="bg-slate-100 text-slate-700"><tr><th className="px-4 py-3">نام و نام خانوادگی</th><th className="px-4 py-3">شماره موبایل</th><th className="px-4 py-3">نقش</th><th className="px-4 py-3">وضعیت حساب</th><th className="px-4 py-3">تأیید مشاور</th><th className="px-4 py-3">تاریخ ثبت</th><th className="px-4 py-3">جزئیات</th></tr></thead>
                 <tbody>{users.map(user => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium">{profileName(user)}</td><td dir="ltr" className="px-4 py-3 text-right">{user.mobile}</td><td className="px-4 py-3">{roles[user.role]}</td>
                   <td className="px-4 py-3"><span className={user.isActive ? "rounded-md bg-emerald-50 px-2 py-1 text-emerald-800" : "rounded-md bg-red-50 px-2 py-1 text-red-800"}>{user.isActive ? "فعال" : "غیرفعال"}</span></td>
-                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td>
+                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td><td className="px-4 py-3"><button onClick={async () => { try { const result = await getAdminUserDetails(user.id); setSelectedUser(result.item); } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت جزئیات ناموفق بود."); } }} className="rounded-md border px-3 py-1.5">مشاهده</button></td>
                 </tr>)}</tbody>
               </table></div>
             )}
@@ -116,6 +118,7 @@ export default function AdminUsersPage() {
               </div>
             </footer>
           </section>
+          {selectedUser && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="font-bold">جزئیات حساب {profileName(selectedUser)}</h2><button onClick={() => setSelectedUser(null)} className="rounded border px-3 py-1">بستن</button></div><p className="mt-3 text-sm">شناسه: <span dir="ltr">{selectedUser.id}</span></p><p className="mt-1 text-sm">موبایل: <span dir="ltr">{selectedUser.mobile}</span> | نقش: {roles[selectedUser.role]} | وضعیت: {selectedUser.isActive ? "فعال" : "غیرفعال"}</p><p className="mt-1 text-sm">تاریخ ایجاد: {new Date(selectedUser.createdAt).toLocaleString("fa-IR")} | آخرین بروزرسانی: {new Date(selectedUser.updatedAt).toLocaleString("fa-IR")}</p>{selectedUser.agent && <p className="mt-1 text-sm">آژانس: {selectedUser.agent.agencyName || "—"} | تأیید مشاور: {selectedUser.agent.isVerified ? "تأییدشده" : "تأییدنشده"}</p>}{selectedUser.role === "HASHTI" && <p className="mt-1 text-sm">سطح دسترسی: {selectedUser.isSuperAdmin ? "مدیر ارشد هشتی" : (selectedUser.adminPermissions || []).join("، ") || "بدون مجوز"}</p>}</section>}
         </>}
       </div>
     </main>
