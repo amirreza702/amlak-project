@@ -66,6 +66,9 @@ export function HashtiUserManagementPanel() {
   const [editAgencyName, setEditAgencyName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editReason, setEditReason] = useState("");
+  const [resetUser, setResetUser] = useState<ManagedUser | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetReason, setResetReason] = useState("");
   const [historyUser, setHistoryUser] = useState<string | null>(null);
   const [historyLogs, setHistoryLogs] = useState<AuditLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -130,6 +133,54 @@ export function HashtiUserManagementPanel() {
     } catch (err) { setError(err instanceof Error ? err.message : "ویرایش پروفایل ناموفق بود."); }
     finally { setSavingUserId(null); }
   };
+  const beginPasswordReset = (user: ManagedUser) => {
+    setResetUser(user);
+    setResetPassword("");
+    setResetReason("");
+    setError(null);
+    setMessage(null);
+  };
+
+  const resetManagedPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!resetUser) return;
+    if (resetPassword.length < 12) {
+      setError("رمز جدید باید حداقل ۱۲ کاراکتر داشته باشد.");
+      return;
+    }
+    if (resetReason.trim().length < 3) {
+      setError("برای بازنشانی رمز، دلیل حداقل ۳ کاراکتری لازم است.");
+      return;
+    }
+
+    setSavingUserId(resetUser.id);
+    setError(null);
+    setMessage(null);
+    try {
+      await requestJson(`/auth/admin/users/${encodeURIComponent(resetUser.id)}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newPassword: resetPassword,
+          reason: resetReason.trim(),
+        }),
+      });
+      setMessage(`رمز حساب ${resetUser.mobile} بازنشانی شد؛ نشست‌های قبلی باطل و رویداد ثبت شد.`);
+      setResetUser(null);
+      setResetPassword("");
+      setResetReason("");
+      if (historyUser === resetUser.id) {
+        setHistoryUser(null);
+        setHistoryLogs([]);
+      }
+      await loadUsers(offset);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "بازنشانی رمز ناموفق بود.");
+    } finally {
+      setSavingUserId(null);
+    }
+  };
+
   const toggleHistory = async (user: ManagedUser) => {
     if (historyUser === user.id) { setHistoryUser(null); return; }
     setHistoryUser(user.id); setHistoryLogs([]); setHistoryError(null); setHistoryLoading(true);
@@ -192,6 +243,30 @@ export function HashtiUserManagementPanel() {
                   {item.agent && <p className="mt-1 text-sm text-slate-600">وضعیت بررسی مشاور: {({ PENDING: "در انتظار", VERIFIED: "تأییدشده", REJECTED: "ردشده" })[item.agent.verificationStatus]}{item.agent.agencyName ? ` · ${item.agent.agencyName}` : ""}</p>}
                 </div><span className={`rounded-full px-3 py-1 text-xs font-bold ${item.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>{item.isActive ? "فعال" : "غیرفعال"}</span></div>
                 <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void changeStatus(item)} disabled={savingUserId === item.id} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50">{savingUserId === item.id ? "در حال ثبت..." : item.isActive ? "غیرفعال‌کردن حساب" : "فعال‌کردن حساب"}</button>{profile && <button type="button" onClick={() => beginEdit(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">ویرایش پروفایل</button>}<button type="button" onClick={() => void toggleHistory(item)} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"><Clock3 className="h-4 w-4" /> {historyUser === item.id ? "بستن تاریخچه" : "تاریخچه تغییرات"}</button></div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => beginPasswordReset(item)} className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                    بازنشانی رمز عبور
+                  </button>
+                </div>
+                {resetUser?.id === item.id && (
+                  <form onSubmit={resetManagedPassword} className="grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:grid-cols-2">
+                    <h4 className="font-bold sm:col-span-2">بازنشانی امن رمز حساب</h4>
+                    <label className="space-y-1 text-sm">رمز جدید (حداقل ۱۲ کاراکتر)
+                      <input required type="password" autoComplete="new-password" minLength={12} maxLength={200} value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2" dir="ltr" />
+                    </label>
+                    <label className="space-y-1 text-sm">دلیل بازنشانی (اجباری)
+                      <textarea required minLength={3} maxLength={1000} rows={2} value={resetReason} onChange={(event) => setResetReason(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2" />
+                    </label>
+                    <div className="flex flex-wrap gap-2 sm:col-span-2">
+                      <button type="submit" disabled={savingUserId === item.id} className="rounded-lg bg-amber-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                        {savingUserId === item.id ? "در حال ثبت..." : "بازنشانی و ثبت تاریخچه"}
+                      </button>
+                      <button type="button" onClick={() => setResetUser(null)} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm">
+                        انصراف
+                      </button>
+                    </div>
+                  </form>
+                )}
                 {editUser?.id === item.id && profile && <form onSubmit={saveProfile} className="grid gap-3 rounded-lg bg-slate-50 p-3 sm:grid-cols-2">
                   <h4 className="font-bold sm:col-span-2">ویرایش پروفایل {profile.type === "agent" ? "مشاور" : profile.type === "owner" ? "مالک" : "مشتری"}</h4>
                   <label className="space-y-1 text-sm">نام<input required maxLength={120} value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2" /></label>
