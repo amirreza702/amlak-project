@@ -176,6 +176,18 @@ export async function resetUserPasswordAndSessionsWithAudit(input: {
         actorMobile: input.actorMobile,
         actorRole: UserRole.HASHTI,
         action: "ADMIN_USER_PASSWORD_RESET",
+        operation: "PASSWORD_RESET",
+        targetUserId: target.id,
+        reason: input.reason?.trim() || "Administrative password reset",
+        before: {
+          role: target.role,
+          isActive: target.isActive,
+        },
+        after: {
+          role: target.role,
+          isActive: target.isActive,
+          sessionsRevoked: true,
+        },
         targetType: "USER",
         targetId: target.id,
         details: {
