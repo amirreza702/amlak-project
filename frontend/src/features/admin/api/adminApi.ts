@@ -71,3 +71,15 @@ export interface AdminStaff {
   id: string; mobile: string; role: "HASHTI"; isActive: boolean; isSuperAdmin: boolean; adminPermissions: string[]; createdAt: string;
 }
 export const getAdminStaff = () => request<{ items: AdminStaff[] }>("/admin/staff");
+
+export type AdminOwnerDetails = AdminOwner & {
+  properties: Array<{ property: { id: string; city: string; district: string; address: string; status: string } }>;
+};
+export type AdminAgentDetails = AdminAgent & {
+  address: string | null;
+  _count: { propertyAgents: number; evaluations: number; contactAccessLogs: number };
+};
+export const getAdminOwnerDetails = (ownerId: string) =>
+  request<{ item: AdminOwnerDetails }>(`/admin/owners/${encodeURIComponent(ownerId)}`);
+export const getAdminAgentDetails = (agentId: string) =>
+  request<{ item: AdminAgentDetails }>(`/admin/agents/${encodeURIComponent(agentId)}`);
