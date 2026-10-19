@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { getAdminOwners, getAdminOwnerDetails, getAdminOwnerHistory, setAdminOwnerStatus, updateAdminManagedProfile, type AdminOwner, type AdminOwnerDetails, type AdminAuditEntry } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
@@ -62,7 +62,7 @@ export default function AdminOwnersPage() {
     setEditingProfile(true);
   }
 
-  async function saveProfileEdit(event: React.FormEvent<HTMLFormElement>) {
+  async function saveProfileEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!profile || editReason.trim().length < 3) {
       setError("برای ویرایش پروفایل، دلیل حداقل ۳ حرفی وارد کنید.");
