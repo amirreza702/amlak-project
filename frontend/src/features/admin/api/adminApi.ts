@@ -63,3 +63,6 @@ export const createAdminStaff = (input: { mobile: string; password: string; perm
   request<{ item: { id: string; mobile: string; adminPermissions: string[] } }>("/admin/staff", { method: "POST", body: JSON.stringify(input) });
 export const updateAdminStaffPermissions = (userId: string, permissions: string[], reason: string) =>
   request<{ item: { id: string; mobile: string; adminPermissions: string[] } }>(`/admin/staff/${encodeURIComponent(userId)}/permissions`, { method: "PATCH", body: JSON.stringify({ permissions, reason }) });
+
+export const setAdminOwnerStatus = (ownerId: string, isActive: boolean, reason: string) =>
+  request<{ item: { id: string; isActive: boolean } }>(`/admin/owners/${encodeURIComponent(ownerId)}/status`, { method: "PATCH", body: JSON.stringify({ isActive, reason }) });
