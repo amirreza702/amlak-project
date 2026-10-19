@@ -12,6 +12,7 @@ import {
   deleteSessionByTokenHash,
   resetUserPasswordAndSessions,
   resetUserPasswordAndSessionsWithAudit,
+  listAdminUsers,
 } from "../repository/authRepository";
 
 interface RegisterInput {
@@ -272,5 +273,22 @@ export const adminResetUserPasswordWithAuditService = async (input: {
     ipAddress: input.ipAddress,
     userAgent: input.userAgent,
     reason: input.reason,
+  });
+};
+
+
+export const listAdminUsersService = async (data: {
+  search?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  page: number;
+  limit: number;
+}) => {
+  return listAdminUsers({
+    search: data.search,
+    role: data.role,
+    isActive: data.isActive,
+    skip: (data.page - 1) * data.limit,
+    take: data.limit,
   });
 };

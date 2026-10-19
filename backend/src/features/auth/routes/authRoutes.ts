@@ -7,11 +7,13 @@ import {
   loginUserController,
   logoutUserController,
   adminResetUserPasswordController,
+  listAdminUsersController,
 } from "../controller/authController";
 
 import { authMiddleware } from "../middleware/authMiddleware";
 import { requireRole } from "../middleware/requireRole";
 import { requireSuperAdmin } from "../middleware/requireSuperAdmin";
+import { requireAdminPermission } from "../../admin/middleware/requireAdminPermission";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -34,7 +36,16 @@ router.get("/auth/me", authMiddleware, (req, res) => {
 // خروج کاربر و حذف نشست فعلی
 router.post("/auth/logout", logoutUserController);
 
-// بازنشانی مدیریتی رمز حساب کاربر؛ فقط کارکنان هشتی
+// فهرست کاربران برای پنل مدیریت هشتی؛ دسترسی بر اساس مجوز کنترل می‌شود.
+router.get(
+  "/auth/admin/users",
+  authMiddleware,
+  requireRole(UserRole.HASHTI),
+  requireAdminPermission("USERS_READ"),
+  listAdminUsersController
+);
+
+// بازنشانی مدیریتی رمز حساب کاربر؛ فقط مدیر ارشد هشتی
 router.post(
   "/auth/admin/users/:userId/reset-password",
   authMiddleware,

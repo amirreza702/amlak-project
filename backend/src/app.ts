@@ -29,6 +29,7 @@ import customerPropertyFavoriteRoutes from "./features/favorite/routes/customerP
 import authRoutes from "./features/auth/routes/authRoutes";
 
 import hashtiRoutes from "./features/hashti/routes/hashtiRoutes";
+import adminRoutes from "./features/admin/routes/adminRoutes";
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use(notificationRoutes);
 app.use(customerPropertyFavoriteRoutes);
 app.use(authRoutes);
 app.use(hashtiRoutes);
+app.use(adminRoutes);
 
 
 

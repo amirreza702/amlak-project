@@ -205,6 +205,7 @@ model User {
   // Elevated access is separate from the HASHTI role and defaults to disabled.
   isSuperAdmin Boolean  @default(false)
 
+  adminPermissions String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -220,6 +221,7 @@ model User {
   reviewedAgents  Agent[]         @relation("AgentVerificationReviewer")
   adminAuditLogs AdminAuditLog[] @relation("AdminAuditActor")
 
+  auditTargets    AdminAuditLog[] @relation("AdminAuditTarget")
   @@map("users")
 }
 
@@ -1152,11 +1154,13 @@ model AdminAuditLog {
   createdAt   DateTime  @default(now())
 
   actor User? @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  target User? @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([actorUserId, createdAt])
   @@index([targetType, targetId, createdAt])
   @@index([action, createdAt])
+  @@index([operation, createdAt])
   @@map("admin_audit_logs")
 }
 

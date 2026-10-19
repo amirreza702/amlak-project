@@ -10,6 +10,7 @@ import {
   logoutUserService,
   adminResetUserPasswordService,
   adminResetUserPasswordWithAuditService,
+  listAdminUsersService,
 } from "../service/authService";
 
 /**
@@ -340,3 +341,81 @@ export async function adminResetUserPasswordController(
   }
 }
 
+
+
+/**
+ * جست‌وجو و فیلتر کاربران برای پنل مدیریت هشتی.
+ * GET /auth/admin/users
+ */
+export async function listAdminUsersController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const rawSearch = req.query.search;
+    const rawRole = req.query.role;
+    const rawIsActive = req.query.isActive;
+    const rawPage = req.query.page;
+    const rawLimit = req.query.limit;
+
+    if (
+      (rawSearch !== undefined && typeof rawSearch !== "string") ||
+      (rawRole !== undefined && typeof rawRole !== "string") ||
+      (rawIsActive !== undefined &&
+        rawIsActive !== "true" &&
+        rawIsActive !== "false") ||
+      (rawPage !== undefined && typeof rawPage !== "string") ||
+      (rawLimit !== undefined && typeof rawLimit !== "string")
+    ) {
+      return res.status(400).json({ message: "Invalid query parameters" });
+    }
+
+    const allowedRoles = Object.values(UserRole);
+    if (
+      typeof rawRole === "string" &&
+      !allowedRoles.includes(rawRole as UserRole)
+    ) {
+      return res.status(400).json({ message: "Invalid user role filter" });
+    }
+
+    const page = rawPage === undefined ? 1 : Number(rawPage);
+    const limit = rawLimit === undefined ? 20 : Number(rawLimit);
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    ) {
+      return res.status(400).json({
+        message: "Page must be positive and limit must be between 1 and 100",
+      });
+    }
+
+    const result = await listAdminUsersService({
+      search: typeof rawSearch === "string" ? rawSearch.trim() : undefined,
+      role: typeof rawRole === "string" ? rawRole as UserRole : undefined,
+      isActive:
+        rawIsActive === "true"
+          ? true
+          : rawIsActive === "false"
+            ? false
+            : undefined,
+      page,
+      limit,
+    });
+
+    return res.status(200).json({
+      items: result.items,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+      },
+    });
+  } catch (error: unknown) {
+    console.error("Error listing admin users:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
