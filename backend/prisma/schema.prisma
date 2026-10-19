@@ -1140,20 +1140,26 @@ model ContactAccessUsage {
 // ADMIN AUDIT LOG
 // ============================================================
 // سوابق مدیریتی مستقل نگه داشته می‌شوند؛ حذف کاربر نباید گزارش را حذف کند.
-model AdminAuditLog {
-  id          String    @id @default(uuid())
-  actorUserId String?
-  actorMobile String?
-  actorRole   UserRole?
-  action      String
-  targetType  String
-  targetId    String?
-  details     Json?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime  @default(now())
 
-  actor User? @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  actorUserId  String?
+  actorMobile  String?
+  actorRole    UserRole?
+  action       String
+  targetType   String
+  targetId     String?
+  targetUserId String?
+  operation    String?
+  reason       String?
+  before       Json?
+  after        Json?
+  details      Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  actor  User? @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
   target User? @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
@@ -1161,8 +1167,10 @@ model AdminAuditLog {
   @@index([targetType, targetId, createdAt])
   @@index([action, createdAt])
   @@index([operation, createdAt])
+  @@index([targetUserId, createdAt])
   @@map("admin_audit_logs")
 }
+
 
 model SubscriptionPlan {
   id                  String   @id @default(uuid())
