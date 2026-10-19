@@ -188,3 +188,24 @@ export async function listAudit(data: { targetType?: string; targetId?: string; 
 export async function listSubscriptionPlans() {
   return prisma.subscriptionPlan.findMany({ where: { status: "ACTIVE" }, orderBy: [{ level: "asc" }, { name: "asc" }], select: { id: true, code: true, name: true, level: true, monthlyContactLimit: true, status: true } });
 }
+
+
+export async function createStaffAccount(data: {
+  actorUserId: string; mobile: string; passwordHash: string; permissions: AdminPermission[]; reason: string;
+}) {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const before = null;
+      const user = await tx.user.create({
+        data: { mobile: data.mobile, passwordHash: data.passwordHash, role: UserRole.HASHTI, adminPermissions: data.permissions },
+        select: { id: true, mobile: true, role: true, isActive: true, isSuperAdmin: true, adminPermissions: true, createdAt: true },
+      });
+      await writeAudit(tx, { actorUserId: data.actorUserId, targetUserId: user.id, targetType: "STAFF", targetId: user.id,
+        operation: "CREATE_STAFF_ACCOUNT", reason: data.reason, before, after: user });
+      return user;
+    });
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") throw new Error("STAFF_MOBILE_EXISTS");
+    throw error;
+  }
+}
