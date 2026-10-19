@@ -92,11 +92,22 @@ export async function updateManagedUserStatus(input: {
   userId: string; isActive: boolean; reason: string; actorUserId: string; actorMobile: string;
 }) {
   return prisma.$transaction(async (tx) => {
+    const actor = await tx.user.findUnique({
+      where: { id: input.actorUserId },
+      select: { role: true, isActive: true, isSuperAdmin: true },
+    });
+    if (!actor || actor.role !== UserRole.HASHTI || !actor.isActive) {
+      throw new Error("HASHTI_PERMISSION_REQUIRED");
+    }
+
     const current = await tx.user.findUnique({
       where: { id: input.userId },
       select: { id: true, mobile: true, role: true, isActive: true, isSuperAdmin: true },
     });
     if (!current) throw new Error("USER_NOT_FOUND");
+    if (current.role === UserRole.HASHTI && !actor.isSuperAdmin) {
+      throw new Error("SUPER_ADMIN_PERMISSION_REQUIRED");
+    }
     if (current.id === input.actorUserId) throw new Error("CANNOT_CHANGE_OWN_STATUS");
 
     if (!input.isActive && current.isSuperAdmin && current.isActive) {
@@ -134,6 +145,13 @@ export async function createManagedHashtiUser(input: {
   mobile: string; firstName: string; lastName: string; passwordHash: string; actorUserId: string; actorMobile: string;
 }) {
   return prisma.$transaction(async (tx) => {
+    const actor = await tx.user.findUnique({
+      where: { id: input.actorUserId },
+      select: { role: true, isActive: true, isSuperAdmin: true },
+    });
+    if (!actor || actor.role !== UserRole.HASHTI || !actor.isActive || !actor.isSuperAdmin) {
+      throw new Error("SUPER_ADMIN_PERMISSION_REQUIRED");
+    }
     const existingUser = await tx.user.findUnique({ where: { mobile: input.mobile }, select: { id: true } });
     if (existingUser) throw new Error("USER_ALREADY_EXISTS");
     const existingStaff = await tx.hashtiStaff.findUnique({
@@ -169,6 +187,17 @@ export async function createManagedHashtiUser(input: {
 
 export async function updateManagedProfile(input: ManagedProfileUpdate) {
   return prisma.$transaction(async (tx) => {
+    const actor = await tx.user.findUnique({
+      where: { id: input.actorUserId },
+      select: { role: true, isActive: true, isSuperAdmin: true },
+    });
+    if (!actor || actor.role !== UserRole.HASHTI || !actor.isActive) {
+      throw new Error("HASHTI_PERMISSION_REQUIRED");
+    }
+    if (input.profileType === "hashti" && !actor.isSuperAdmin) {
+      throw new Error("SUPER_ADMIN_PERMISSION_REQUIRED");
+    }
+
     if (input.profileType === "customer") {
       const current = await tx.customer.findUnique({ where: { id: input.profileId }, select: { id: true, firstName: true, lastName: true } });
       if (!current) throw new Error("PROFILE_NOT_FOUND");
