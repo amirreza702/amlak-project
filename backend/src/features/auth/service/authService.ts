@@ -186,9 +186,7 @@ export const logoutUserService = async (
  */
 export const adminResetUserPasswordService = async (
   userId: string,
-  newPassword: string,
-  actorUserId: string,
-  reason: string
+  newPassword: string
 ) => {
   if (!userId.trim()) {
     throw new Error("INVALID_USER_ID");
@@ -197,17 +195,12 @@ export const adminResetUserPasswordService = async (
   if (newPassword.length < 8) {
     throw new Error("PASSWORD_TOO_SHORT");
   }
-  if (!actorUserId.trim() || reason.trim().length < 3 || reason.trim().length > 1000) {
-    throw new Error("REASON_REQUIRED");
-  }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
   const user = await resetUserPasswordAndSessions(
     userId,
-    passwordHash,
-    actorUserId,
-    reason.trim()
+    passwordHash
   );
 
   return {
