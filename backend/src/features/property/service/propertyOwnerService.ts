@@ -137,6 +137,7 @@ export async function addPropertyOwner(
       propertyId: data.propertyId,
       action: PropertyHistoryAction.OWNERSHIP_CHANGED,
       field: "propertyOwner",
+      performedBy: data.performedBy ?? null,
       newValue: JSON.stringify({
         ownerId: data.ownerId,
         share: data.share,
