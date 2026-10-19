@@ -66,3 +66,8 @@ export const updateAdminStaffPermissions = (userId: string, permissions: string[
 
 export const setAdminOwnerStatus = (ownerId: string, isActive: boolean, reason: string) =>
   request<{ item: { id: string; isActive: boolean } }>(`/admin/owners/${encodeURIComponent(ownerId)}/status`, { method: "PATCH", body: JSON.stringify({ isActive, reason }) });
+
+export interface AdminStaff {
+  id: string; mobile: string; role: "HASHTI"; isActive: boolean; isSuperAdmin: boolean; adminPermissions: string[]; createdAt: string;
+}
+export const getAdminStaff = () => request<{ items: AdminStaff[] }>("/admin/staff");
