@@ -192,6 +192,16 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
           ? "ثبت‌نام با موفقیت انجام شد و ورود خودکار انجام گرفت."
           : "ورود با موفقیت انجام شد."
       );
+
+      // پس از ورود کارکنان هشتی، کاربر را به همان صفحه مدیریتی برگردان
+      // که پیش از ورود درخواست کرده بود؛ فقط مسیرهای داخلی پنل پذیرفته می‌شوند.
+      if (role === "HASHTI" && typeof window !== "undefined") {
+        const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+        if (returnTo?.startsWith("/admin/")) {
+          window.location.assign(returnTo);
+          return;
+        }
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "";
       if (message.includes("already registered")) setAuthMode("login");
