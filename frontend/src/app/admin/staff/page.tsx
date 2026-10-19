@@ -1,19 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getAdminUsers, type AdminUser } from "@/features/auth/api/authApi";
+import { type AdminStaff, getAdminStaff } from "@/features/admin/api/adminApi";
 import { ADMIN_PERMISSION_OPTIONS, createAdminStaff, updateAdminStaffPermissions } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
 export default function AdminStaffPage() {
-  const [staff, setStaff] = useState<AdminUser[]>([]);
+  const [staff, setStaff] = useState<AdminStaff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [reason, setReason] = useState("");
   const [permissions, setPermissions] = useState<string[]>(["USERS_READ"]);
-  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [editing, setEditing] = useState<AdminStaff | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
 
   const load = useCallback(async () => {
@@ -21,7 +21,7 @@ export default function AdminStaffPage() {
     try {
       const user = await getCurrentUser();
       if (user.role !== "HASHTI") throw new Error("دسترسی کارکنان هشتی لازم است.");
-      const result = await getAdminUsers({ role: "HASHTI", page: 1, limit: 100 });
+      const result = await getAdminStaff();
       setStaff(result.items);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت فهرست کارکنان ناموفق بود."); }
     finally { setLoading(false); }
