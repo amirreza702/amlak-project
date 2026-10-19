@@ -83,3 +83,6 @@ export const getAdminOwnerDetails = (ownerId: string) =>
   request<{ item: AdminOwnerDetails }>(`/admin/owners/${encodeURIComponent(ownerId)}`);
 export const getAdminAgentDetails = (agentId: string) =>
   request<{ item: AdminAgentDetails }>(`/admin/agents/${encodeURIComponent(agentId)}`);
+
+export const getAdminUserDetails = (userId: string) =>
+  request<{ item: import("@/features/auth/api/authApi").AdminUser }>(`/admin/users/${encodeURIComponent(userId)}`);
