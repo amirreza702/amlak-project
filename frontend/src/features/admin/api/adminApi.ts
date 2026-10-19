@@ -1,0 +1,52 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    credentials: "include",
+    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
+  });
+  const data = await response.json().catch(() => ({})) as { message?: string };
+  if (!response.ok) throw new Error(data.message || "درخواست ناموفق بود.");
+  return data as T;
+}
+function query(filters: Record<string, string | number | boolean | undefined>) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== "") params.set(key, String(value)); });
+  return params.toString();
+}
+export interface AdminPage<T> { items: T[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
+export interface AdminOwner {
+  id: string; userId: string; firstName: string; lastName: string;
+  user: { id: string; mobile: string; isActive: boolean; createdAt: string };
+  _count: { properties: number; evaluations: number };
+}
+export interface AdminAgent {
+  id: string; userId: string; firstName: string; lastName: string; agencyName: string | null;
+  isVerified: boolean; user: { id: string; mobile: string; isActive: boolean; createdAt: string };
+  subscriptions: Array<{ id: string; status: string; planId: string; startsAt: string; expiresAt: string | null; subscriptionPlan: { id: string; code: string; name: string; level: number } }>;
+}
+export interface AdminAuditEntry {
+  id: string; actorUserId: string; targetUserId: string | null; targetType: string; targetId: string;
+  operation: string; reason: string; before: unknown; after: unknown; createdAt: string;
+  actor: { id: string; mobile: string }; target: { id: string; mobile: string; role: string } | null;
+}
+export interface SubscriptionPlan { id: string; code: string; name: string; level: number; monthlyContactLimit: number; status: string }
+
+export const getAdminOwners = (filters: { search?: string; isActive?: string; page?: number; limit?: number } = {}) =>
+  request<AdminPage<AdminOwner>>(`/admin/owners?${query(filters)}`);
+export const getAdminAgents = (filters: { search?: string; isActive?: string; isVerified?: string; subscriptionStatus?: string; page?: number; limit?: number } = {}) =>
+  request<AdminPage<AdminAgent>>(`/admin/agents?${query(filters)}`);
+export const setAdminUserStatus = (userId: string, isActive: boolean, reason: string) =>
+  request<{ item: { id: string; isActive: boolean } }>(`/admin/users/${encodeURIComponent(userId)}/status`, { method: "PATCH", body: JSON.stringify({ isActive, reason }) });
+export const setAdminAgentVerification = (agentId: string, isVerified: boolean, reason: string) =>
+  request<{ item: AdminAgent }>(`/admin/agents/${encodeURIComponent(agentId)}/verification`, { method: "PATCH", body: JSON.stringify({ isVerified, reason }) });
+export const getAdminAgentHistory = (agentId: string, page = 1) =>
+  request<AdminPage<AdminAuditEntry>>(`/admin/agents/${encodeURIComponent(agentId)}/history?${query({ page, limit: 20 })}`);
+export const getAdminOwnerHistory = (ownerId: string, page = 1) =>
+  request<AdminPage<AdminAuditEntry>>(`/admin/owners/${encodeURIComponent(ownerId)}/history?${query({ page, limit: 20 })}`);
+export const getAdminSubscriptionPlans = () => request<{ items: SubscriptionPlan[] }>("/admin/subscription-plans");
+export const setAdminAgentSubscription = (agentId: string, input: { planId: string; status: string; startsAt: string; expiresAt?: string; reason: string }) =>
+  request<{ item: AdminAgent["subscriptions"][number] }>(`/admin/agents/${encodeURIComponent(agentId)}/subscription`, { method: "POST", body: JSON.stringify(input) });
+export const getAdminAudit = (filters: { targetType?: string; targetId?: string; targetUserId?: string; actorUserId?: string; page?: number; limit?: number } = {}) =>
+  request<AdminPage<AdminAuditEntry>>(`/admin/audit?${query(filters)}`);
