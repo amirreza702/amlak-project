@@ -77,7 +77,7 @@ export async function adminUpdateStaffPermissions(input: { actorUserId: string; 
   if (!Array.isArray(input.permissions) || input.permissions.some(p => typeof p !== "string" || !(ADMIN_PERMISSIONS as readonly string[]).includes(p))) throw new Error("INVALID_PERMISSIONS");
   return updateStaffPermissions({ actorUserId: input.actorUserId, userId: input.userId, permissions: input.permissions as AdminPermission[], reason: reasonValue(input.reason) });
 }
-export async function adminAudit(input: { targetType?: string; targetId?: string; actorUserId?: string; page: number; limit: number }) {
+export async function adminAudit(input: { targetType?: string; targetId?: string; targetUserId?: string; actorUserId?: string; page: number; limit: number }) {
   pageArgs(input.page, input.limit); return listAudit(input);
 }
 export const adminPlans = listSubscriptionPlans;
