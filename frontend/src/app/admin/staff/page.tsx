@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { type AdminStaff, getAdminStaff } from "@/features/admin/api/adminApi";
 import { ADMIN_PERMISSION_OPTIONS, createAdminStaff, updateAdminStaffPermissions } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
@@ -31,7 +31,7 @@ export default function AdminStaffPage() {
   function toggle(value: string, selected: string[], setter: (values: string[]) => void) {
     setter(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
   }
-  async function createStaff(event: React.FormEvent<HTMLFormElement>) {
+  async function createStaff(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (reason.trim().length < 3) { setError("برای ایجاد حساب، دلیل ثبت کنید."); return; }
     try {
