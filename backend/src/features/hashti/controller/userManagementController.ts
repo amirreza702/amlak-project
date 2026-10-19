@@ -113,7 +113,7 @@ export async function updateManagedProfileController(req: Request, res: Response
   const actor = getActor(req);
   if (!actor) return res.status(401).json({ message: "Authentication required" });
   const profileType = req.params.profileType;
-  if (!["customer", "owner", "agent"].includes(profileType)) return res.status(400).json({ message: "profileType must be customer, owner, or agent" });
+  if (!["customer", "owner", "agent", "hashti"].includes(profileType)) return res.status(400).json({ message: "profileType must be customer, owner, agent, or hashti" });
 
   const { firstName, lastName, agencyName, address } = req.body ?? {};
   const reason = readReason(req.body?.reason);
