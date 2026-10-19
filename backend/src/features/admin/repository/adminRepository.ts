@@ -210,3 +210,12 @@ export async function createStaffAccount(data: {
     throw error;
   }
 }
+
+
+export async function listStaffAccounts() {
+  return prisma.user.findMany({
+    where: { role: UserRole.HASHTI },
+    select: { id: true, mobile: true, role: true, isActive: true, isSuperAdmin: true, adminPermissions: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
