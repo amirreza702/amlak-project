@@ -16,8 +16,12 @@
  */
 
 import { Request, Response } from "express";
+import { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 import {
   getOwnerProfile,
+  getCurrentOwnerProfile,
+  getCurrentOwnerPropertiesService,
+  updateCurrentOwnerProfileService,
   getOwnerPropertiesService,
   updateOwnerProfileService,
 } from "../service/ownerService";
@@ -130,6 +134,67 @@ export async function getOwnerPropertiesController(
   } catch (error: any) {
     if (error.message === "Owner not found") return res.status(404).json({ message: error.message });
     console.error("Error getting owner properties:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+function getAuthenticatedOwnerUserId(req: Request): string | undefined {
+  return (req as AuthenticatedRequest).user?.id;
+}
+
+/** GET /owners/me/profile */
+export async function getCurrentOwnerProfileController(req: Request, res: Response) {
+  try {
+    const userId = getAuthenticatedOwnerUserId(req);
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    const owner = await getCurrentOwnerProfile(userId);
+    return res.status(200).json(owner);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "OWNER_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ message: "Owner profile not found" });
+    }
+    console.error("Error getting current owner profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/** PUT /owners/me/profile */
+export async function updateCurrentOwnerProfileController(req: Request, res: Response) {
+  try {
+    const userId = getAuthenticatedOwnerUserId(req);
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    const owner = await updateCurrentOwnerProfileService(userId, req.body);
+    return res.status(200).json(owner);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.message === "OWNER_PROFILE_NOT_FOUND") {
+        return res.status(404).json({ message: "Owner profile not found" });
+      }
+      if ([
+        "First name cannot be empty",
+        "Last name cannot be empty",
+        "No profile fields to update",
+      ].includes(error.message)) {
+        return res.status(400).json({ message: error.message });
+      }
+    }
+    console.error("Error updating current owner profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/** GET /owners/me/properties */
+export async function getCurrentOwnerPropertiesController(req: Request, res: Response) {
+  try {
+    const userId = getAuthenticatedOwnerUserId(req);
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    const properties = await getCurrentOwnerPropertiesService(userId);
+    return res.status(200).json({ properties });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "OWNER_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ message: "Owner profile not found" });
+    }
+    console.error("Error getting current owner properties:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
