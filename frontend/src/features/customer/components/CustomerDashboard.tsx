@@ -32,7 +32,6 @@ import {
 } from "../api/customerDashboardApi";
 import {
   markUserNotificationAsRead,
-  type UserNotification,
 } from "@/features/notification/api/notificationApi";
 
 type DashboardTab = "requests" | "favorites" | "notifications" | "profile";
@@ -72,8 +71,8 @@ function propertyLabel(value: string): string {
 export function CustomerDashboard() {
   const [tab, setTab] = useState<DashboardTab | null>(null);
   const {
-    user, profile, setProfile, requests, setRequests, favorites, notifications,
-    loading, pageError, setPageError, actionMessage, setActionMessage,
+    user, profile, setProfile, requests, favorites, notifications,
+    loading, pageError, actionMessage, setActionMessage,
     actionError, setActionError, busyId, setBusyId, editingId, setEditingId,
     editValues, setEditValues, firstName, setFirstName, lastName, setLastName, refreshData,
   } = useCustomerDashboardData();
