@@ -20,6 +20,7 @@ import {
   AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
+  logoutUser,
   registerUser,
   type UserPublic,
   type UserRole,
@@ -211,6 +212,17 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setCurrentUser(null);
+      setSuccessMessage(null);
+      setAuthError(null);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "خروج از حساب انجام نشد.");
+    }
+  };
+
   const changeMode = (mode: AuthMode) => {
     setAuthMode(mode);
     setAuthError(null);
@@ -221,17 +233,12 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="text-lg font-black text-[#043873]">هشتی</Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-[#043873]"
-          >
-            <ArrowRight className="h-4 w-4" />
-            بازگشت به صفحه اصلی
-          </Link>
-        </div>
+      <header className="pointer-events-none fixed left-3 top-3 z-50 sm:left-5 sm:top-4">
+        <nav aria-label="مسیرهای پنل" className="pointer-events-auto flex items-center gap-2">
+          {currentUser?.role === role && <Link href={role === "OWNER" ? "/owner" : role === "AGENT" ? "/agent" : "/hashti"} className="rounded-lg px-3 py-2 text-sm font-semibold text-[#043873] hover:bg-blue-50">پنل</Link>}
+          <Link href="/" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">بازگشت</Link>
+          {currentUser?.role === role && <button type="button" onClick={() => void handleLogout()} className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">خروج</button>}
+        </nav>
       </header>
 
       <section className={role === "HASHTI" ? "w-full max-w-none px-0 py-4" : "mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12"}>
