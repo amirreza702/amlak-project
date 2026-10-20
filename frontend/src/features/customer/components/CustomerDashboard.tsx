@@ -23,6 +23,7 @@ import type {
   CustomerRequestPropertyType,
   CustomerRequestTransactionType,
 } from "../types/customerSearchRequest";
+import type { CustomerSearchRequestRecord } from "../api/customerDashboardApi";
 import {
   closeCustomerSearchRequest,
   removeCustomerFavorite,
