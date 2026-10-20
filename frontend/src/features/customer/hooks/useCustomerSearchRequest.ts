@@ -271,27 +271,6 @@ export function useCustomerSearchRequest() {
     }, [authMode, firstName, lastName, loadCustomerProfile, mobile, password]
   );
 
-  const signOutAndUseCustomerAccount = useCallback(async () => {
-    setAuthError(null);
-    setIsAuthSubmitting(true);
-    try {
-      await logoutUser();
-      setUser(null);
-      setCustomerProfile(null);
-      setPassword("");
-      setAuthStatus("anonymous");
-      setAuthMode("login");
-      setRegistrationSuccess(false);
-      setCreatedRequest(null);
-      setRequestValues(initialRequestValues);
-      setRequestError(null);
-    } catch (error: unknown) {
-      setAuthError(getErrorMessage(error, "خروج از حساب انجام نشد."));
-    } finally {
-      setIsAuthSubmitting(false);
-    }
-  }, []);
-
   const retryLoadCustomerProfile = useCallback(async () => {
     setAuthError(null);
     setIsAuthSubmitting(true);
@@ -397,7 +376,6 @@ export function useCustomerSearchRequest() {
     authError,
     registrationSuccess,
     submitAuthentication,
-    signOutAndUseCustomerAccount,
     retryLoadCustomerProfile,
     requestValues,
     setRequestField,
