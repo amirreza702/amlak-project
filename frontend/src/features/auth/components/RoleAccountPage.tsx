@@ -4,7 +4,6 @@ import { AgentDashboard } from "@/features/agent/components/AgentDashboard";
 import { OwnerDashboard } from "@/features/owner/components/OwnerDashboard";
 import { HashtiDashboard } from "@/features/hashti/components/HashtiDashboard";
 import {
-  ArrowRight,
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
