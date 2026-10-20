@@ -195,7 +195,17 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
 
   const visibleRequests = requests.filter((request) => {
     const text = `${request.city} ${request.transactionType} ${request.propertyType} ${request.description ?? ""} ${request.id}`.toLocaleLowerCase();
-    const budget = request.budget === null ? null : Number(request.budget);\n    const createdAt = new Date(request.createdAt).getTime();\n    return text.includes(requestSearch.trim().toLocaleLowerCase()) &&\n      (requestFilter === "all" || (requestFilter === "verified" ? request.hashtiVerified : !request.hashtiVerified)) &&\n      (requestTransaction === "all" || request.transactionType === requestTransaction) &&\n      (requestPropertyType === "all" || request.propertyType === requestPropertyType) &&\n      (!requestCity.trim() || request.city.toLocaleLowerCase().includes(requestCity.trim().toLocaleLowerCase())) &&\n      (budgetMin === "" || (budget !== null && Number.isFinite(budget) && budget >= Number(budgetMin))) &&\n      (budgetMax === "" || (budget !== null && Number.isFinite(budget) && budget <= Number(budgetMax))) &&\n      (!requestFrom || createdAt >= new Date(`${requestFrom}T00:00:00`).getTime()) &&\n      (!requestTo || createdAt <= new Date(`${requestTo}T23:59:59`).getTime());
+    const budget = request.budget === null ? null : Number(request.budget);
+    const createdAt = new Date(request.createdAt).getTime();
+    return text.includes(requestSearch.trim().toLocaleLowerCase()) &&
+      (requestFilter === "all" || (requestFilter === "verified" ? request.hashtiVerified : !request.hashtiVerified)) &&
+      (requestTransaction === "all" || request.transactionType === requestTransaction) &&
+      (requestPropertyType === "all" || request.propertyType === requestPropertyType) &&
+      (!requestCity.trim() || request.city.toLocaleLowerCase().includes(requestCity.trim().toLocaleLowerCase())) &&
+      (budgetMin === "" || (budget !== null && Number.isFinite(budget) && budget >= Number(budgetMin))) &&
+      (budgetMax === "" || (budget !== null && Number.isFinite(budget) && budget <= Number(budgetMax))) &&
+      (!requestFrom || createdAt >= new Date(`${requestFrom}T00:00:00`).getTime()) &&
+      (!requestTo || createdAt <= new Date(`${requestTo}T23:59:59`).getTime());
   });
 
   const loadRequests = useCallback(async () => {
