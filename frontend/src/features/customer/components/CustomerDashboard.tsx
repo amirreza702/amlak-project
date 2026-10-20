@@ -92,6 +92,19 @@ export function CustomerDashboard() {
   const [editValues, setEditValues] = useState({ city: "", budget: "", description: "", transactionType: "SALE" as CustomerRequestTransactionType, propertyType: "APARTMENT" as CustomerRequestPropertyType });
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestStatusFilter, setRequestStatusFilter] = useState("all");
+  const [requestTransactionFilter, setRequestTransactionFilter] = useState("all");
+  const [requestTypeFilter, setRequestTypeFilter] = useState("all");
+  const [requestCityFilter, setRequestCityFilter] = useState("");
+  const [requestBudgetMin, setRequestBudgetMin] = useState("");
+  const [requestBudgetMax, setRequestBudgetMax] = useState("");
+
+  const filteredRequests = requests.filter((request) => {
+    const budget = request.budget === null ? null : Number(request.budget);
+    const text = `${request.id} ${request.city} ${request.description ?? ""}`.toLocaleLowerCase();
+    return text.includes(requestSearch.trim().toLocaleLowerCase()) && (requestStatusFilter === "all" || request.status === requestStatusFilter) && (requestTransactionFilter === "all" || request.transactionType === requestTransactionFilter) && (requestTypeFilter === "all" || request.propertyType === requestTypeFilter) && (!requestCityFilter.trim() || request.city.toLocaleLowerCase().includes(requestCityFilter.trim().toLocaleLowerCase())) && (requestBudgetMin === "" || (budget !== null && budget >= Number(requestBudgetMin))) && (requestBudgetMax === "" || (budget !== null && budget <= Number(requestBudgetMax)));
+  });
 
   const refreshData = useCallback(async (customer: CustomerProfileForRequest, authenticatedUser: UserPublic) => {
     const [requestsResult, favoritesResult, notificationsResult] = await Promise.allSettled([
@@ -318,8 +331,8 @@ export function CustomerDashboard() {
 
             {tab === "requests" && (
               <div className="space-y-3">
-                {requests.length === 0 ? <EmptyState text="هنوز درخواستی ثبت نکرده‌اید." action={<Link href="/request" className="font-bold text-[#043873] underline">ثبت درخواست جدید</Link>} /> :
-                  requests.map((request) => (
+                {requests.length === 0 ? <EmptyState text="هنوز درخواستی ثبت نکرده‌اید." action={<Link href="/request" className="font-bold text-[#043873] underline">ثبت درخواست جدید</Link>} /> : <><div className="mb-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 xl:grid-cols-3"><input aria-label="جست‌وجوی درخواست" value={requestSearch} onChange={(event) => setRequestSearch(event.target.value)} placeholder="کد، شهر یا توضیحات..." className={inputClass} /><input aria-label="شهر درخواست" value={requestCityFilter} onChange={(event) => setRequestCityFilter(event.target.value)} placeholder="شهر" className={inputClass} /><select aria-label="نوع معامله درخواست" value={requestTransactionFilter} onChange={(event) => setRequestTransactionFilter(event.target.value)} className={inputClass}><option value="all">همه معاملات</option>{transactionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><select aria-label="نوع ملک درخواست" value={requestTypeFilter} onChange={(event) => setRequestTypeFilter(event.target.value)} className={inputClass}><option value="all">همه انواع ملک</option>{propertyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><input aria-label="حداقل بودجه درخواست" type="number" min="0" value={requestBudgetMin} onChange={(event) => setRequestBudgetMin(event.target.value)} placeholder="حداقل بودجه" className={inputClass} /><input aria-label="حداکثر بودجه درخواست" type="number" min="0" value={requestBudgetMax} onChange={(event) => setRequestBudgetMax(event.target.value)} placeholder="حداکثر بودجه" className={inputClass} /><select aria-label="وضعیت درخواست" value={requestStatusFilter} onChange={(event) => setRequestStatusFilter(event.target.value)} className={inputClass}><option value="all">همه وضعیت‌ها</option><option value="ACTIVE">فعال</option><option value="CLOSED">بسته</option></select><div className="flex items-center justify-between gap-2 text-sm text-slate-500"><span>{filteredRequests.length} مورد</span><button type="button" onClick={() => { setRequestSearch(""); setRequestCityFilter(""); setRequestTransactionFilter("all"); setRequestTypeFilter("all"); setRequestBudgetMin(""); setRequestBudgetMax(""); setRequestStatusFilter("all"); }} className="rounded-lg border bg-white px-3 py-2 text-xs font-semibold">پاک‌کردن فیلترها</button></div></div>
+                  filteredRequests.map((request) => (
                     <article key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                       {editingId === request.id ? (
                         <div className="space-y-4">
@@ -373,7 +386,7 @@ export function CustomerDashboard() {
                         </>
                       )}
                     </article>
-                  ))}
+                  ))}</>}
               </div>
             )}
 
