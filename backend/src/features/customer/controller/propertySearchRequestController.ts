@@ -264,10 +264,22 @@ export async function getActivePropertySearchRequestsController(
 ) {
   try {
     const result =
-      await getActivePropertySearchRequests();
+      await getActivePropertySearchRequests({
+        city: typeof req.query.city === "string" ? req.query.city : undefined,
+        transactionType: typeof req.query.transactionType === "string" ? req.query.transactionType : undefined,
+        propertyType: typeof req.query.propertyType === "string" ? req.query.propertyType : undefined,
+        minBudget: typeof req.query.minBudget === "string" ? req.query.minBudget : undefined,
+        maxBudget: typeof req.query.maxBudget === "string" ? req.query.maxBudget : undefined,
+        hashtiVerified: typeof req.query.hashtiVerified === "string" ? req.query.hashtiVerified : undefined,
+        createdFrom: typeof req.query.createdFrom === "string" ? req.query.createdFrom : undefined,
+        createdTo: typeof req.query.createdTo === "string" ? req.query.createdTo : undefined,
+      });
 
     return res.status(200).json(result);
   } catch (error: any) {
+    if (typeof error?.message === "string" && (error.message.startsWith("Invalid ") || error.message.includes("cannot exceed"))) {
+      return res.status(400).json({ message: error.message });
+    }
     console.error(
       "Error getting active property search requests:",
       error
