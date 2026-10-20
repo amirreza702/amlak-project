@@ -82,6 +82,21 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
             <LoaderCircle className="h-5 w-5 animate-spin" />
             در حال بررسی وضعیت ورود...
           </div>
+        ) : currentUser && currentUser.role !== role ? (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-7 text-amber-900">
+              <h2 className="font-bold">یک حساب دیگر در حال حاضر وارد شده است</h2>
+              <p className="mt-2">
+                این مرورگر با حساب دیگری وارد شده و به همین دلیل فرم ورود یا ثبت‌نام {copy.title} نمایش داده نمی‌شود.
+              </p>
+              <p className="mt-2">
+                ابتدا از دکمهٔ «خروج» در بالای صفحه خارج شوید. پس از خروج، فرم این بخش در همین صفحه نمایش داده خواهد شد.
+              </p>
+              <p className="mt-2 text-xs">
+                حساب فعال: <span dir="ltr">{currentUser.mobile}</span>
+              </p>
+            </div>
+          </section>
         ) : isAuthenticatedForThisRole && currentUser ? (
           <div className="space-y-5">
             <p className="text-sm text-slate-600">
@@ -105,12 +120,6 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
           </div>
         ) : (
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            {currentUser && currentUser.role !== role && (
-              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
-                اکنون با حساب دیگری وارد شده‌اید. پس از ورود موفق به حساب {copy.title}، نشست قبلی همین مرورگر باطل می‌شود.
-              </div>
-            )}
-
             <h2 className="text-lg font-bold">{copy.heading}</h2>
             {role !== "HASHTI" && (
               <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
