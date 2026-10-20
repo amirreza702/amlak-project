@@ -179,6 +179,7 @@ export function useRoleAccountAuth(role: AccountPortalRole) {
     setSuccessMessage(null);
   };
 
+  const isAuthenticatedForThisRole = currentUser?.role === role;
 
   return {
     authMode, setAuthMode, mobile, setMobile, password, setPassword,
