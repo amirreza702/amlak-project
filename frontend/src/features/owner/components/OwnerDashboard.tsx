@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Building2, LoaderCircle, Save, ShieldCheck, UserRound, UserRoundCheck, Users } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { OwnerPropertiesPanel } from "./OwnerPropertiesPanel";
+import { useOwnerProfile } from "../hooks/useOwnerProfile";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-interface OwnerProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  user?: { mobile: string };
-}
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
   const body = await response.json().catch(() => ({})) as { message?: string };
@@ -22,59 +17,15 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function OwnerDashboard({ user }: { user: UserPublic }) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [profile, setProfile] = useState<OwnerProfile | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const {
+    profile, firstName, setFirstName, lastName, setLastName,
+    loadingProfile, savingProfile, profileError, message, saveProfile,
+  } = useOwnerProfile(user.mobile);
   const [propertyId, setPropertyId] = useState("");
   const [agentId, setAgentId] = useState("");
   const [relationshipBusy, setRelationshipBusy] = useState(false);
   const [relationshipMessage, setRelationshipMessage] = useState<string | null>(null);
   const [relationshipError, setRelationshipError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    setLoadingProfile(true);
-    setProfileError(null);
-
-    (async () => {
-      try {
-        const result = await requestJson<OwnerProfile>("/owners/me/profile");
-        if (!active) return;
-        setProfile(result);
-        setFirstName(result.firstName);
-        setLastName(result.lastName);
-      } catch (error: unknown) {
-        if (active) setProfileError(error instanceof Error ? error.message : "دریافت پروفایل مالک انجام نشد.");
-      } finally {
-        if (active) setLoadingProfile(false);
-      }
-    })();
-
-    return () => { active = false; };
-  }, [user.mobile]);
-
-  const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSavingProfile(true);
-    setProfileError(null);
-    setMessage(null);
-    try {
-      const result = await requestJson<{ id: string; firstName: string; lastName: string }>(
-        "/owners/me/profile",
-        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim() }) }
-      );
-      setProfile((current) => current ? { ...current, firstName: result.firstName, lastName: result.lastName } : current);
-      setMessage("اطلاعات پروفایل ذخیره شد.");
-    } catch (error: unknown) {
-      setProfileError(error instanceof Error ? error.message : "ذخیرهٔ پروفایل انجام نشد.");
-    } finally {
-      setSavingProfile(false);
-    }
-  };
 
   const setAgentRelationship = async (decision: "approval" | "revoke") => {
     if (!propertyId.trim() || !agentId.trim()) {
