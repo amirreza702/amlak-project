@@ -32,7 +32,7 @@ function idText(value: string) {
   return <span dir="ltr" className="break-all font-mono text-xs">{value}</span>;
 }
 
-export function HashtiDashboard({ user }: { user: UserPublic }) {
+export function HashtiDashboard({ user, onToolSelected }: { user: UserPublic; onToolSelected?: () => void }) {
   // تا پیش از انتخاب ابزار، فضای اصلی پنل خالی می‌ماند.
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const {
@@ -74,7 +74,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
             ["property-tools", "ابزارهای مدیریت ملک"], ["user-management", "مدیریت کاربران"],
             ["verification-queue", "صف تأیید"], ["notifications", "اعلان‌ها"],
           ].map(([target, label]) => (
-            <button key={target} type="button" aria-current={selectedTool === target ? "page" : undefined} onClick={() => setSelectedTool(target)} title={label} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
+            <button key={target} type="button" aria-current={selectedTool === target ? "page" : undefined} onClick={() => { setSelectedTool(target); onToolSelected?.(); }} title={label} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
           ))}
         </nav>
       </aside>
