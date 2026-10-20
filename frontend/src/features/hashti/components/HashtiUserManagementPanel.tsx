@@ -6,7 +6,6 @@ import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Search, ShieldCheck, Use
 import { hashtiManagementRequest as requestJson } from "../api/hashtiUserManagementApi";
 import type {
   HashtiAuditLog as AuditLog,
-  HashtiManagedProfile as ManagedProfile,
   HashtiManagedProfileType as ProfileType,
   HashtiManagedRole as Role,
   HashtiManagedUser as ManagedUser,
