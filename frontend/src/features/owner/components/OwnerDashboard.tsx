@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Building2, LoaderCircle, Save, ShieldCheck, UserRound, UserRoundCheck, Users } from "lucide-react";
+import { Building2, ShieldCheck, UserRoundCheck, Users } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { OwnerPropertiesPanel } from "./OwnerPropertiesPanel";
 import { useOwnerProfile } from "../hooks/useOwnerProfile";
+import { OwnerProfilePanel } from "./OwnerProfilePanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -64,21 +65,21 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
         <SummaryCard icon={<ShieldCheck className="h-5 w-5" />} label="دسترسی‌ها" value="کنترل سرورمحور" />
       </div>
 
-      <section hidden={selectedTool !== "profile"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex items-center gap-2"><UserRound className="h-5 w-5 text-[#043873]" /><h2 className="text-lg font-bold">اطلاعات مالک</h2></div>
-        {loadingProfile ? <p className="mt-4 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" />در حال دریافت پروفایل...</p> : profile ? (
-          <form onSubmit={saveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">
-            <p className="sm:col-span-2 text-sm text-slate-600">شماره موبایل: <span dir="ltr" className="font-semibold">{profile.user?.mobile ?? user.mobile}</span></p>
-            <label className="space-y-1 text-sm font-medium">نام<input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={firstName} onChange={(e) => setFirstName(e.target.value)} required /></label>
-            <label className="space-y-1 text-sm font-medium">نام خانوادگی<input className="w-full rounded-xl border border-slate-300 px-3 py-2.5" value={lastName} onChange={(e) => setLastName(e.target.value)} required /></label>
-            <div className="sm:col-span-2"><button type="submit" disabled={savingProfile} className="inline-flex items-center gap-2 rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white disabled:opacity-60">{savingProfile ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}ذخیرهٔ پروفایل</button></div>
-          </form>
-        ) : (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">{profileError || "پروفایل در دسترس نیست."}</div>
-        )}
-        {message && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
-        {profileError && profile && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{profileError}</p>}
-      </section>
+      <div hidden={selectedTool !== "profile"}>
+        <OwnerProfilePanel
+          profile={profile}
+          mobile={user.mobile}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          loading={loadingProfile}
+          saving={savingProfile}
+          error={profileError}
+          message={message}
+          onSubmit={saveProfile}
+        />
+      </div>
 
       <section hidden={selectedTool !== "agent-access"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2"><Users className="h-5 w-5 text-[#043873]" /><h2 className="text-lg font-bold">تأیید یا لغو دسترسی مشاور برای یک ملک</h2></div>
