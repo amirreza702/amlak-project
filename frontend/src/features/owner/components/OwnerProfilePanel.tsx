@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import { LoaderCircle, Save, UserRound } from "lucide-react";
-import type { OwnerProfile } from "../hooks/useOwnerProfile";
+import type { OwnerProfile } from "../api/ownerApi";
 
 interface OwnerProfilePanelProps {
   profile: OwnerProfile | null;
