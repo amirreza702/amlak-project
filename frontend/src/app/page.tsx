@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { HomeHeader } from "@/shared/components/HomeHeader";
 import { HomeSearchButton } from "@/shared/components/HomeSearchButton";
@@ -26,8 +28,20 @@ const RealMap = dynamic(
   }
 );
 
+const HOME_LOADING_DURATION_MS = 1800;
+
 export default function Page() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setIsLoading(false),
+      HOME_LOADING_DURATION_MS
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   return (
     <div
@@ -40,6 +54,50 @@ export default function Page() {
         bg-slate-100
       "
     >
+      {isLoading && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label="در حال بارگذاری هشتی"
+          className="
+            fixed
+            inset-0
+            z-[3000]
+            flex
+            flex-col
+            items-center
+            justify-center
+            gap-5
+            bg-white
+            transition-opacity
+          "
+        >
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-[2rem] bg-white p-3 shadow-xl ring-1 ring-slate-100">
+            <Image
+              src="/hashti-logo.png"
+              alt="لوگوی هشتی"
+              width={88}
+              height={88}
+              priority
+              className="h-full w-full object-contain"
+            />
+          </div>
+
+          <div className="text-center">
+            <p className="text-2xl font-black tracking-tight text-[#043873]">
+              هشتی
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              سامانه شفاف معاملات ملک
+            </p>
+          </div>
+
+          <div className="h-1.5 w-36 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-[#043873]" />
+          </div>
+        </div>
+      )}
+
       {/* ======================================================
           نقشه پس‌زمینه Home
           ====================================================== */}
@@ -52,7 +110,6 @@ export default function Page() {
           select-none
         "
       >
-        {/* خود نقشه */}
         <div
           className="
             absolute
@@ -64,7 +121,6 @@ export default function Page() {
           <RealMap />
         </div>
 
-        {/* لایه سفید برای کم‌رنگ‌تر کردن نقشه */}
         <div
           className="
             pointer-events-none
@@ -112,7 +168,6 @@ export default function Page() {
               lg:max-w-5xl
             "
           >
-            {/* عنوان Home */}
             <div
               className="
                 mb-6
@@ -146,7 +201,6 @@ export default function Page() {
               </h2>
             </div>
 
-            {/* پنل اصلی */}
             <div
               className="
                 rounded-2xl
@@ -171,14 +225,12 @@ export default function Page() {
               </div>
             </div>
 
-            {/* پیام اعتماد */}
             <div className="mt-4 pb-12">
               <HomeTrustMessage />
             </div>
           </div>
         </main>
       </div>
-
     </div>
   );
 }
