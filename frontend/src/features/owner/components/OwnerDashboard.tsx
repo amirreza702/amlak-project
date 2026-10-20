@@ -22,7 +22,6 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function OwnerDashboard({ user }: { user: UserPublic }) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -38,39 +37,34 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
 
   useEffect(() => {
     let active = true;
-    const id = window.sessionStorage.getItem(`hashti:ownerProfileId:${user.mobile}`);
-    setProfileId(id);
-    if (!id) {
-      setLoadingProfile(false);
-      setProfileError("شناسهٔ پروفایل مالک در مرورگر ذخیره نیست. حساب قابل ورود است، اما API فعلی پروفایل مالک را از نشست جاری پیدا نمی‌کند.");
-      return;
-    }
+    setLoadingProfile(true);
+    setProfileError(null);
+
     (async () => {
       try {
-        const result = await requestJson<OwnerProfile>(`/owners/${encodeURIComponent(id)}/profile`);
+        const result = await requestJson<OwnerProfile>("/owners/me/profile");
         if (!active) return;
         setProfile(result);
         setFirstName(result.firstName);
         setLastName(result.lastName);
-        setProfileError(null);
       } catch (error: unknown) {
         if (active) setProfileError(error instanceof Error ? error.message : "دریافت پروفایل مالک انجام نشد.");
       } finally {
         if (active) setLoadingProfile(false);
       }
     })();
+
     return () => { active = false; };
   }, [user.mobile]);
 
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!profileId) return;
     setSavingProfile(true);
     setProfileError(null);
     setMessage(null);
     try {
       const result = await requestJson<{ id: string; firstName: string; lastName: string }>(
-        `/owners/${encodeURIComponent(profileId)}/profile`,
+        "/owners/me/profile",
         { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim() }) }
       );
       setProfile((current) => current ? { ...current, firstName: result.firstName, lastName: result.lastName } : current);
