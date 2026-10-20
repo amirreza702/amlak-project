@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getCurrentUser } from "@/features/auth/api/authApi";
+import { useAdminHomeAccess } from "@/features/admin/hooks/useAdminHomeAccess";
 
 const panels = [
   { href: "/admin/users", title: "کاربران", description: "فهرست حساب‌ها، جست‌وجو، نقش، وضعیت و جزئیات" },
@@ -12,8 +11,7 @@ const panels = [
 ];
 
 export default function AdminHomePage() {
-  const [error, setError] = useState("");
-  useEffect(() => { getCurrentUser().then(user => { if (user.role !== "HASHTI") setError("دسترسی کارکنان هشتی لازم است."); }).catch(() => setError("ابتدا وارد حساب مدیریتی شوید.")); }, []);
+  const error = useAdminHomeAccess();
   return <main dir="rtl" className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 sm:px-8"><div className="mx-auto max-w-6xl space-y-6">
     <header className="border-b border-slate-200 pb-5"><p className="text-sm font-semibold text-amber-700">هشتی / مرکز مدیریت</p><h1 className="mt-1 text-3xl font-black">مدیر ارشد هشتی</h1><p className="mt-2 text-sm text-slate-600">مدیریت حساب‌ها، پروفایل‌ها، اشتراک‌ها و سوابق با مجوزهای کنترل‌شده در بک‌اند</p></header>
     {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
