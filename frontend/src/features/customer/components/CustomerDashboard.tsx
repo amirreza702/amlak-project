@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Bell,
   Check,
@@ -17,28 +17,19 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { AUTH_STATE_CHANGE_EVENT, getCurrentUser, type UserPublic } from "@/features/auth/api/authApi";
+import { useCustomerDashboardData } from "../hooks/useCustomerDashboardData";
 import { useCustomerRequestFilters } from "../hooks/useCustomerRequestFilters";
-import { getCurrentCustomerProfile } from "../api/customerSearchRequestApi";
 import type {
-  CustomerProfileForRequest,
   CustomerRequestPropertyType,
   CustomerRequestTransactionType,
 } from "../types/customerSearchRequest";
 import {
   closeCustomerSearchRequest,
-  getCustomerFavorites,
-  getCustomerSearchRequests,
-  getPublicProperty,
   removeCustomerFavorite,
   updateCustomerProfile,
   updateCustomerSearchRequest,
-  type CustomerFavoriteRecord,
-  type CustomerSearchRequestRecord,
-  type PublicPropertyRecord,
 } from "../api/customerDashboardApi";
 import {
-  getUserNotifications,
   markUserNotificationAsRead,
   type UserNotification,
 } from "@/features/notification/api/notificationApi";
@@ -79,20 +70,13 @@ function propertyLabel(value: string): string {
 
 export function CustomerDashboard() {
   const [tab, setTab] = useState<DashboardTab | null>(null);
-  const [user, setUser] = useState<UserPublic | null>(null);
-  const [profile, setProfile] = useState<CustomerProfileForRequest | null>(null);
-  const [requests, setRequests] = useState<CustomerSearchRequestRecord[]>([]);
-  const [favorites, setFavorites] = useState<Array<CustomerFavoriteRecord & { property: PublicPropertyRecord | null }>>([]);
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({ city: "", budget: "", description: "", transactionType: "SALE" as CustomerRequestTransactionType, propertyType: "APARTMENT" as CustomerRequestPropertyType });
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const {
+    user, profile, setProfile, requests, setRequests, favorites, notifications,
+    loading, pageError, setPageError, actionMessage, setActionMessage,
+    actionError, setActionError, busyId, setBusyId, editingId, setEditingId,
+    editValues, setEditValues, firstName, setFirstName, lastName, setLastName, refreshData,
+  } = useCustomerDashboardData();
+
   const {
     filteredRequests,
     requestSearch, setRequestSearch,
@@ -104,96 +88,6 @@ export function CustomerDashboard() {
     requestBudgetMax, setRequestBudgetMax,
     resetRequestFilters,
   } = useCustomerRequestFilters(requests);
-
-  const refreshData = useCallback(async (customer: CustomerProfileForRequest, authenticatedUser: UserPublic) => {
-    const [requestsResult, favoritesResult, notificationsResult] = await Promise.allSettled([
-      getCustomerSearchRequests(customer.id),
-      getCustomerFavorites(customer.id),
-      getUserNotifications(authenticatedUser.id),
-    ]);
-
-    if (requestsResult.status === "fulfilled") setRequests(requestsResult.value);
-    else setActionError(requestsResult.reason instanceof Error ? requestsResult.reason.message : "دریافت درخواست‌ها انجام نشد.");
-
-    if (favoritesResult.status === "fulfilled") {
-      const favoriteRecords = favoritesResult.value;
-      const enriched = await Promise.all(favoriteRecords.map(async (favorite) => {
-        try {
-          return { ...favorite, property: await getPublicProperty(favorite.propertyId) };
-        } catch {
-          return { ...favorite, property: null };
-        }
-      }));
-      setFavorites(enriched);
-    } else {
-      setActionError(favoritesResult.reason instanceof Error ? favoritesResult.reason.message : "دریافت علاقه‌مندی‌ها انجام نشد.");
-    }
-
-    if (notificationsResult.status === "fulfilled") setNotifications(notificationsResult.value);
-    else setNotifications([]);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const authenticatedUser = await getCurrentUser();
-        if (authenticatedUser.role !== "CUSTOMER") {
-          throw new Error("این صفحه فقط برای حساب مشتری در دسترس است.");
-        }
-        const customerProfile = await getCurrentCustomerProfile();
-        if (!active) return;
-        setUser(authenticatedUser);
-        setProfile(customerProfile);
-        setFirstName(customerProfile.firstName);
-        setLastName(customerProfile.lastName);
-        await refreshData(customerProfile, authenticatedUser);
-      } catch (error: unknown) {
-        if (active) setPageError(error instanceof Error ? error.message : "دریافت پنل مشتری انجام نشد.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => { active = false; };
-  }, [refreshData]);
-
-  // پاک‌سازی اطلاعات خصوصی صفحه وقتی نشست سراسری خروج کند یا نقش عوض شود.
-  useEffect(() => {
-    let active = true;
-
-    const handleAuthStateChange = async () => {
-      try {
-        const authenticatedUser = await getCurrentUser();
-        if (authenticatedUser.role !== "CUSTOMER") {
-          throw new Error("این صفحه فقط برای حساب مشتری در دسترس است.");
-        }
-        const customerProfile = await getCurrentCustomerProfile();
-        if (!active) return;
-        setUser(authenticatedUser);
-        setProfile(customerProfile);
-        setFirstName(customerProfile.firstName);
-        setLastName(customerProfile.lastName);
-        setPageError(null);
-        await refreshData(customerProfile, authenticatedUser);
-      } catch {
-        if (!active) return;
-        setUser(null);
-        setProfile(null);
-        setRequests([]);
-        setFavorites([]);
-        setNotifications([]);
-        setEditingId(null);
-        setPageError("برای مشاهدهٔ پنل، با حساب مشتری وارد شوید.");
-        setLoading(false);
-      }
-    };
-
-    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
-    return () => {
-      active = false;
-      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
-    };
-  }, [refreshData]);
 
   const activeCount = useMemo(() => requests.filter((request) => request.status === "ACTIVE").length, [requests]);
   const unreadCount = useMemo(() => notifications.filter((notification) => !notification.isRead).length, [notifications]);
