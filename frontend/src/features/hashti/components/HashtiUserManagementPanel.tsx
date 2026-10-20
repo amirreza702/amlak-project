@@ -3,32 +3,15 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, Clock3, LoaderCircle, RefreshCw, Search, ShieldCheck, UserRoundCog } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-type Role = "CUSTOMER" | "OWNER" | "AGENT" | "HASHTI";
-type ProfileType = "customer" | "owner" | "agent" | "hashti";
-interface ProfileName { id: string; firstName: string; lastName: string; }
-interface ManagedUser {
-  id: string; mobile: string; role: Role; isActive: boolean; isSuperAdmin: boolean; createdAt: string; updatedAt: string;
-  customer: ProfileName | null;
-  owner: ProfileName | null;
-  agent: (ProfileName & { agencyName: string | null; address: string | null; isVerified: boolean; verificationStatus: "PENDING" | "VERIFIED" | "REJECTED"; verificationReviewedAt: string | null; verificationNotes: string | null }) | null;
-  staffProfile: { id: string; mobile: string; firstName: string; lastName: string; isActive: boolean } | null;
-}
-interface AuditLog {
-  id: string; actorMobile: string | null; actorRole: string | null; action: string; targetType: string;
-  targetId: string | null; details: unknown; createdAt: string;
-}
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) {
-    const message = body.message || "Request failed.";
-    if (message === "Authentication required") throw new Error("برای استفاده از پنل دوباره وارد شوید.");
-    if (message === "Super-admin permission required") throw new Error("این بخش فقط در اختیار مدیر ارشد هشتی است.");
-    throw new Error(message);
-  }
-  return body as T;
-}
+import { hashtiManagementRequest as requestJson } from "../api/hashtiUserManagementApi";
+import type {
+  HashtiAuditLog as AuditLog,
+  HashtiManagedProfile as ManagedProfile,
+  HashtiManagedProfileType as ProfileType,
+  HashtiManagedRole as Role,
+  HashtiManagedUser as ManagedUser,
+} from "../types/hashtiUserManagement";
+
 function displayName(user: ManagedUser) {
   const profile = user.agent ?? user.owner ?? user.customer ?? user.staffProfile;
   return profile ? `${profile.firstName} ${profile.lastName}` : "نام ثبت نشده";
