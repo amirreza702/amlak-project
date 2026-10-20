@@ -47,8 +47,6 @@ export function useRoleAccountAuth(role: AccountPortalRole) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const syncSession = useCallback(async () => {
     try {
@@ -157,22 +155,6 @@ export function useRoleAccountAuth(role: AccountPortalRole) {
     }
   };
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    setLogoutError(null);
-    try {
-      await logoutUser();
-      setCurrentUser(null);
-      setSuccessMessage(null);
-      setAuthError(null);
-      setAuthMode("login");
-    } catch (error: unknown) {
-      setLogoutError(error instanceof Error ? error.message : "خروج از حساب انجام نشد.");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   const changeMode = (mode: AuthMode) => {
     setAuthMode(mode);
     setAuthError(null);
@@ -185,8 +167,7 @@ export function useRoleAccountAuth(role: AccountPortalRole) {
     authMode, setAuthMode, mobile, setMobile, password, setPassword,
     firstName, setFirstName, lastName, setLastName, currentUser, setCurrentUser,
     isCheckingSession, setIsCheckingSession, isSubmitting, setIsSubmitting,
-    authError, setAuthError, successMessage, setSuccessMessage, logoutError,
-    setLogoutError, isLoggingOut, setIsLoggingOut, syncSession, handleSubmit,
-    handleLogout, changeMode, isAuthenticatedForThisRole,
+    authError, setAuthError, successMessage, setSuccessMessage, syncSession,
+    handleSubmit, changeMode, isAuthenticatedForThisRole,
   };
 }
