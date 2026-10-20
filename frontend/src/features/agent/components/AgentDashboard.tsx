@@ -5,72 +5,8 @@ import { BadgeCheck, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Sa
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { useAgentRequestFilters } from "../hooks/useAgentRequestFilters";
+import { agentApiRequest as requestJson } from "../api/agentApi";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-
-interface AgentProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  agencyName: string | null;
-  address: string | null;
-  isVerified: boolean;
-  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
-  verificationReviewedAt: string | null;
-  verificationNotes: string | null;
-}
-interface ActiveRequest {
-  id: string;
-  transactionType: string;
-  propertyType: string;
-  city: string;
-  budget: string | number | null;
-  description: string | null;
-  hashtiVerified: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-interface ContactResult {
-  customer: { id: string; firstName: string; lastName: string; mobile: string };
-}
-
-interface SubscriptionPlan {
-  id: string;
-  code: string;
-  name: string;
-  level: number;
-  monthlyContactLimit: number;
-}
-interface ActiveAgentSubscription {
-  id: string;
-  status: string;
-  startsAt: string;
-  expiresAt: string | null;
-  plan: SubscriptionPlan;
-}
-interface AgentContactUsage {
-  periodStart: string;
-  usedCount: number;
-  monthlyLimit: number;
-  remainingCount: number;
-  hasActiveSubscription: boolean;
-  subscriptionPlan: { id: string; code: string; name: string; level: number } | null;
-}
-
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) {
-    const msg = body.message || "درخواست به سرور ناموفق بود.";
-    if (msg === "Active subscription not found") throw new Error("برای مشاهدهٔ اطلاعات تماس، اشتراک فعال لازم است.");
-    if (msg === "Monthly contact access limit reached") throw new Error("سقف ماهانهٔ مشاهدهٔ اطلاعات تماس مصرف شده است.");
-    if (msg === "You do not have permission to access this resource") throw new Error("برای این عملیات مجوز ندارید.");
-    if (msg === "Session is invalid or expired") throw new Error("نشست شما منقضی شده است؛ دوباره وارد شوید.");
-    throw new Error(msg);
-  }
-  return body as T;
-}
 
 function displayMoney(value: string | number | null) {
   if (value === null || value === "") return "تعیین نشده";
