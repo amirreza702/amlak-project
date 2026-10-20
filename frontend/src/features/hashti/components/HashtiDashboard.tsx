@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
-import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
+import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
 import { HashtiPropertyAdminToolsPanel } from "./HashtiPropertyAdminToolsPanel";
