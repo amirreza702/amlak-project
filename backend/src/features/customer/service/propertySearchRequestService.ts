@@ -385,8 +385,38 @@ export const updateCustomerSearchRequest = async (
  * اطلاعات تماس مشتری در این مرحله برگردانده نمی‌شود.
  */
 export const getActivePropertySearchRequests =
-  async () => {
-    return findActivePropertySearchRequests();
+  async (filters: {
+    city?: string; transactionType?: string; propertyType?: string;
+    minBudget?: string; maxBudget?: string; hashtiVerified?: string;
+    createdFrom?: string; createdTo?: string;
+  } = {}) => {
+    const transactionTypes = ["SALE", "FULL_DEPOSIT", "RENT"];
+    const propertyTypes = ["APARTMENT", "HOUSE", "VILLA", "LAND", "SHOP", "OFFICE", "GARDEN"];
+    if (filters.transactionType && !transactionTypes.includes(filters.transactionType)) throw new Error("Invalid transaction type filter");
+    if (filters.propertyType && !propertyTypes.includes(filters.propertyType)) throw new Error("Invalid property type filter");
+    const parseAmount = (value: string | undefined, label: string) => {
+      if (value === undefined || value.trim() === "") return undefined;
+      const amount = Number(value);
+      if (!Number.isFinite(amount) || amount < 0) throw new Error(`Invalid ${label} filter`);
+      return amount;
+    };
+    const minBudget = parseAmount(filters.minBudget, "minimum budget");
+    const maxBudget = parseAmount(filters.maxBudget, "maximum budget");
+    if (minBudget !== undefined && maxBudget !== undefined && minBudget > maxBudget) throw new Error("Minimum budget cannot exceed maximum budget");
+    const parseDate = (value: string | undefined, label: string) => {
+      if (!value) return undefined;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) throw new Error(`Invalid ${label} date`);
+      return date;
+    };
+    const createdFrom = parseDate(filters.createdFrom, "start");
+    const createdTo = parseDate(filters.createdTo, "end");
+    if (createdFrom && createdTo && createdFrom > createdTo) throw new Error("Start date cannot exceed end date");
+    let hashtiVerified: boolean | undefined;
+    if (filters.hashtiVerified === "true") hashtiVerified = true;
+    else if (filters.hashtiVerified === "false") hashtiVerified = false;
+    else if (filters.hashtiVerified && filters.hashtiVerified !== "all") throw new Error("Invalid verification filter");
+    return findActivePropertySearchRequests({ city: filters.city?.trim() || undefined, transactionType: filters.transactionType, propertyType: filters.propertyType, minBudget, maxBudget, hashtiVerified, createdFrom, createdTo });
   };
 
   /**
