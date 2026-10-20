@@ -63,21 +63,27 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
       <section className={role === "HASHTI" ? "w-full max-w-none px-0 py-4" : "mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12"}>
-        <div className="mb-6">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
-            {role === "OWNER" ? (
-              <Building2 className="h-6 w-6" />
-            ) : role === "AGENT" ? (
-              <BriefcaseBusiness className="h-6 w-6" />
-            ) : (
-              <ShieldCheck className="h-6 w-6" />
-            )}
-          </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            {role === "HASHTI" ? "پنل هشتی" : copy.heading}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{copy.description}</p>
-        </div>
+        {!hasSelectedTool && (
+  <div className="mb-6">
+    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
+      {role === "OWNER" ? (
+        <Building2 className="h-6 w-6" />
+      ) : role === "AGENT" ? (
+        <BriefcaseBusiness className="h-6 w-6" />
+      ) : (
+        <ShieldCheck className="h-6 w-6" />
+      )}
+    </div>
+
+    <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+      {role === "HASHTI" ? "پنل هشتی" : copy.heading}
+    </h1>
+
+    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+      {copy.description}
+    </p>
+  </div>
+)}
 
         {isCheckingSession ? (
           <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
