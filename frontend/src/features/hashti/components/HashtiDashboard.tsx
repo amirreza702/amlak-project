@@ -12,114 +12,14 @@ import {
   XCircle,
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
+import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ManagedAgent, AdminSubscriptionPlan, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
+import { requestJson } from "@/features/hashti/api/hashtiApi";
 import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
 import { HashtiPropertyAdminToolsPanel } from "./HashtiPropertyAdminToolsPanel";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-interface DuplicateMatch {
-  property: {
-    id: string;
-    propertyType: string;
-    city: string;
-    district: string;
-    area: number | null;
-    rooms: number | null;
-    registrationSource?: string;
-  };
-  distanceMeters: number;
-  similarityScore: number;
-}
-interface DuplicateReview {
-  id: string;
-  primaryPropertyId: string;
-  candidatePropertyId: string;
-  similarityScore: number;
-  decision: "SAME_PROPERTY" | "DIFFERENT_PROPERTY" | null;
-  notes: string | null;
-  createdAt: string;
-  reviewedAt: string | null;
-}
-interface ExactLocationLog {
-  id: string;
-  userId: string;
-  propertyId: string;
-  reason: string | null;
-  accessedAt: string;
-  user?: { mobile?: string; role?: string };
-}
-
-interface ManagedAgent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  agencyName: string | null;
-  address: string | null;
-  isVerified: boolean;
-  verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
-  verificationReviewedAt: string | null;
-  verificationNotes: string | null;
-  verificationReviewedBy: string | null;
-  user: { id: string; mobile: string; isActive: boolean; createdAt: string };
-  subscription: {
-    id: string;
-    status: string;
-    startsAt: string;
-    expiresAt: string | null;
-    subscriptionPlan: { id: string; code: string; name: string; level: number; monthlyContactLimit: number };
-  } | null;
-  usage: {
-    periodStart: string;
-    usedCount: number;
-    monthlyLimit: number;
-    remainingCount: number;
-    hasActiveSubscription: boolean;
-  };
-}
-
-interface AdminSubscriptionPlan {
-  id: string;
-  code: string;
-  name: string;
-  level: number;
-  monthlyContactLimit: number;
-}
-interface ContactAccessAuditLog {
-  id: string;
-  accessedAt: string;
-  agent: { id: string; firstName: string; lastName: string; agencyName: string | null; user: { mobile: string } };
-  customer: { id: string; firstName: string; lastName: string; user: { mobile: string } };
-  searchRequest: { id: string; city: string; transactionType: string; propertyType: string; status: string };
-}
-
-interface AdminAuditLog {
-  id: string;
-  actorUserId: string | null;
-  actorMobile: string | null;
-  actorRole: string | null;
-  action: string;
-  targetType: string;
-  targetId: string | null;
-  details: unknown;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: string;
-}
-
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) {
-    const message = body.message || "درخواست به سرور ناموفق بود.";
-    if (message === "Authentication required") throw new Error("برای استفاده از پنل هشتی دوباره وارد شوید.");
-    if (message === "You do not have permission to access this resource") throw new Error("این عملیات فقط برای تیم هشتی مجاز است.");
-    if (message === "Session is invalid or expired") throw new Error("نشست منقضی شده است؛ دوباره وارد شوید.");
-    throw new Error(message);
-  }
-  return body as T;
-}
 
 function scoreLabel(value: number) {
   return `${Math.round(value * 100)}٪`;
