@@ -48,28 +48,12 @@ export function PropertySearchPage() {
       "
     >
 
-      ```tsx
-<div
-  className="
-    absolute
-    bottom-5
-    right-4
-    z-[1000]
-    flex
-    h-10
-    items-center
-    rounded-xl
-    bg-white
-    px-4
-    text-sm
-    font-medium
-    text-slate-700
-    shadow-lg
-  "
->
-  نتایج: {results.length}
-</div>
-```
+      <div
+        aria-live="polite"
+        className="absolute bottom-5 right-4 z-[1000] flex h-10 items-center rounded-xl bg-white px-4 text-sm font-medium text-slate-700 shadow-lg"
+      >
+        نتایج: {results.length}
+      </div>
 
 
       <SearchMap
