@@ -13,6 +13,7 @@ import {
   Home,
   LoaderCircle,
   LogIn,
+  LogOut,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
+  logoutUser,
   registerUser,
   type UserPublic,
   type UserRole,
@@ -96,6 +98,8 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const syncSession = useCallback(async () => {
     try {
@@ -204,6 +208,22 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
     }
   };
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    try {
+      await logoutUser();
+      setCurrentUser(null);
+      setSuccessMessage(null);
+      setAuthError(null);
+      setAuthMode("login");
+    } catch (error: unknown) {
+      setLogoutError(error instanceof Error ? error.message : "خروج از حساب انجام نشد.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const changeMode = (mode: AuthMode) => {
     setAuthMode(mode);
     setAuthError(null);
@@ -238,6 +258,16 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
           </div>
         ) : isAuthenticatedForThisRole && currentUser ? (
           <div className="space-y-5">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Link href="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                <Home className="h-4 w-4" /> صفحه اصلی
+              </Link>
+              <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
+                {isLoggingOut ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+                {isLoggingOut ? "در حال خروج..." : "خروج از حساب"}
+              </button>
+            </div>
+            {logoutError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{logoutError}</p>}
             <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
@@ -249,9 +279,6 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
                   <p className="mt-1 text-xs text-slate-500">حساب فعال: <span dir="ltr">{currentUser.mobile}</span></p>
                 </div>
               </div>
-              <Link href="/" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#043873] underline">
-                <Home className="h-4 w-4" /> بازگشت به صفحه اصلی
-              </Link>
             </section>
             {role === "OWNER" && <OwnerDashboard user={currentUser} />}
             {role === "AGENT" && <AgentDashboard user={currentUser} />}
