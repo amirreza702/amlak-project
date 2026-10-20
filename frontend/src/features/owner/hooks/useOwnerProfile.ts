@@ -1,26 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-
-export interface OwnerProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  user?: { mobile: string };
-}
-
-async function requestOwnerJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    credentials: "include",
-    cache: "no-store",
-    ...init,
-  });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) throw new Error(body.message || "درخواست به سرور ناموفق بود.");
-  return body as T;
-}
+import { ownerApiRequest, type OwnerProfile } from "../api/ownerApi";
 
 /** منطق دریافت و ویرایش پروفایل مالک، مستقل از رابط کاربری پنل. */
 export function useOwnerProfile(mobile: string) {
@@ -36,7 +17,7 @@ export function useOwnerProfile(mobile: string) {
     setLoadingProfile(true);
     setProfileError(null);
     try {
-      const result = await requestOwnerJson<OwnerProfile>("/owners/me/profile");
+      const result = await ownerApiRequest<OwnerProfile>("/owners/me/profile");
       setProfile(result);
       setFirstName(result.firstName);
       setLastName(result.lastName);
