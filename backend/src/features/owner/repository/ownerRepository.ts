@@ -63,6 +63,22 @@ export const findOwnerProfileById = async (
 };
 
 /**
+ * دریافت پروفایل مالک از شناسه حساب کاربری نشست جاری.
+ * شناسه پروفایل از مرورگر دریافت نمی‌شود.
+ */
+export const findOwnerProfileByUserId = async (userId: string) => {
+  return prisma.owner.findUnique({
+    where: { userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      user: { select: { mobile: true } },
+    },
+  });
+};
+
+/**
  * ------------------------------------------------------------
  * ویرایش اطلاعات Profile مالک
  * ------------------------------------------------------------
