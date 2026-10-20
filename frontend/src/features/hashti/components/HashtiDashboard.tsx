@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
+import type { DuplicateReview } from "@/features/hashti/types/hashti";
+import { useHashtiDuplicateReview } from "@/features/hashti/hooks/useHashtiDuplicateReview";
 
 import { useHashtiSecurityOperations } from "@/features/hashti/hooks/useHashtiSecurityOperations";
 import { useHashtiAgentManagement } from "@/features/hashti/hooks/useHashtiAgentManagement";
