@@ -100,6 +100,8 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
   const [requests, setRequests] = useState<ActiveRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [requestSearch, setRequestSearch] = useState("");
+  const [requestFilter, setRequestFilter] = useState("all");
   const [contacts, setContacts] = useState<Record<string, ContactResult["customer"]>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -183,6 +185,11 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
 
     return () => { active = false; };
   }, [profileId]);
+
+  const visibleRequests = requests.filter((request) => {
+    const text = `${request.city} ${request.transactionType} ${request.propertyType} ${request.description ?? ""} ${request.id}`.toLocaleLowerCase();
+    return text.includes(requestSearch.trim().toLocaleLowerCase()) && (requestFilter === "all" || (requestFilter === "verified" ? request.hashtiVerified : !request.hashtiVerified));
+  });
 
   const loadRequests = useCallback(async () => {
     setLoadingRequests(true);
@@ -392,7 +399,7 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
           <section hidden={selectedTool !== "requests"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold">درخواست‌های فعال مشتریان</h2>
+                <h2 className="text-lg font-bold">درخواست‌های فعال مشتریان و مالکان</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">اطلاعات تماس تا زمان درخواست و تأیید دسترسی نمایش داده نمی‌شود.</p>
               </div>
               <button type="button" onClick={() => void loadRequests()} disabled={loadingRequests} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">
@@ -401,13 +408,16 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
             </div>
             {requestsError && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{requestsError}</p>}
             {actionMessage && <p role="status" className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{actionMessage}</p>}
+            {!loadingRequests && requests.length > 0 && <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]"><input aria-label="جست‌وجوی درخواست" value={requestSearch} onChange={(event) => setRequestSearch(event.target.value)} placeholder="جست‌وجوی شهر، نوع ملک، توضیحات یا کد..." className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-[#043873]" /><select aria-label="فیلتر بررسی هشتی" value={requestFilter} onChange={(event) => setRequestFilter(event.target.value)} className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm"><option value="all">همه درخواست‌ها</option><option value="verified">بررسی‌شده توسط هشتی</option><option value="pending">در انتظار بررسی هشتی</option></select></div>}
             {loadingRequests ? (
               <div className="mt-5 flex items-center gap-2 text-sm text-slate-500"><LoaderCircle className="h-4 w-4 animate-spin" />در حال دریافت درخواست‌ها...</div>
             ) : requests.length === 0 ? (
               <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">در حال حاضر درخواست فعالی وجود ندارد.</p>
+            ) : visibleRequests.length === 0 ? (
+              <p className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">درخواستی با این جست‌وجو و فیلتر پیدا نشد.</p>
             ) : (
               <div className="mt-4 space-y-3">
-                {requests.map((request) => (
+                {visibleRequests.map((request) => (
                   <article key={request.id} className="rounded-xl border border-slate-200 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
