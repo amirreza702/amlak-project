@@ -76,8 +76,8 @@ export default function Page() {
             <Image
               src="/hashti-logo.png"
               alt="لوگوی هشتی"
-              width={300}
-              height={300}
+              width={600}
+              height={600}
               priority
               className="h-full w-full object-contain"
             />
