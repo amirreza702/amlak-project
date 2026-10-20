@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Building2, LoaderCircle, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { ownerApiRequest } from "../api/ownerApi";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 interface OwnerProperty {
   propertyId: string; share: number; isPrimary: boolean;
   verificationStatus: "PENDING" | "VERIFIED" | "REJECTED";
@@ -64,9 +64,7 @@ export function OwnerPropertiesPanel({ user, mode = "properties" }: { user: { mo
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_URL}/owners/me/properties`, { credentials: "include", cache: "no-store" });
-        const body = await response.json().catch(() => ({})) as { message?: string; properties?: OwnerProperty[] };
-        if (!response.ok) throw new Error(body.message || "دریافت املاک مالک ناموفق بود.");
+        const body = await ownerApiRequest<{ properties?: OwnerProperty[] }>("/owners/me/properties");
         if (active) setProperties(body.properties ?? []);
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "دریافت املاک مالک ناموفق بود.");
