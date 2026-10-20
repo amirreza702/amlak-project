@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
+  AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
   logoutUser,
@@ -33,6 +34,15 @@ export function useCurrentAgent() {
 
   useEffect(() => {
     void fetchUser();
+
+    const handleAuthStateChange = () => {
+      void fetchUser();
+    };
+
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    return () => {
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, handleAuthStateChange);
+    };
   }, [fetchUser]);
 
   // ورود و به‌روزرسانی وضعیت با کاربر واقعی پاسخ بک‌اند
