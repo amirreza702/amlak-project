@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { AgentDashboard } from "@/features/agent/components/AgentDashboard";
 import { OwnerDashboard } from "@/features/owner/components/OwnerDashboard";
 import { HashtiDashboard } from "@/features/hashti/components/HashtiDashboard";
@@ -10,10 +8,8 @@ import {
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
-  Home,
   LoaderCircle,
   LogIn,
-  LogOut,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
@@ -59,7 +55,7 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
   const {
     authMode, mobile, setMobile, password, setPassword, firstName, setFirstName,
     lastName, setLastName, currentUser, isCheckingSession, isSubmitting, authError,
-    successMessage, logoutError, isLoggingOut, handleSubmit, handleLogout, changeMode,
+    successMessage, handleSubmit, changeMode,
     isAuthenticatedForThisRole,
   } = useRoleAccountAuth(role);
 
@@ -89,17 +85,10 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
           </div>
         ) : isAuthenticatedForThisRole && currentUser ? (
           <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Link href="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                <Home className="h-4 w-4" /> صفحه اصلی
-              </Link>
-              <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
-                {isLoggingOut ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-                {isLoggingOut ? "در حال خروج..." : "خروج از حساب"}
-              </button>
-            </div>
-            {logoutError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{logoutError}</p>}
-            <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
+            <p className="text-sm text-slate-600">
+              برای رفتن به صفحهٔ اصلی یا خروج از حساب، از دکمه‌های سراسری بالای صفحه استفاده کنید.
+            </p>
+                        <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                   <CheckCircle2 className="h-6 w-6" />
