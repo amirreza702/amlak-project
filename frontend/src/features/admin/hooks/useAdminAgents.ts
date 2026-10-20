@@ -109,7 +109,7 @@ export function useAdminAgents() {
     items, plans, searchInput, setSearchInput, search, setSearch, active, setActive, verified, setVerified,
     subscriptionStatus, setSubscriptionStatus, reason, setReason, planId, setPlanId, startsAt, setStartsAt,
     expiresAt, setExpiresAt, subscriptionAgent, setSubscriptionAgent, page, setPage, total, totalPages,
-    loading, error, history, historyAgent, profile, setProfile, editingProfile, setEditingProfile,
+    loading, error, history, setHistory, historyAgent, setHistoryAgent, profile, setProfile, editingProfile, setEditingProfile,
     editFirstName, setEditFirstName, editLastName, setEditLastName, editAgencyName, setEditAgencyName,
     editAddress, setEditAddress, editReason, setEditReason, load, verify, accountStatus, saveSubscription,
     showProfile, showHistory, beginProfileEdit, saveProfileEdit,
