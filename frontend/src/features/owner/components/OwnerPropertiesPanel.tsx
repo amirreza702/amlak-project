@@ -49,9 +49,7 @@ export function OwnerPropertiesPanel({ user, mode = "properties" }: { user: { mo
   const updateAgentAccess = async (propertyId: string, agentId: string, action: "approval" | "revoke") => {
     setBusyAgent(`${propertyId}:${agentId}`); setActionMessage(null); setActionError(null);
     try {
-      const response = await fetch(`${API_URL}/properties/${encodeURIComponent(propertyId)}/agents/${encodeURIComponent(agentId)}/${action}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-      const body = await response.json().catch(() => ({})) as { message?: string };
-      if (!response.ok) throw new Error(body.message || "تغییر دسترسی مشاور انجام نشد.");
+      await ownerApiRequest<{ message?: string }>(`/properties/${encodeURIComponent(propertyId)}/agents/${encodeURIComponent(agentId)}/${action}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       setActionMessage(action === "approval" ? "دسترسی مشاور تأیید شد." : "دسترسی مشاور لغو شد.");
       setReload((value) => value + 1);
     } catch (error) { setActionError(error instanceof Error ? error.message : "تغییر دسترسی مشاور انجام نشد."); }
