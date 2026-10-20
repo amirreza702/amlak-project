@@ -1,6 +1,5 @@
 "use client";
 
-import { getAdminUserDetails } from "@/features/admin/api/adminApi";
 import { type AdminUser, type UserRole } from "@/features/auth/api/authApi";
 import { useAdminUsers } from "@/features/admin/hooks/useAdminUsers";
 
@@ -14,7 +13,7 @@ export default function AdminUsersPage() {
   const {
     currentRole, currentUserId, users, searchInput, setSearchInput, reason, setReason,
     role, setRole, active, setActive, page, setPage, total, totalPages, loading, error,
-    selectedUser, setSelectedUser, submitSearch, changeUserStatus,
+    selectedUser, setSelectedUser, submitSearch, changeUserStatus, showUserDetails,
   } = useAdminUsers();
 
   return (
@@ -57,7 +56,7 @@ export default function AdminUsersPage() {
                 <tbody>{users.map(user => <tr key={user.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium">{profileName(user)}</td><td dir="ltr" className="px-4 py-3 text-right">{user.mobile}</td><td className="px-4 py-3">{roles[user.role]}</td>
                   <td className="px-4 py-3"><span className={user.isActive ? "rounded-md bg-emerald-50 px-2 py-1 text-emerald-800" : "rounded-md bg-red-50 px-2 py-1 text-red-800"}>{user.isActive ? "فعال" : "غیرفعال"}</span></td>
-                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td><td className="px-4 py-3"><button onClick={async () => { try { const result = await getAdminUserDetails(user.id); setSelectedUser(result.item); } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت جزئیات ناموفق بود."); } }} className="rounded-md border px-3 py-1.5">مشاهده</button></td><td className="px-4 py-3"><button disabled={loading || user.id === currentUserId || Boolean(user.isSuperAdmin)} onClick={() => void changeUserStatus(user)} className="rounded-md border px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-40">{user.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}</button></td>
+                  <td className="px-4 py-3">{user.agent ? (user.agent.isVerified ? "تأییدشده" : "تأییدنشده") : "—"}</td><td className="px-4 py-3 text-slate-600">{new Date(user.createdAt).toLocaleDateString("fa-IR")}</td><td className="px-4 py-3"><button onClick={() => void showUserDetails(user)} className="rounded-md border px-3 py-1.5">مشاهده</button></td><td className="px-4 py-3"><button disabled={loading || user.id === currentUserId || Boolean(user.isSuperAdmin)} onClick={() => void changeUserStatus(user)} className="rounded-md border px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-40">{user.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}</button></td>
                 </tr>)}</tbody>
               </table></div>
             )}
