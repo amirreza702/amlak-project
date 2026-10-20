@@ -28,7 +28,7 @@ const RealMap = dynamic(
   }
 );
 
-const HOME_LOADING_DURATION_MS = 1800;
+const HOME_LOADING_DURATION_MS = 800;
 
 export default function Page() {
   const router = useRouter();
@@ -72,29 +72,20 @@ export default function Page() {
             transition-opacity
           "
         >
-          <div className="relative flex h-24 w-24 items-center justify-center rounded-[2rem] bg-white p-3 shadow-xl ring-1 ring-slate-100">
+          <div className="relative flex h-48 w-48 items-center justify-center rounded-[2rem] bg-white p-3 shadow-xl ring-1 ring-slate-100">
             <Image
               src="/hashti-logo.png"
               alt="لوگوی هشتی"
-              width={88}
-              height={88}
+              width={300}
+              height={300}
               priority
               className="h-full w-full object-contain"
             />
           </div>
 
-          <div className="text-center">
-            <p className="text-2xl font-black tracking-tight text-[#043873]">
-              هشتی
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              سامانه شفاف معاملات ملک
-            </p>
-          </div>
+          
 
-          <div className="h-1.5 w-36 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-[#043873]" />
-          </div>
+          
         </div>
       )}
 
