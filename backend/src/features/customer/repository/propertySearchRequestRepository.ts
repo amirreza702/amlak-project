@@ -17,6 +17,7 @@
  */
 
 import { prisma } from "../../../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 /**
  * ایجاد درخواست جستجوی ملک
@@ -115,11 +116,30 @@ export const updatePropertySearchRequest = async (
   * customerId عمداً در خروجی وجود ندارد.
   */
 export const findActivePropertySearchRequests =
-  async () => {
+  async (filters: {
+    city?: string; transactionType?: string; propertyType?: string;
+    minBudget?: number; maxBudget?: number; hashtiVerified?: boolean;
+    createdFrom?: Date; createdTo?: Date;
+  } = {}) => {
+    const where: Prisma.PropertySearchRequestWhereInput = { status: "ACTIVE" };
+    if (filters.city) where.city = { contains: filters.city, mode: "insensitive" };
+    if (filters.transactionType) where.transactionType = filters.transactionType as Prisma.EnumTransactionTypeFilter["equals"];
+    if (filters.propertyType) where.propertyType = filters.propertyType as Prisma.EnumPropertyTypeFilter["equals"];
+    if (filters.hashtiVerified !== undefined) where.hashtiVerified = filters.hashtiVerified;
+    if (filters.minBudget !== undefined || filters.maxBudget !== undefined) {
+      where.budget = {
+        ...(filters.minBudget !== undefined ? { gte: filters.minBudget } : {}),
+        ...(filters.maxBudget !== undefined ? { lte: filters.maxBudget } : {}),
+      };
+    }
+    if (filters.createdFrom || filters.createdTo) {
+      where.createdAt = {
+        ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+        ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+      };
+    }
     return prisma.propertySearchRequest.findMany({
-      where: {
-        status: "ACTIVE",
-      },
+      where,
 
       select: {
         id: true,
