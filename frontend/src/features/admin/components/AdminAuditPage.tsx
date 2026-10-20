@@ -1,31 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { getAdminAudit, type AdminAuditEntry } from "@/features/admin/api/adminApi";
-import { getCurrentUser } from "@/features/auth/api/authApi";
+import { useAdminAuditLog } from "@/features/admin/hooks/useAdminAuditLog";
 
 export default function AdminAuditPage() {
-  const [items, setItems] = useState<AdminAuditEntry[]>([]);
-  const [targetType, setTargetType] = useState("");
-  const [targetId, setTargetId] = useState("");
-  const [actorUserId, setActorUserId] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true); setError("");
-    try {
-      const user = await getCurrentUser();
-      if (user.role !== "HASHTI") throw new Error("دسترسی کارکنان هشتی لازم است.");
-      const result = await getAdminAudit({ targetType, targetId: targetId.trim() || undefined, actorUserId: actorUserId.trim() || undefined, page, limit: 20 });
-      setItems(result.items); setTotal(result.pagination.total); setTotalPages(result.pagination.totalPages);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "دریافت سوابق ناموفق بود."); }
-    finally { setLoading(false); }
-  }, [targetType, targetId, actorUserId, page]);
-  useEffect(() => { void load(); }, [load]);
+  const {
+    items, targetType, setTargetType, targetId, setTargetId, actorUserId, setActorUserId,
+    page, setPage, total, totalPages, loading, error, load,
+  } = useAdminAuditLog();
 
   return <main dir="rtl" className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 sm:px-8"><div className="mx-auto max-w-7xl space-y-5">
     <header className="border-b border-slate-200 pb-5"><p className="text-sm font-semibold text-amber-700">هشتی / مدیریت</p><h1 className="mt-1 text-3xl font-black">دفتر سوابق مدیریتی</h1><p className="mt-2 text-sm text-slate-600">سوابق ثبت‌شده در همان تراکنش تغییرات مدیریتی</p></header>
