@@ -3,21 +3,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, LoaderCircle, RefreshCw, Search, XCircle } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-interface VerificationCaseRow {
-  id: string; propertyId: string; status: "PENDING" | "VERIFIED" | "REJECTED";
-  reviewedBy: string | null; reviewedAt: string | null; notes: string | null; createdAt: string;
-  property: {
-    id: string; propertyType: string; city: string; district: string; address: string;
-    owners: Array<{ ownerId: string; share: number; verificationStatus: "PENDING" | "VERIFIED" | "REJECTED"; owner: { firstName: string; lastName: string } }>;
-  };
-}
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) throw new Error(body.message || "Request failed.");
-  return body as T;
-}
+import {
+  getVerificationQueue,
+  reviewVerificationCase,
+  reviewVerificationOwner,
+} from "../api/hashtiVerificationQueueApi";
+import type { VerificationCaseRow } from "../types/hashtiVerificationQueue";
 
 export function HashtiVerificationQueuePanel() {
   const [status, setStatus] = useState("PENDING");
@@ -40,7 +31,7 @@ export function HashtiVerificationQueuePanel() {
       const params = new URLSearchParams({ status, limit: "25", offset: String(offset) });
       if (appliedQuery.trim()) params.set("query", appliedQuery.trim());
       try {
-        const result = await requestJson<{ cases: VerificationCaseRow[]; pagination: { total: number; limit: number; offset: number } }>(`/hashti/verification-cases?${params.toString()}`);
+        const result = await getVerificationQueue(params);
         if (active) { setCases(result.cases); setTotal(result.pagination.total); }
       } catch (cause) {
         if (active) { setError(cause instanceof Error ? cause.message : "دریافت پرونده‌ها ناموفق بود."); setCases([]); }
@@ -58,10 +49,7 @@ export function HashtiVerificationQueuePanel() {
     if (nextStatus === "REJECTED" && notes.trim().length < 3) { setError("برای رد پرونده، دلیل حداقل ۳ کاراکتری لازم است."); return; }
     setBusyId(item.id); setError(null); setMessage(null);
     try {
-      await requestJson(`/verification-cases/${encodeURIComponent(item.id)}/review`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus, notes: notes.trim() || null }),
-      });
+      await reviewVerificationCase(item.id, nextStatus, notes.trim() || null);
       setMessage(nextStatus === "VERIFIED" ? "پرونده تأیید شد و در سوابق ثبت شد." : "پرونده رد شد و دلیل آن در سوابق ثبت شد.");
       setOffset(0); setReload((value) => value + 1);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "رسیدگی به پرونده ناموفق بود."); }
@@ -90,14 +78,7 @@ export function HashtiVerificationQueuePanel() {
     setError(null);
     setMessage(null);
     try {
-      await requestJson(
-        `/properties/${encodeURIComponent(propertyId)}/owners/${encodeURIComponent(ownerId)}/verification`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: nextStatus, reason: reason.trim() }),
-        }
-      );
+      await reviewVerificationOwner(propertyId, ownerId, nextStatus, reason.trim());
       setMessage(`${labels[nextStatus]} انجام شد؛ عامل، زمان، دلیل و تغییر وضعیت در تاریخچه ثبت شد.`);
       setOffset(0);
       setReload((value) => value + 1);
