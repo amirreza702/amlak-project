@@ -85,7 +85,7 @@ export function useHashtiAgentManagement() {
     }
     setBusySubscriptionAgentId(agent.id);
     try {
-      await changeHashtiAgentSubscription(agent.id, isUpgrade ? { planId } : { planId, startsAt, ...(expiresAt ? { expiresAt } : {}) });
+      await changeHashtiAgentSubscription(agent.id, isUpgrade ? { planId } : { planId, startsAt: startsAt as string, ...(expiresAt ? { expiresAt } : {}) });
       setSubscriptionActionMessage(isUpgrade ? "ارتقای اشتراک مشاور ثبت شد." : "اشتراک جدید مشاور ثبت شد.");
       setSelectedPlanByAgent((current) => { const next = { ...current }; delete next[agent.id]; return next; });
       await loadManagedAgents();
