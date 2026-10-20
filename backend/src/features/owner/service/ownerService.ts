@@ -13,6 +13,7 @@
 
 import {
   findOwnerProfileById,
+  findOwnerProfileByUserId,
   findOwnerPropertiesByOwnerId,
   updateOwnerProfile,
 } from "../repository/ownerRepository";
@@ -103,4 +104,34 @@ export const getOwnerPropertiesService = async (ownerId: string) => {
   const owner = await findOwnerProfileById(ownerId);
   if (!owner) throw new Error("Owner not found");
   return findOwnerPropertiesByOwnerId(ownerId);
+};
+
+/**
+ * دریافت پروفایل مالک از نشست معتبر، بدون اتکا به شناسه ذخیره‌شده در مرورگر.
+ */
+export const getCurrentOwnerProfile = async (authenticatedUserId: string) => {
+  const owner = await findOwnerProfileByUserId(authenticatedUserId);
+  if (!owner) throw new Error("OWNER_PROFILE_NOT_FOUND");
+  return owner;
+};
+
+/**
+ * ویرایش پروفایل مالک جاری؛ مالک از نشست تعیین می‌شود.
+ */
+export const updateCurrentOwnerProfileService = async (
+  authenticatedUserId: string,
+  data: { firstName?: string; lastName?: string }
+) => {
+  const owner = await findOwnerProfileByUserId(authenticatedUserId);
+  if (!owner) throw new Error("OWNER_PROFILE_NOT_FOUND");
+  return updateOwnerProfileService(owner.id, data);
+};
+
+/**
+ * دریافت املاک مالک جاری؛ شناسه مالک از نشست معتبر به دست می‌آید.
+ */
+export const getCurrentOwnerPropertiesService = async (authenticatedUserId: string) => {
+  const owner = await findOwnerProfileByUserId(authenticatedUserId);
+  if (!owner) throw new Error("OWNER_PROFILE_NOT_FOUND");
+  return findOwnerPropertiesByOwnerId(owner.id);
 };
