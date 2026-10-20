@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ManagedAgent, AdminSubscriptionPlan, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
-import { getHashtiAgents, getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiSubscriptionPlans, requestJson } from "@/features/hashti/api/hashtiApi";
+import { changeHashtiAgentSubscription, createHashtiDuplicateReview, decideHashtiDuplicateReview, getHashtiAgents, getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiDuplicateMatches, getHashtiDuplicateReviews, getHashtiExactLocationAccessLogs, getHashtiSubscriptionPlans, resetHashtiUserPassword, reviewHashtiAgent, reviewHashtiVerificationCase } from "@/features/hashti/api/hashtiApi";
 import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
@@ -126,17 +126,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setAgentsError(null);
     setAgentsMessage(null);
     try {
-      await requestJson<{ agent: ManagedAgent }>(
-        "/hashti/agents/" + encodeURIComponent(agentId) + "/verification",
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            verificationStatus,
-            notes: agentVerificationNotes.trim() || null,
-          }),
-        }
-      );
+      await reviewHashtiAgent(agentId, { verificationStatus, notes: agentVerificationNotes.trim() || null });
       const labels = {
         PENDING: "وضعیت مشاور به در انتظار بررسی تغییر کرد.",
         VERIFIED: "تأیید مشاور ثبت شد.",
@@ -219,25 +209,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
 
     setBusySubscriptionAgentId(agent.id);
     try {
-      const path = "/hashti/agents/" + encodeURIComponent(agent.id) + "/subscriptions";
-      await requestJson(
-        path,
-        isUpgrade
-          ? {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ planId }),
-            }
-          : {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                planId,
-                startsAt,
-                ...(expiresAt ? { expiresAt } : {}),
-              }),
-            }
-      );
+      await changeHashtiAgentSubscription(agent.id, isUpgrade ? { planId } : { planId, startsAt, ...(expiresAt ? { expiresAt } : {}) });
 
       setSubscriptionActionMessage(
         isUpgrade
@@ -290,11 +262,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setMatchingError(null);
     setMatchingMessage(null);
     try {
-      const encoded = encodeURIComponent(propertyId.trim());
-      const [matchResponse, reviewResponse] = await Promise.all([
-        requestJson<{ matches: DuplicateMatch[] }>(`/properties/${encoded}/duplicate-matches`),
-        requestJson<{ duplicateReviews: DuplicateReview[] }>(`/properties/${encoded}/duplicate-reviews`),
-      ]);
+      const [matchResponse, reviewResponse] = await Promise.all([getHashtiDuplicateMatches(propertyId.trim()), getHashtiDuplicateReviews(propertyId.trim())]);
       setCandidateMatches(matchResponse.matches);
       setReviews(reviewResponse.duplicateReviews);
       setMatchingMessage("نتایج مشابهت و سوابق بررسی به‌روز شد.");
@@ -313,11 +281,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setMatchingError(null);
     setMatchingMessage(null);
     try {
-      await requestJson(`/properties/${encodeURIComponent(propertyId.trim())}/duplicate-reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidatePropertyId }),
-      });
+      await createHashtiDuplicateReview(propertyId.trim(), candidatePropertyId);
       setMatchingMessage("پروندهٔ بررسی تشابه ایجاد شد.");
       await loadDuplicateWork();
     } catch (error: unknown) {
@@ -332,11 +296,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setMatchingError(null);
     setMatchingMessage(null);
     try {
-      await requestJson(`/duplicate-reviews/${encodeURIComponent(reviewId)}/review`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, notes: reviewNotes.trim() || null }),
-      });
+      await decideHashtiDuplicateReview(reviewId, { decision, notes: reviewNotes.trim() || null });
       setMatchingMessage(decision === "SAME_PROPERTY" ? "دو رکورد به‌عنوان یک ملک ثبت شدند." : "دو رکورد به‌عنوان املاک متفاوت ثبت شدند.");
       await loadDuplicateWork();
     } catch (error: unknown) {
@@ -360,11 +320,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     }
     setResetBusy(true);
     try {
-      await requestJson(`/auth/admin/users/${encodeURIComponent(resetUserId.trim())}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword }),
-      });
+      await resetHashtiUserPassword(resetUserId.trim(), newPassword);
       setNewPassword("");
       setResetMessage("رمز عبور تغییر کرد و نشست‌های قبلی آن حساب باطل شدند.");
     } catch (error: unknown) {
@@ -383,11 +339,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setVerificationError(null);
     setVerificationMessage(null);
     try {
-      await requestJson(`/verification-cases/${encodeURIComponent(verificationCaseId.trim())}/review`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, notes: verificationNotes.trim() || null }),
-      });
+      await reviewHashtiVerificationCase(verificationCaseId.trim(), { status, notes: verificationNotes.trim() || null });
       setVerificationMessage(status === "VERIFIED" ? "پرونده تأیید شد." : "پرونده رد شد.");
     } catch (error: unknown) {
       setVerificationError(error instanceof Error ? error.message : "رسیدگی به پرونده انجام نشد.");
@@ -405,9 +357,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setLogsBusy(true);
     setLogsError(null);
     try {
-      const result = await requestJson<{ accessLogs: ExactLocationLog[] }>(
-        `/properties/${encodeURIComponent(logPropertyId.trim())}/exact-location-access-logs`
-      );
+      const result = await getHashtiExactLocationAccessLogs(logPropertyId.trim());
       setAccessLogs(result.accessLogs);
     } catch (error: unknown) {
       setLogsError(error instanceof Error ? error.message : "دریافت سوابق دسترسی انجام نشد.");
