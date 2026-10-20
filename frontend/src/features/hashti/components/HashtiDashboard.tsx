@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ManagedAgent, AdminSubscriptionPlan, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
-import { requestJson } from "@/features/hashti/api/hashtiApi";
+import { getHashtiAgents, getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiSubscriptionPlans, requestJson } from "@/features/hashti/api/hashtiApi";
 import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
@@ -84,10 +84,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
     setAgentsBusy(true);
     setAgentsError(null);
     try {
-      const result = await requestJson<{
-        agents: ManagedAgent[];
-        pagination: { total: number; limit: number; offset: number };
-      }>("/hashti/agents?verificationStatus=" + verificationFilter + "&limit=100&offset=0");
+      const result = await getHashtiAgents(verificationFilter);
       setManagedAgents(result.agents);
     } catch (error: unknown) {
       setAgentsError(error instanceof Error ? error.message : "دریافت فهرست مشاوران انجام نشد.");
@@ -103,7 +100,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
 
   useEffect(() => {
     let active = true;
-    requestJson<{ plans: AdminSubscriptionPlan[] }>("/subscription-plans")
+    getHashtiSubscriptionPlans()
       .then((result) => {
         if (active) setAdminSubscriptionPlans(result.plans);
       })
@@ -165,9 +162,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       if (adminAuditTargetId.trim()) params.set("targetId", adminAuditTargetId.trim());
       params.set("limit", "100");
       params.set("offset", "0");
-      const result = await requestJson<{ logs: AdminAuditLog[] }>(
-        "/hashti/admin-audit-logs?" + params.toString()
-      );
+      const result = await getHashtiAdminAuditLogs(params);
       setAdminAuditLogs(result.logs);
     } catch (error: unknown) {
       setAdminAuditError(error instanceof Error ? error.message : "دریافت سوابق مدیریتی انجام نشد.");
@@ -275,9 +270,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       if (auditTo) params.set("to", new Date(auditTo).toISOString());
       params.set("limit", "100");
       params.set("offset", "0");
-      const result = await requestJson<{ logs: ContactAccessAuditLog[] }>(
-        "/hashti/contact-access-logs?" + params.toString()
-      );
+      const result = await getHashtiContactAccessLogs(params);
       setAuditLogs(result.logs);
     } catch (error: unknown) {
       setAuditError(error instanceof Error ? error.message : "دریافت گزارش دسترسی تماس انجام نشد.");
