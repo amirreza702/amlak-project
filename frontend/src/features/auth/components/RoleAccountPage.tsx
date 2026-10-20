@@ -11,8 +11,6 @@ import {
   Building2,
   CheckCircle2,
   Home,
-  LogOut,
-  ArrowLeft,
   LoaderCircle,
   LogIn,
   ShieldCheck,
@@ -22,7 +20,6 @@ import {
   AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
-  logoutUser,
   registerUser,
   type UserPublic,
   type UserRole,
@@ -214,17 +211,6 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      setCurrentUser(null);
-      setSuccessMessage(null);
-      setAuthError(null);
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "خروج از حساب انجام نشد.");
-    }
-  };
-
   const changeMode = (mode: AuthMode) => {
     setAuthMode(mode);
     setAuthError(null);
@@ -235,12 +221,6 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
-      <nav aria-label="مسیرهای پنل" className="fixed left-3 top-3 z-50 flex items-center gap-2 sm:left-5 sm:top-4">
-        {currentUser?.role === role && <Link href={role === "OWNER" ? "/owner" : role === "AGENT" ? "/agent" : "/hashti"} aria-label="رفتن به پنل" title="پنل" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-[#043873] shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"><Home className="h-5 w-5" /></Link>}
-        <Link href="/" aria-label="بازگشت به صفحه اصلی" title="بازگشت" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/95 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-100"><ArrowLeft className="h-5 w-5" /></Link>
-        {currentUser?.role === role && <button type="button" onClick={() => void handleLogout()} aria-label="خروج از حساب" title="خروج" className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-white/95 text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50"><LogOut className="h-5 w-5" /></button>}
-      </nav>
-
       <section className={role === "HASHTI" ? "w-full max-w-none px-0 py-4" : "mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12"}>
         <div className="mb-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
