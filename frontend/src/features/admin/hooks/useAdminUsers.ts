@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { getAdminUsers, getCurrentUser, type AdminUser, type UserRole } from "@/features/auth/api/authApi";
-import { getAdminUserDetails, setAdminUserStatus } from "@/features/admin/api/adminApi";
+import { setAdminUserStatus } from "@/features/admin/api/adminApi";
 
 export function useAdminUsers() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
