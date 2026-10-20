@@ -7,14 +7,7 @@ import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPan
 import { OwnerPropertiesPanel } from "./OwnerPropertiesPanel";
 import { useOwnerProfile } from "../hooks/useOwnerProfile";
 import { OwnerProfilePanel } from "./OwnerProfilePanel";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, { credentials: "include", cache: "no-store", ...init });
-  const body = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) throw new Error(body.message || "درخواست به سرور ناموفق بود.");
-  return body as T;
-}
+import { useOwnerAgentAccess } from "../hooks/useOwnerAgentAccess";
 
 export function OwnerDashboard({ user }: { user: UserPublic }) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
@@ -22,32 +15,10 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
     profile, firstName, setFirstName, lastName, setLastName,
     loadingProfile, savingProfile, profileError, message, saveProfile,
   } = useOwnerProfile(user.mobile);
-  const [propertyId, setPropertyId] = useState("");
-  const [agentId, setAgentId] = useState("");
-  const [relationshipBusy, setRelationshipBusy] = useState(false);
-  const [relationshipMessage, setRelationshipMessage] = useState<string | null>(null);
-  const [relationshipError, setRelationshipError] = useState<string | null>(null);
-
-  const setAgentRelationship = async (decision: "approval" | "revoke") => {
-    if (!propertyId.trim() || !agentId.trim()) {
-      setRelationshipError("شناسهٔ ملک و شناسهٔ پروفایل مشاور را وارد کنید.");
-      return;
-    }
-    setRelationshipBusy(true);
-    setRelationshipError(null);
-    setRelationshipMessage(null);
-    try {
-      await requestJson(
-        `/properties/${encodeURIComponent(propertyId.trim())}/agents/${encodeURIComponent(agentId.trim())}/${decision}`,
-        { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) }
-      );
-      setRelationshipMessage(decision === "approval" ? "اجازهٔ فعالیت مشاور روی ملک ثبت شد." : "اجازهٔ فعالیت مشاور روی ملک لغو شد.");
-    } catch (error: unknown) {
-      setRelationshipError(error instanceof Error ? error.message : "تغییر دسترسی مشاور انجام نشد.");
-    } finally {
-      setRelationshipBusy(false);
-    }
-  };
+  const {
+    propertyId, setPropertyId, agentId, setAgentId, relationshipBusy,
+    relationshipMessage, relationshipError, setAgentRelationship,
+  } = useOwnerAgentAccess();
 
   return (
     <div dir="rtl" className="min-h-screen w-full mr-16 space-y-5 overflow-x-hidden bg-slate-50 px-3 py-4 sm:px-5 lg:mr-64 lg:px-6">
