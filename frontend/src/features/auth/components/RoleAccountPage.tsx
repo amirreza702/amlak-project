@@ -167,21 +167,14 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
     try {
       if (authMode === "register") {
         const registrationRole = role as Exclude<UserRole, "HASHTI">;
-        const registration = await registerUser({
+        await registerUser({
           mobile: normalizedMobile,
           password,
           role: registrationRole,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
         });
-        // شناسهٔ پروفایل فقط برای وصل‌شدن رابط به APIهای موجود نگه داشته می‌شود؛
-        // کنترل دسترسی واقعی همچنان باید از نشست سمت سرور انجام شود.
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            `hashti:${role.toLowerCase()}ProfileId:${normalizedMobile}`,
-            registration.user.profileId
-          );
-        }
+
       }
 
       const result = await loginUser(normalizedMobile, password, role);
