@@ -6,6 +6,7 @@ import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { useAgentRequestFilters } from "../hooks/useAgentRequestFilters";
 import { agentApiRequest as requestJson } from "../api/agentApi";
+import type { AgentContactUsage, AgentProfile, ActiveAgentSubscription, ActiveRequest, ContactResult, SubscriptionPlan } from "../types/agent";
 
 
 function displayMoney(value: string | number | null) {
