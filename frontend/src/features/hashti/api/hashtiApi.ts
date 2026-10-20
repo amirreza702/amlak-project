@@ -16,6 +16,9 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
 
 import type {
   AdminAuditLog,
+  DuplicateMatch,
+  DuplicateReview,
+  ExactLocationLog,
   AdminSubscriptionPlan,
   ContactAccessAuditLog,
   ManagedAgent,
@@ -43,4 +46,42 @@ export async function getHashtiContactAccessLogs(
   params: URLSearchParams
 ): Promise<{ logs: ContactAccessAuditLog[] }> {
   return requestJson("/hashti/contact-access-logs?" + params.toString());
+}
+
+
+export async function reviewHashtiAgent(agentId: string, payload: { verificationStatus: "PENDING" | "VERIFIED" | "REJECTED"; notes: string | null }): Promise<{ agent: ManagedAgent }> {
+  return requestJson("/hashti/agents/" + encodeURIComponent(agentId) + "/verification", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+export async function changeHashtiAgentSubscription(agentId: string, payload: { planId: string } | { planId: string; startsAt: string; expiresAt?: string }): Promise<unknown> {
+  const isUpgrade = !("startsAt" in payload);
+  return requestJson("/hashti/agents/" + encodeURIComponent(agentId) + "/subscriptions", { method: isUpgrade ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+export async function getHashtiDuplicateMatches(propertyId: string): Promise<{ matches: DuplicateMatch[] }> {
+  return requestJson("/properties/" + encodeURIComponent(propertyId) + "/duplicate-matches");
+}
+
+export async function getHashtiDuplicateReviews(propertyId: string): Promise<{ duplicateReviews: DuplicateReview[] }> {
+  return requestJson("/properties/" + encodeURIComponent(propertyId) + "/duplicate-reviews");
+}
+
+export async function createHashtiDuplicateReview(propertyId: string, candidatePropertyId: string): Promise<unknown> {
+  return requestJson("/properties/" + encodeURIComponent(propertyId) + "/duplicate-reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidatePropertyId }) });
+}
+
+export async function decideHashtiDuplicateReview(reviewId: string, payload: { decision: "SAME_PROPERTY" | "DIFFERENT_PROPERTY"; notes: string | null }): Promise<unknown> {
+  return requestJson("/duplicate-reviews/" + encodeURIComponent(reviewId) + "/review", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+export async function resetHashtiUserPassword(userId: string, newPassword: string): Promise<unknown> {
+  return requestJson("/auth/admin/users/" + encodeURIComponent(userId) + "/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ newPassword }) });
+}
+
+export async function reviewHashtiVerificationCase(caseId: string, payload: { status: "VERIFIED" | "REJECTED"; notes: string | null }): Promise<unknown> {
+  return requestJson("/verification-cases/" + encodeURIComponent(caseId) + "/review", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+export async function getHashtiExactLocationAccessLogs(propertyId: string): Promise<{ accessLogs: ExactLocationLog[] }> {
+  return requestJson("/properties/" + encodeURIComponent(propertyId) + "/exact-location-access-logs");
 }
