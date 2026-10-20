@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, FileText, LoaderCircle } from "lucide-react";
+import { FileText, LoaderCircle } from "lucide-react";
 import { useCustomerSearchRequest } from "../hooks/useCustomerSearchRequest";
 import type {
   CustomerRequestPropertyType,
@@ -75,26 +74,6 @@ export function CustomerSearchRequestPage() {
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-lg font-black text-[#043873]">هشتی</Link>
-            {authStatus === "customer" && (
-              <Link href="/customer" className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-bold text-[#043873] hover:bg-blue-100">
-                پنل مشتری
-              </Link>
-            )}
-          </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-600 transition hover:text-[#043873]"
-          >
-            <ArrowRight className="h-4 w-4" />
-            بازگشت به صفحه اصلی
-          </Link>
-        </div>
-      </header>
-
       <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
