@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -81,26 +80,18 @@ export function GlobalSessionControl() {
     }
   };
 
-  if (!user) {
-    if (!logoutError) return null;
+  const showHomeButton = pathname !== "/";
 
-    return (
-      <div
-        role="alert"
-        dir="rtl"
-        className="fixed left-4 top-16 z-[2000] rounded-lg bg-white px-3 py-2 text-sm text-red-700 shadow"
-      >
-        {logoutError}
-      </div>
-    );
+  if (!user && !showHomeButton && !logoutError) {
+    return null;
   }
 
   const dashboardHref =
-    user.role === "CUSTOMER"
+    user?.role === "CUSTOMER"
       ? "/customer"
-      : user.role === "OWNER"
+      : user?.role === "OWNER"
         ? "/owner"
-        : user.role === "AGENT"
+        : user?.role === "AGENT"
           ? "/agent"
           : "/hashti";
 
@@ -108,58 +99,78 @@ export function GlobalSessionControl() {
     "inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4F9CF9] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <div
-      className="fixed left-4 top-4 z-[2000] flex items-center gap-2"
-      dir="ltr"
-    >
-      <Link
-        href="/"
-        aria-label="خانه"
-        title="خانه"
-        className={buttonClass}
-        dir="rtl"
-      >
-        <House className="h-4 w-4" />
-        خانه
-      </Link>
+    <>
+      {(showHomeButton || user) && (
+        <div
+          className="fixed left-4 top-4 z-[2000] flex items-center gap-2"
+          dir="ltr"
+        >
+          {showHomeButton && (
+            <Link
+              href="/"
+              aria-label="خانه"
+              title="خانه"
+              className={buttonClass}
+              dir="rtl"
+            >
+              <House className="h-4 w-4" />
+              خانه
+            </Link>
+          )}
 
-      <Link
-        href={dashboardHref}
-        aria-label="پنل من"
-        title="پنل من"
-        className={buttonClass}
-        dir="rtl"
-      >
-        <LayoutDashboard className="h-4 w-4" />
-        پنل
-      </Link>
+          {user && (
+            <>
+              <Link
+                href={dashboardHref}
+                aria-label="پنل من"
+                title="پنل من"
+                className={buttonClass}
+                dir="rtl"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                پنل
+              </Link>
 
-      <button
-        type="button"
-        onClick={() => void handleLogout()}
-        disabled={isSigningOut}
-        aria-label="خروج از حساب کاربری"
-        title="خروج"
-        className={buttonClass}
-        dir="rtl"
-      >
-        {isSigningOut ? (
-          <LoaderCircle className="h-4 w-4 animate-spin" />
-        ) : (
-          <LogOut className="h-4 w-4" />
-        )}
-        {isSigningOut ? "در حال خروج..." : "خروج"}
-      </button>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                disabled={isSigningOut}
+                aria-label="خروج از حساب کاربری"
+                title="خروج"
+                className={buttonClass}
+                dir="rtl"
+              >
+                {isSigningOut ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
+                {isSigningOut ? "در حال خروج..." : "خروج"}
+              </button>
+            </>
+          )}
 
-      {logoutError && (
-        <span
+          {logoutError && (
+            <span
+              role="alert"
+              className="absolute left-0 top-full mt-2 whitespace-nowrap rounded-lg bg-white px-3 py-2 text-sm text-red-700 shadow"
+              dir="rtl"
+            >
+              {logoutError}
+            </span>
+          )}
+        </div>
+      )}
+
+      {logoutError && !showHomeButton && !user && (
+        <div
           role="alert"
-          className="absolute left-0 top-full mt-2 whitespace-nowrap rounded-lg bg-white px-3 py-2 text-sm text-red-700 shadow"
           dir="rtl"
+          className="fixed left-4 top-16 z-[2000] rounded-lg bg-white px-3 py-2 text-sm text-red-700 shadow"
         >
           {logoutError}
-        </span>
+        </div>
       )}
-    </div>
+    </>
   );
 }
