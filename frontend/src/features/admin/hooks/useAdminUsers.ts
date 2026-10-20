@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { getAdminUsers, getCurrentUser, type AdminUser, type UserRole } from "@/features/auth/api/authApi";
-import { setAdminUserStatus } from "@/features/admin/api/adminApi";
+import { getAdminUserDetails, setAdminUserStatus } from "@/features/admin/api/adminApi";
 
 export function useAdminUsers() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
@@ -63,6 +63,15 @@ export function useAdminUsers() {
     setSearch(searchInput.trim());
   }
 
+  async function showUserDetails(user: AdminUser) {
+    try {
+      const result = await getAdminUserDetails(user.id);
+      setSelectedUser(result.item);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : "دریافت جزئیات ناموفق بود.");
+    }
+  }
+
   async function changeUserStatus(user: AdminUser) {
     if (user.id === currentUserId) {
       setError("نمی‌توانید وضعیت حساب خودتان را از این بخش تغییر دهید.");
@@ -83,6 +92,6 @@ export function useAdminUsers() {
   return {
     currentRole, currentUserId, users, searchInput, setSearchInput, search, setSearch, reason, setReason,
     role, setRole, active, setActive, page, setPage, total, totalPages, loading, error,
-    selectedUser, setSelectedUser, submitSearch, changeUserStatus,
+    selectedUser, setSelectedUser, submitSearch, changeUserStatus, showUserDetails,
   };
 }
