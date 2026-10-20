@@ -1,4 +1,4 @@
-interface DuplicateMatch {
+export interface DuplicateMatch {
   property: {
     id: string;
     propertyType: string;
@@ -11,7 +11,7 @@ interface DuplicateMatch {
   distanceMeters: number;
   similarityScore: number;
 }
-interface DuplicateReview {
+export interface DuplicateReview {
   id: string;
   primaryPropertyId: string;
   candidatePropertyId: string;
@@ -21,7 +21,7 @@ interface DuplicateReview {
   createdAt: string;
   reviewedAt: string | null;
 }
-interface ExactLocationLog {
+export interface ExactLocationLog {
   id: string;
   userId: string;
   propertyId: string;
@@ -30,7 +30,7 @@ interface ExactLocationLog {
   user?: { mobile?: string; role?: string };
 }
 
-interface ManagedAgent {
+export interface ManagedAgent {
   id: string;
   firstName: string;
   lastName: string;
@@ -58,14 +58,14 @@ interface ManagedAgent {
   };
 }
 
-interface AdminSubscriptionPlan {
+export interface AdminSubscriptionPlan {
   id: string;
   code: string;
   name: string;
   level: number;
   monthlyContactLimit: number;
 }
-interface ContactAccessAuditLog {
+export interface ContactAccessAuditLog {
   id: string;
   accessedAt: string;
   agent: { id: string; firstName: string; lastName: string; agencyName: string | null; user: { mobile: string } };
@@ -73,7 +73,7 @@ interface ContactAccessAuditLog {
   searchRequest: { id: string; city: string; transactionType: string; propertyType: string; status: string };
 }
 
-interface AdminAuditLog {
+export interface AdminAuditLog {
   id: string;
   actorUserId: string | null;
   actorMobile: string | null;
