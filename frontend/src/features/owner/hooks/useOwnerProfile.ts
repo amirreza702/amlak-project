@@ -39,7 +39,7 @@ export function useOwnerProfile(mobile: string) {
     setProfileError(null);
     setMessage(null);
     try {
-      const result = await requestOwnerJson<OwnerProfile>("/owners/me/profile", {
+      const result = await ownerApiRequest<OwnerProfile>("/owners/me/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim() }),
