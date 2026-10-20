@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { type AdminStaff, getAdminStaff, ADMIN_PERMISSION_OPTIONS, createAdminStaff, updateAdminStaffPermissions } from "@/features/admin/api/adminApi";
+import { type AdminStaff, getAdminStaff, createAdminStaff, updateAdminStaffPermissions } from "@/features/admin/api/adminApi";
 import { getCurrentUser } from "@/features/auth/api/authApi";
 
 export function useAdminStaff() {
