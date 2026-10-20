@@ -61,14 +61,10 @@ export function OwnerPropertiesPanel({ user, mode = "properties" }: { user: { mo
   useEffect(() => {
     let active = true;
     const load = async () => {
-      setLoading(true); setError(null);
-      const ownerId = window.sessionStorage.getItem(`hashti:ownerProfileId:${user.mobile}`);
-      if (!ownerId) {
-        if (active) { setProperties([]); setError("شناسه پروفایل مالک در نشست مرورگر موجود نیست؛ ابتدا دوباره وارد شوید."); setLoading(false); }
-        return;
-      }
+      setLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`${API_URL}/owners/${encodeURIComponent(ownerId)}/properties`, { credentials: "include", cache: "no-store" });
+        const response = await fetch(`${API_URL}/owners/me/properties`, { credentials: "include", cache: "no-store" });
         const body = await response.json().catch(() => ({})) as { message?: string; properties?: OwnerProperty[] };
         if (!response.ok) throw new Error(body.message || "دریافت املاک مالک ناموفق بود.");
         if (active) setProperties(body.properties ?? []);
