@@ -12,8 +12,9 @@ import {
   XCircle,
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
-import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ManagedAgent, AdminSubscriptionPlan, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
+import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ManagedAgent, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
 import { changeHashtiAgentSubscription, createHashtiDuplicateReview, decideHashtiDuplicateReview, getHashtiAgents, getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiDuplicateMatches, getHashtiDuplicateReviews, getHashtiExactLocationAccessLogs, getHashtiSubscriptionPlans, resetHashtiUserPassword, reviewHashtiAgent, reviewHashtiVerificationCase } from "@/features/hashti/api/hashtiApi";
+import { useHashtiSubscriptionPlans } from "@/features/hashti/hooks/useHashtiSubscriptionPlans";
 import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
 import { HashtiVerificationQueuePanel } from "./HashtiVerificationQueuePanel";
@@ -56,8 +57,7 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   const [verificationFilter, setVerificationFilter] = useState<"pending" | "verified" | "rejected" | "all">("pending");
   const [agentVerificationNotes, setAgentVerificationNotes] = useState("");
   const [managedAgents, setManagedAgents] = useState<ManagedAgent[]>([]);
-  const [adminSubscriptionPlans, setAdminSubscriptionPlans] = useState<AdminSubscriptionPlan[]>([]);
-  const [subscriptionPlansError, setSubscriptionPlansError] = useState<string | null>(null);
+  const { adminSubscriptionPlans, subscriptionPlansError } = useHashtiSubscriptionPlans();
   const [selectedPlanByAgent, setSelectedPlanByAgent] = useState<Record<string, string>>({});
   const [subscriptionStartsAt, setSubscriptionStartsAt] = useState("");
   const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState("");
@@ -97,22 +97,6 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
   useEffect(() => {
     void loadManagedAgents();
   }, [loadManagedAgents]);
-
-  useEffect(() => {
-    let active = true;
-    getHashtiSubscriptionPlans()
-      .then((result) => {
-        if (active) setAdminSubscriptionPlans(result.plans);
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setSubscriptionPlansError(
-            error instanceof Error ? error.message : "دریافت پلن‌های اشتراک انجام نشد."
-          );
-        }
-      });
-    return () => { active = false; };
-  }, []);
 
   const reviewAgent = async (
     agentId: string,
