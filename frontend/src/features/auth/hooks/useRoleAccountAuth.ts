@@ -5,7 +5,6 @@ import {
   AUTH_STATE_CHANGE_EVENT,
   getCurrentUser,
   loginUser,
-  logoutUser,
   registerUser,
   type UserPublic,
   type UserRole,
