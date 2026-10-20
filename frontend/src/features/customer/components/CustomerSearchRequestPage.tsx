@@ -61,7 +61,6 @@ export function CustomerSearchRequestPage() {
     authError,
     registrationSuccess,
     submitAuthentication,
-    signOutAndUseCustomerAccount,
     retryLoadCustomerProfile,
     requestValues,
     setRequestField,
@@ -98,27 +97,20 @@ export function CustomerSearchRequestPage() {
           <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-lg font-bold">بازیابی اطلاعات حساب مشتری</h2>
             <p className="text-sm leading-7 text-slate-600">
-              ورود انجام شده، اما دریافت پروفایل مشتری تکمیل نشد. می‌توانید دوباره تلاش کنید یا از حساب خارج شوید و با حساب مشتری وارد شوید.
+              ورود انجام شده، اما دریافت پروفایل مشتری تکمیل نشد. ابتدا دریافت پروفایل را دوباره امتحان کنید؛ در صورت نیاز به خروج، از دکمهٔ سراسری خروج بالای صفحه استفاده کنید.
             </p>
             {authError && <Alert>{authError}</Alert>}
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => void retryLoadCustomerProfile()}
-                disabled={isAuthSubmitting}
-                className="rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#062a5b] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isAuthSubmitting ? "در حال بررسی..." : "تلاش دوباره"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void signOutAndUseCustomerAccount()}
-                disabled={isAuthSubmitting}
-                className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                خروج از حساب
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => void retryLoadCustomerProfile()}
+              disabled={isAuthSubmitting}
+              className="rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#062a5b] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isAuthSubmitting ? "در حال بررسی..." : "تلاش دوباره"}
+            </button>
+            <p className="text-sm text-slate-600">
+              برای خروج از حساب، از دکمهٔ سراسری خروج بالای صفحه استفاده کنید.
+            </p>
           </section>
         )}
 
@@ -126,17 +118,9 @@ export function CustomerSearchRequestPage() {
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-lg font-bold">این بخش مخصوص حساب مشتری است</h2>
             <p className="text-sm leading-7 text-slate-600">
-              در حال حاضر با نقش دیگری وارد شده‌اید. برای ثبت درخواست جست‌وجو باید از حساب مشتری استفاده کنید.
+              در حال حاضر با نقش دیگری وارد شده‌اید. برای ثبت درخواست جست‌وجو باید با حساب مشتری وارد شوید. ابتدا از دکمهٔ سراسری خروج بالای صفحه استفاده کنید و سپس دوباره وارد شوید.
             </p>
             {authError && <Alert>{authError}</Alert>}
-            <button
-              type="button"
-              onClick={() => void signOutAndUseCustomerAccount()}
-              disabled={isAuthSubmitting}
-              className="rounded-xl bg-[#043873] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#062a5b] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isAuthSubmitting ? "در حال خروج..." : "خروج و ورود با حساب مشتری"}
-            </button>
           </div>
         )}
 
