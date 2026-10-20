@@ -9,7 +9,7 @@ import { useOwnerProfile } from "../hooks/useOwnerProfile";
 import { OwnerProfilePanel } from "./OwnerProfilePanel";
 import { useOwnerAgentAccess } from "../hooks/useOwnerAgentAccess";
 
-export function OwnerDashboard({ user }: { user: UserPublic }) {
+export function OwnerDashboard({ user, onToolSelected }: { user: UserPublic; onToolSelected?: () => void }) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const {
     profile, firstName, setFirstName, lastName, setLastName,
@@ -26,7 +26,7 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
         <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">پنل مالک</h2>
         <nav className="grid grid-cols-1 gap-1.5 lg:gap-2" aria-label="ابزارهای مالک">
           {[["profile", "اطلاعات مالک"], ["properties", "مدیریت املاک"], ["agents", "مدیریت مشاوران"], ["agent-access", "دسترسی مشاوران"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
-            <button key={target} type="button" title={label} aria-current={selectedTool === target ? "page" : undefined} onClick={() => setSelectedTool(target)} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
+            <button key={target} type="button" title={label} aria-current={selectedTool === target ? "page" : undefined} onClick={() => { setSelectedTool(target); onToolSelected?.(); }} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
           ))}
         </nav>
       </aside>
