@@ -12,8 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
-import type { DuplicateMatch, DuplicateReview, ExactLocationLog, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
-import { createHashtiDuplicateReview, decideHashtiDuplicateReview, getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiDuplicateMatches, getHashtiDuplicateReviews, getHashtiExactLocationAccessLogs, resetHashtiUserPassword, reviewHashtiVerificationCase } from "@/features/hashti/api/hashtiApi";
+import type { ExactLocationLog, ContactAccessAuditLog, AdminAuditLog } from "@/features/hashti/types/hashti";
+import { getHashtiAdminAuditLogs, getHashtiContactAccessLogs, getHashtiExactLocationAccessLogs, resetHashtiUserPassword, reviewHashtiVerificationCase } from "@/features/hashti/api/hashtiApi";
 import { useHashtiAgentManagement } from "@/features/hashti/hooks/useHashtiAgentManagement";
 import { UserNotificationsPanel } from "@/features/notification/components/UserNotificationsPanel";
 import { HashtiUserManagementPanel } from "./HashtiUserManagementPanel";
@@ -32,14 +32,10 @@ function idText(value: string) {
 export function HashtiDashboard({ user }: { user: UserPublic }) {
   // تا پیش از انتخاب ابزار، فضای اصلی پنل خالی می‌ماند.
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [propertyId, setPropertyId] = useState("");
-  const [candidateMatches, setCandidateMatches] = useState<DuplicateMatch[]>([]);
-  const [reviews, setReviews] = useState<DuplicateReview[]>([]);
-  const [matchingBusy, setMatchingBusy] = useState(false);
-  const [matchingError, setMatchingError] = useState<string | null>(null);
-  const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
-  const [reviewNotes, setReviewNotes] = useState("");
-  const [busyReviewId, setBusyReviewId] = useState<string | null>(null);
+  const {
+    propertyId, setPropertyId, candidateMatches, reviews, matchingBusy, matchingError, matchingMessage,
+    reviewNotes, setReviewNotes, busyReviewId, loadDuplicateWork, createReview, decideReview,
+  } = useHashtiDuplicateReview();
   const [resetUserId, setResetUserId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
@@ -112,60 +108,6 @@ export function HashtiDashboard({ user }: { user: UserPublic }) {
       setAuditLogs([]);
     } finally {
       setAuditBusy(false);
-    }
-  };
-
-  const loadDuplicateWork = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    if (!propertyId.trim()) {
-      setMatchingError("شناسهٔ ملک اصلی را وارد کنید.");
-      return;
-    }
-    setMatchingBusy(true);
-    setMatchingError(null);
-    setMatchingMessage(null);
-    try {
-      const [matchResponse, reviewResponse] = await Promise.all([getHashtiDuplicateMatches(propertyId.trim()), getHashtiDuplicateReviews(propertyId.trim())]);
-      setCandidateMatches(matchResponse.matches);
-      setReviews(reviewResponse.duplicateReviews);
-      setMatchingMessage("نتایج مشابهت و سوابق بررسی به‌روز شد.");
-    } catch (error: unknown) {
-      setMatchingError(error instanceof Error ? error.message : "بررسی مغایرت انجام نشد.");
-      setCandidateMatches([]);
-      setReviews([]);
-    } finally {
-      setMatchingBusy(false);
-    }
-  };
-
-  const createReview = async (candidatePropertyId: string) => {
-    if (!propertyId.trim()) return;
-    setBusyReviewId(candidatePropertyId);
-    setMatchingError(null);
-    setMatchingMessage(null);
-    try {
-      await createHashtiDuplicateReview(propertyId.trim(), candidatePropertyId);
-      setMatchingMessage("پروندهٔ بررسی تشابه ایجاد شد.");
-      await loadDuplicateWork();
-    } catch (error: unknown) {
-      setMatchingError(error instanceof Error ? error.message : "ایجاد پروندهٔ بررسی انجام نشد.");
-    } finally {
-      setBusyReviewId(null);
-    }
-  };
-
-  const decideReview = async (reviewId: string, decision: "SAME_PROPERTY" | "DIFFERENT_PROPERTY") => {
-    setBusyReviewId(reviewId);
-    setMatchingError(null);
-    setMatchingMessage(null);
-    try {
-      await decideHashtiDuplicateReview(reviewId, { decision, notes: reviewNotes.trim() || null });
-      setMatchingMessage(decision === "SAME_PROPERTY" ? "دو رکورد به‌عنوان یک ملک ثبت شدند." : "دو رکورد به‌عنوان املاک متفاوت ثبت شدند.");
-      await loadDuplicateWork();
-    } catch (error: unknown) {
-      setMatchingError(error instanceof Error ? error.message : "ثبت تصمیم انجام نشد.");
-    } finally {
-      setBusyReviewId(null);
     }
   };
 
