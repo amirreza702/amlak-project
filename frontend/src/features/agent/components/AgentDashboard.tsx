@@ -444,8 +444,8 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
             )}
           </section>
 
-          <section hidden={selectedTool !== "requests"} className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
-            <h2 className="font-bold">املاک مرتبط و درخواست‌های مالکان</h2>
+          <section hidden={selectedTool !== "owner-requests"} className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
+            <h2 className="font-bold">درخواست‌های مالکان</h2>
             <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی فهرست املاک مرتبط با مشاور و درخواست‌های جداگانهٔ مالکان را برنمی‌گرداند؛ این بخش تا افزودن API مجاز سمت سرور دادهٔ واقعی ندارد.</p>
           </section>
 
