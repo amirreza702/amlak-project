@@ -125,21 +125,16 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
 
   useEffect(() => {
     let active = true;
-    const storageKey = "hashti:agentProfileId:" + user.mobile;
-    const storedProfileId = window.sessionStorage.getItem(storageKey);
     setProfileId(null);
     setProfileState("checking");
     setProfileError(null);
 
     (async () => {
       try {
-        // برای حساب‌های قدیمی نیز شناسه پروفایل فقط از نشست معتبر سرور گرفته می‌شود.
-        const profile = storedProfileId
-          ? await requestJson<AgentProfile>("/agents/" + encodeURIComponent(storedProfileId) + "/profile")
-          : await requestJson<AgentProfile>("/agents/me/profile");
+        // شناسه پروفایل همیشه از نشست معتبر سرور استخراج می‌شود، نه از مرورگر.
+        const profile = await requestJson<AgentProfile>("/agents/me/profile");
 
         if (!active) return;
-        window.sessionStorage.setItem(storageKey, profile.id);
         setProfileId(profile.id);
         setFirstName(profile.firstName);
         setLastName(profile.lastName);
@@ -155,7 +150,7 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
         }
       } catch (error: unknown) {
         if (active) {
-          setProfileState(storedProfileId ? "error" : "unknown");
+          setProfileState("error");
           setProfileError(error instanceof Error ? error.message : "بررسی وضعیت حساب مشاور انجام نشد.");
         }
       }
