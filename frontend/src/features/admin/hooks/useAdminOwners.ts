@@ -83,7 +83,7 @@ export function useAdminOwners() {
   }
   return {
     items, searchInput, setSearchInput, search, setSearch, active, setActive, reason, setReason,
-    page, setPage, total, totalPages, loading, error, history, historyOwner, profile, setProfile,
+    page, setPage, total, totalPages, loading, error, history, setHistory, historyOwner, setHistoryOwner, profile, setProfile,
     editingProfile, setEditingProfile, editFirstName, setEditFirstName, editLastName, setEditLastName,
     editReason, setEditReason, load, changeStatus, showProfile, showHistory, beginProfileEdit, saveProfileEdit,
   };
