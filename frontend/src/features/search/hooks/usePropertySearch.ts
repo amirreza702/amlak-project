@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { searchProperties } from "../api/propertySearchApi";
 
 export type TransactionType =
   | "خرید"
@@ -253,210 +254,15 @@ export function usePropertySearch() {
     return count;
   }
 
-  /**
-   * ----------------------------------------------------------
-   * تبدیل مقدار فارسی UI به مقدار مورد انتظار Backend
-   * ----------------------------------------------------------
-   */
-  function mapTransactionType(
-    value: TransactionType | ""
-  ): string | undefined {
-    switch (value) {
-      case "خرید":
-        return "SALE";
-
-      case "رهن":
-        return "FULL_DEPOSIT";
-
-      case "اجاره":
-        return "RENT";
-
-      case "رهن و اجاره":
-        /*
-         * Backend فعلاً TransactionType جداگانه‌ای
-         * برای رهن و اجاره ندارد.
-         *
-         * در این مرحله ارسال نمی‌کنیم.
-         */
-        return undefined;
-
-      default:
-        return undefined;
-    }
-  }
-
-  /**
-   * ----------------------------------------------------------
-   * تبدیل نوع ملک فارسی به Enum دیتابیس
-   * ----------------------------------------------------------
-   */
-  function mapPropertyType(
-    value: PropertyType | ""
-  ): string | undefined {
-    switch (value) {
-      case "آپارتمان":
-        return "APARTMENT";
-
-      case "خانه":
-        return "HOUSE";
-
-      case "ویلا":
-        return "VILLA";
-
-      case "زمین":
-        return "LAND";
-
-      case "مغازه":
-        return "SHOP";
-
-      case "اداری":
-        return "OFFICE";
-
-      case "باغ":
-        return "GARDEN";
-
-      default:
-        return undefined;
-    }
-  }
-
-  /**
-   * ----------------------------------------------------------
-   * جستجوی واقعی در Backend
-   * ----------------------------------------------------------
-   */
   async function search() {
     setIsSearching(true);
-
     try {
-      const params = new URLSearchParams();
-
-      /**
-       * شهر
-       */
-      if (filters.city.trim()) {
-        params.set("city", filters.city.trim());
-      }
-
-      /**
-       * منطقه
-       */
-      if (filters.district.trim()) {
-        params.set("district", filters.district.trim());
-      }
-
-      /**
-       * نوع معامله
-       */
-      const transactionType = mapTransactionType(
-        filters.transactionType
-      );
-
-      if (transactionType) {
-        params.set("transactionType", transactionType);
-      }
-
-      /**
-       * نوع ملک
-       */
-      const propertyType = mapPropertyType(
-        filters.propertyType
-      );
-
-      if (propertyType) {
-        params.set("propertyType", propertyType);
-      }
-
-      /**
-       * قیمت
-       */
-      if (filters.minPrice.trim()) {
-        params.set("minPrice", filters.minPrice.trim());
-      }
-
-      if (filters.maxPrice.trim()) {
-        params.set("maxPrice", filters.maxPrice.trim());
-      }
-
-      /**
-       * متراژ
-       */
-      if (filters.minArea.trim()) {
-        params.set("minArea", filters.minArea.trim());
-      }
-
-      if (filters.maxArea.trim()) {
-        params.set("maxArea", filters.maxArea.trim());
-      }
-
-      /**
-       * تعداد اتاق
-       */
-      if (filters.rooms.trim()) {
-        params.set("rooms", filters.rooms.trim());
-      }
-
-      /**
-       * سال ساخت
-       */
-      if (filters.minYearBuilt.trim()) {
-        params.set(
-          "yearFrom",
-          filters.minYearBuilt.trim()
-        );
-      }
-
-      if (filters.maxYearBuilt.trim()) {
-        params.set(
-          "yearTo",
-          filters.maxYearBuilt.trim()
-        );
-      }
-
-      /**
-       * ------------------------------------------------------
-       * درخواست واقعی به Backend
-       * ------------------------------------------------------
-       */
-      const queryString = params.toString();
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
-      const response = await fetch(
-        `${apiUrl}/properties/search${
-          queryString ? `?${queryString}` : ""
-        }`
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `خطا در جستجوی ملک: ${response.status}`
-        );
-      }
-
-      const data: PropertySearchResponse =
-        await response.json();
-
-      /**
-       * ذخیره نتایج واقعی
-       */
-      setResults(data.items);
-
-      /**
-       * فیلترهای اعمال‌شده
-       */
-      setAppliedFilters({
-        ...filters,
-      });
+      const items = await searchProperties(filters);
+      setResults(items);
+      setAppliedFilters({ ...filters });
     } catch (error) {
-      console.error(
-        "Property search failed:",
-        error
-      );
-
-      /**
-       * در صورت خطا، نتیجه قبلی را پاک نمی‌کنیم.
-       * این کار باعث نمی‌شود نقشه ناگهان خالی شود.
-       */
+      console.error("Property search failed:", error);
+      // نتیجهٔ قبلی در خطا حفظ می‌شود تا نقشه ناگهان خالی نشود.
     } finally {
       setIsSearching(false);
     }
