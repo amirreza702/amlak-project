@@ -11,16 +11,27 @@ export interface PropertyCoordinates {
 
 interface PropertyLocationPickerProps {
   value: PropertyCoordinates | null;
-  onChange: (value: PropertyCoordinates) => void;
+  onChange: (value: PropertyCoordinates | null) => void;
   city: string;
 }
 
 const defaultCenter: [number, number] = [36.4182, 54.9763];
 
-function MapClickHandler({ onChange }: { onChange: (value: PropertyCoordinates) => void }) {
+function MapClickHandler({
+  onPreview,
+  onSelect,
+}: {
+  onPreview: (value: PropertyCoordinates) => void;
+  onSelect: (value: PropertyCoordinates) => void;
+}) {
   useMapEvents({
     click(event) {
-      onChange({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+      // کلیک معمولی فقط نشانگر پیش‌نمایش را جابه‌جا می‌کند؛ مختصات قبلی را نامعتبر می‌کنیم.
+      onPreview({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+    },
+    dblclick(event) {
+      // دابل‌کلیک تنها رویدادی است که موقعیت را برای ثبت ملک نهایی می‌کند.
+      onSelect({ latitude: event.latlng.lat, longitude: event.latlng.lng });
     },
   });
   return null;
@@ -51,7 +62,6 @@ function MapSizeHandler({ position }: { position: PropertyCoordinates | null }) 
 
     observer?.observe(container);
     window.addEventListener("resize", invalidate);
-    // دو بار پس از چیدمان اولیه بررسی می‌کنیم؛ به‌ویژه وقتی پنل تازه نمایش داده شده است.
     const firstLayout = window.setTimeout(invalidate, 150);
     const secondLayout = window.setTimeout(invalidate, 500);
 
@@ -78,6 +88,7 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [results, setResults] = useState<Array<{ label: string; lat: number; lon: number }>>([]);
+  const [preview, setPreview] = useState<PropertyCoordinates | null>(value);
 
   async function searchPlace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,7 +103,6 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
     const timeoutId = window.setTimeout(() => controller.abort(), 12000);
 
     try {
-      // اگر سرویس جست‌وجو پاسخ ندهد، فرم برای همیشه در حالت انتظار نمی‌ماند.
       const params = new URLSearchParams({
         q: [term, city.trim(), "ایران"].filter(Boolean).join(", "),
         format: "jsonv2",
@@ -134,7 +144,22 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
     }
   }
 
-  const center: [number, number] = value ? [value.latitude, value.longitude] : defaultCenter;
+  const markerPosition = preview ?? value;
+  const center: [number, number] = markerPosition
+    ? [markerPosition.latitude, markerPosition.longitude]
+    : defaultCenter;
+
+  function previewPosition(position: PropertyCoordinates) {
+    setPreview(position);
+    onChange(null);
+    setSearchError("");
+  }
+
+  function selectPosition(position: PropertyCoordinates) {
+    setPreview(position);
+    onChange(position);
+    setSearchError("موقعیت انتخاب شد و مختصات آن برای ثبت ملک تأیید شده است.");
+  }
 
   return (
     <div className="space-y-3">
@@ -164,8 +189,11 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
               <button
                 type="button"
                 onClick={() => {
-                  onChange({ latitude: item.lat, longitude: item.lon });
+                  const position = { latitude: item.lat, longitude: item.lon };
+                  setPreview(position);
+                  onChange(null);
                   setResults([]);
+                  setSearchError("مکان پیدا شد؛ برای تأیید نهایی، روی نقطه دقیق نقشه دابل‌کلیک کنید.");
                 }}
                 className="w-full rounded-lg px-3 py-2 text-right text-sm leading-6 hover:bg-blue-50"
               >
@@ -179,8 +207,9 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
       <div className="h-80 min-h-80 w-full overflow-hidden rounded-xl border border-slate-300 sm:h-[28rem]">
         <MapContainer
           center={center}
-          zoom={value ? 15 : 13}
+          zoom={markerPosition ? 15 : 13}
           scrollWheelZoom
+          doubleClickZoom={false}
           className="h-full w-full"
           style={{ height: "100%", width: "100%" }}
         >
@@ -191,27 +220,38 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
               tileerror: () => setSearchError((current) => current || "بخشی از نقشه بارگذاری نشد؛ اتصال اینترنت یا دسترسی به سرور نقشه را بررسی کنید."),
             }}
           />
-          <MapClickHandler onChange={onChange} />
-          <MapSizeHandler position={value} />
-          {value && (
+          <MapClickHandler onPreview={previewPosition} onSelect={selectPosition} />
+          <MapSizeHandler position={markerPosition} />
+          {markerPosition && (
             <CircleMarker
-              center={[value.latitude, value.longitude]}
-              radius={9}
-              pathOptions={{ color: "#043873", fillColor: "#3b82f6", fillOpacity: 0.9 }}
+              center={[markerPosition.latitude, markerPosition.longitude]}
+              radius={value ? 10 : 8}
+              pathOptions={{
+                color: value ? "#047857" : "#043873",
+                fillColor: value ? "#10b981" : "#3b82f6",
+                fillOpacity: 0.9,
+              }}
             />
           )}
         </MapContainer>
       </div>
 
       <p className="text-xs leading-6 text-slate-500">
-        روی نقشه در محل دقیق ملک کلیک کنید؛ یا نشانی را جست‌وجو و سپس نقطه را روی نقشه اصلاح کنید. انتخاب نقطه الزامی است.
+        کلیک معمولی فقط نشانگر موقت را جابه‌جا می‌کند. برای تأیید موقعیت ملک، روی نقطه دقیق نقشه دابل‌کلیک کنید. انتخاب از نتایج جست‌وجو نیز به‌تنهایی نهایی نیست.
       </p>
 
-      {value && (
-        <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-2">
+      {value ? (
+        <div className="grid gap-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900 sm:grid-cols-2">
           <p>عرض جغرافیایی: <b dir="ltr" className="font-mono">{value.latitude.toFixed(6)}</b></p>
           <p>طول جغرافیایی: <b dir="ltr" className="font-mono">{value.longitude.toFixed(6)}</b></p>
+          <p className="sm:col-span-2 font-bold">موقعیت نهایی انتخاب شده است.</p>
         </div>
+      ) : markerPosition ? (
+        <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+          نشانگر موقت است؛ برای نهایی‌کردن موقعیت، روی همان نقطه دابل‌کلیک کنید.
+        </div>
+      ) : (
+        <p className="text-sm text-amber-800">هنوز موقعیت نهایی انتخاب نشده است.</p>
       )}
     </div>
   );
