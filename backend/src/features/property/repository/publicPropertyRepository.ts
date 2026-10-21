@@ -18,6 +18,13 @@ export async function findPublishedPublicPropertyById(id: string) {
       listing: {
         status: "PUBLISHED",
       },
+      // فقط آگهی دارای تأیید مستقل هشتی و تأیید مالکیت قابل مشاهده عمومی است.
+      verificationCases: {
+        some: { status: "VERIFIED" },
+      },
+      owners: {
+        some: { verificationStatus: "VERIFIED" },
+      },
     },
     select: {
       id: true,
