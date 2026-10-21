@@ -178,14 +178,11 @@ export async function updatePropertyListingStatus(
 
       if (data.status === ListingStatus.PUBLISHED) {
         // تأیید مالکیت و تأیید انتشار دو شرط مستقل‌اند و هر دو لازم هستند.
-        const [verifiedCase, verifiedOwnerCount] = await Promise.all([
+        const [latestVerificationCase, verifiedOwnerCount] = await Promise.all([
           tx.verificationCase.findFirst({
-            where: {
-              propertyId,
-              status: VerificationStatus.VERIFIED,
-            },
-            select: { id: true },
-            orderBy: { reviewedAt: "desc" },
+            where: { propertyId },
+            select: { id: true, status: true },
+            orderBy: { createdAt: "desc" },
           }),
           tx.propertyOwner.count({
             where: {
@@ -195,8 +192,8 @@ export async function updatePropertyListingStatus(
           }),
         ]);
 
-        if (!verifiedCase) {
-          throw new Error("ابتدا باید پرونده انتشار ملک توسط هشتی تأیید شود.");
+        if (!latestVerificationCase || latestVerificationCase.status !== VerificationStatus.VERIFIED) {
+          throw new Error("آخرین پرونده انتشار ملک باید توسط هشتی تأیید شده باشد.");
         }
 
         if (verifiedOwnerCount === 0) {
