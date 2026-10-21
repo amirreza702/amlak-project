@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 export interface PropertyCoordinates {
@@ -89,7 +88,7 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
           <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <MapClickHandler onChange={onChange} />
           <MoveMap position={value} />
-          {value && <Marker position={[value.latitude, value.longitude]} />}
+          {value && <CircleMarker center={[value.latitude, value.longitude]} radius={9} pathOptions={{ color: "#043873", fillColor: "#3b82f6", fillOpacity: 0.9 }} />}
         </MapContainer>
       </div>
       <p className="text-xs leading-6 text-slate-500">روی نقشه در محل دقیق ملک کلیک کنید؛ یا ابتدا نشانی را جست‌وجو و سپس نقطه را روی نقشه اصلاح کنید. انتخاب نقطه الزامی است.</p>
