@@ -178,6 +178,16 @@ export async function registerProperty(
         tx
       );
 
+      // پرونده بررسی هشتی همراه با ثبت مالکیت ادعاشده ایجاد می‌شود تا ثبت ملک
+      // به دلیل شکست درخواست جداگانه فرانت‌اند، از صف بررسی جا نماند.
+      const pendingVerificationCase = await tx.verificationCase.findFirst({
+        where: { propertyId: property.id, status: "PENDING" },
+        select: { id: true },
+      });
+      if (!pendingVerificationCase) {
+        await tx.verificationCase.create({ data: { propertyId: property.id } });
+      }
+
       return { property, propertyOwner, isNewProperty };
     }
 
@@ -206,7 +216,16 @@ export async function registerProperty(
           },
         });
 
-        return { property, propertyAgent, isNewProperty };
+        // پرونده بررسی هشتی در همان تراکنش ثبت ملک/ارتباط مشاور ایجاد می‌شود.
+    const pendingVerificationCase = await tx.verificationCase.findFirst({
+      where: { propertyId: property.id, status: "PENDING" },
+      select: { id: true },
+    });
+    if (!pendingVerificationCase) {
+      await tx.verificationCase.create({ data: { propertyId: property.id } });
+    }
+
+    return { property, propertyAgent, isNewProperty };
       }
 
       throw new Error("این مشاور قبلاً این ملک را ثبت کرده است.");
