@@ -1,4 +1,5 @@
 import {
+  ListingStatus,
   PropertyHistoryAction,
   VerificationStatus,
 } from "@prisma/client";
@@ -100,6 +101,41 @@ export const reviewVerificationCaseService = async (
       data.notes,
       tx
     );
+
+    // رد پرونده توسط هشتی نباید آگهی را در حالت انتشار عمومی باقی بگذارد.
+    if (data.status === VerificationStatus.REJECTED) {
+      const listing = await tx.propertyListing.findUnique({
+        where: { propertyId: verificationCase.propertyId },
+        select: { id: true, status: true },
+      });
+
+      if (
+        listing &&
+        (listing.status === ListingStatus.PUBLISHED ||
+          listing.status === ListingStatus.PENDING_HASHTI_VERIFICATION)
+      ) {
+        await tx.propertyListing.update({
+          where: { id: listing.id },
+          data: {
+            status: ListingStatus.REJECTED,
+            rejectedAt: new Date(),
+          },
+        });
+
+        await createPropertyHistory(
+          {
+            propertyId: verificationCase.propertyId,
+            action: PropertyHistoryAction.LISTING_CHANGED,
+            field: "listing.status",
+            oldValue: listing.status,
+            newValue: ListingStatus.REJECTED,
+            performedBy: data.reviewedBy,
+            reason: data.notes ?? "رد آگهی توسط هشتی",
+          },
+          tx
+        );
+      }
+    }
 
     await createPropertyHistory(
       {
