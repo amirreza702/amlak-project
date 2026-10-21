@@ -242,7 +242,7 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
         </section>
       )}
 
-      {profileState === "verified" && selectedTool === "register-property" && <PropertyRegistrationPanel />}\n\n      {profileState === "verified" && (
+      {profileState === "verified" && selectedTool === "register-property" && <PropertyRegistrationPanel mode="agent" />}\n\n      {profileState === "verified" && (
         <section hidden={selectedTool !== "account"} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900">
           <h2 className="font-bold">حساب مشاور تأیید شده است</h2>
           <p className="mt-2">امکانات پنل بر اساس وضعیت حساب و سطح دسترسی شما نمایش داده می‌شود.</p>
