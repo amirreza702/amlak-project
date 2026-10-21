@@ -25,6 +25,8 @@
  */
 
 import { Request, Response } from "express";
+import { UserRole } from "@prisma/client";
+import type { AuthenticatedRequest } from "../../auth/middleware/authMiddleware";
 
 import {
   updatePropertyListingStatus,
@@ -58,10 +60,16 @@ export async function updatePropertyListingStatusController(
      * ارسال درخواست به Service
      * --------------------------------------------------------
      */
+    const actor = (req as AuthenticatedRequest).user;
+    if (!actor?.role || !Object.values(UserRole).includes(actor.role)) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
     const result =
       await updatePropertyListingStatus(
         propertyId,
-        req.body
+        req.body,
+        actor.role
       );
 
     /**
