@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -40,7 +40,7 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
   const [searchError, setSearchError] = useState("");
   const [results, setResults] = useState<Array<{ label: string; lat: number; lon: number }>>([]);
 
-  async function searchPlace(event: React.FormEvent<HTMLFormElement>) {
+  async function searchPlace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const term = query.trim();
     if (!term) return;
