@@ -95,7 +95,7 @@ export function bindOwnProfileIdToBody(kind: ProfileKind, bodyField: string) {
  * فقط مالک مرتبط یا مشاور فعالِ تأییدشده برای همان ملک، یا کارمند هشتی،
  * می‌تواند از مسیرهای خصوصی ملک عبور کند. role باید قبل از این guard محدود شود.
  */
-export function requirePropertyAccess(paramName = "id", requireVerifiedOwner = true) {
+export function requirePropertyAccess(paramName = "id", requireVerifiedOwner = true, requireApprovedAgent = true) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const user = currentUser(req, res);
     if (!user) return;
@@ -125,7 +125,7 @@ export function requirePropertyAccess(paramName = "id", requireVerifiedOwner = t
             where: {
               agent: { is: { userId: user.id } },
               status: "ACTIVE",
-              approvedByOwner: true,
+              ...(requireApprovedAgent ? { approvedByOwner: true } : {}),
             },
             select: { agentId: true },
             take: 1,
