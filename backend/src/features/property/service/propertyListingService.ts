@@ -179,6 +179,19 @@ export async function createPropertyListingWithInitialPrice(
         tx
       );
 
+      // پرونده بررسی هشتی هم‌زمان با ثبت آگهی ساخته می‌شود؛
+      // بنابراین آگهی ثبت‌شده بدون پرونده وارد صف بررسی نمی‌ماند.
+      const existingVerificationCase = await tx.verificationCase.findFirst({
+        where: { propertyId },
+        select: { id: true },
+      });
+
+      if (!existingVerificationCase) {
+        await tx.verificationCase.create({
+          data: { propertyId },
+        });
+      }
+
       /**
        * ------------------------------------------------------
        * نتیجه Transaction
