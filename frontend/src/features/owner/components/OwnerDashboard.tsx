@@ -5,6 +5,7 @@ import { Building2, LoaderCircle, Save, ShieldCheck, UserRound, UserRoundCheck, 
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
 import { OwnerPropertiesPanel } from "./OwnerPropertiesPanel";
+import { PropertyRegistrationPanel } from "@/features/property/components/PropertyRegistrationPanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 interface OwnerProfile {
@@ -104,6 +105,7 @@ export function OwnerDashboard({ user }: { user: UserPublic }) {
 
   return (
     <div className="space-y-5">
+      <PropertyRegistrationPanel />
       <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard icon={<Building2 className="h-5 w-5" />} label="املاک ثبت‌شده" value="از طریق API فعلی قابل فهرست‌کردن نیست" />
         <SummaryCard icon={<UserRoundCheck className="h-5 w-5" />} label="مشاوران مجاز" value="فهرست کامل در دسترس نیست" />
