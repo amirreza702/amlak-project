@@ -243,6 +243,16 @@ export async function registerProperty(
       },
     });
 
+    // پرونده بررسی هشتی در همان تراکنش ثبت ملک/ارتباط مشاور ایجاد می‌شود.
+    // اگر پرونده در انتظار قبلاً وجود دارد، پرونده تکراری نمی‌سازیم.
+    const pendingVerificationCase = await tx.verificationCase.findFirst({
+      where: { propertyId: property.id, status: "PENDING" },
+      select: { id: true },
+    });
+    if (!pendingVerificationCase) {
+      await tx.verificationCase.create({ data: { propertyId: property.id } });
+    }
+
     return { property, propertyAgent, isNewProperty };
   });
 }
