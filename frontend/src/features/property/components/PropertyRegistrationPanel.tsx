@@ -77,8 +77,16 @@ export function PropertyRegistrationPanel({ mode }: PropertyRegistrationPanelPro
         rentAmount: transactionType === "RENT" ? rentAmount.trim() : null,
       }),
     });
-    const listingBody = await listingResponse.json().catch(() => ({})) as { message?: string };
-    if (!listingResponse.ok) throw new Error(listingBody.message || "ملک ثبت شد، اما ثبت اطلاعات معامله ناموفق بود. می‌توانید ثبت معامله را دوباره امتحان کنید.");
+    const listingBody = await listingResponse.json().catch(() => ({})) as { message?: string; code?: string };
+    if (!listingResponse.ok) {
+      if (listingResponse.status === 401) {
+        throw new Error("نشست ورود معتبر نیست یا منقضی شده است. بدون بستن فرم، دوباره وارد حساب شوید و سپس ثبت معامله را ادامه دهید.");
+      }
+      if (listingBody.code === "AGENT_NOT_VERIFIED") {
+        throw new Error("حساب مشاور هنوز توسط هشتی تأیید نشده است؛ پس از تأیید حساب می‌توانید اطلاعات معامله را ثبت کنید.");
+      }
+      throw new Error(listingBody.message || `ثبت اطلاعات معامله ناموفق بود (خطای ${listingResponse.status}). می‌توانید دوباره تلاش کنید.`);
+    }
     setListingCreated(true);
     setMessage("اطلاعات ملک و معامله با موفقیت ثبت شد. آگهی هنوز منتشر نشده و برای انتشار باید مراحل بررسی و تأیید هشتی طی شود.");
   }
@@ -130,9 +138,18 @@ export function PropertyRegistrationPanel({ mode }: PropertyRegistrationPanelPro
       });
       const body = await response.json().catch(() => ({})) as {
         message?: string;
+        code?: string;
         property?: { id?: string };
       };
-      if (!response.ok) throw new Error(body.message || "ثبت ملک ناموفق بود.");
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("نشست ورود معتبر نیست یا منقضی شده است. فرم حفظ شده؛ دوباره وارد حساب شوید و سپس ثبت را ادامه دهید.");
+        }
+        if (body.code === "AGENT_NOT_VERIFIED") {
+          throw new Error("حساب مشاور هنوز توسط هشتی تأیید نشده است؛ پس از تأیید حساب می‌توانید ملک ثبت کنید.");
+        }
+        throw new Error(body.message || `ثبت ملک ناموفق بود (خطای ${response.status}). اطلاعات را بررسی و دوباره تلاش کنید.`);
+      }
 
       const propertyId = body.property?.id;
       if (!propertyId) {
@@ -163,18 +180,18 @@ export function PropertyRegistrationPanel({ mode }: PropertyRegistrationPanelPro
         <fieldset disabled={Boolean(createdPropertyId) || busy} className="space-y-4 disabled:opacity-70">
           <legend className="mb-3 text-base font-bold">۱. مشخصات ملک</legend>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-1.5 text-sm font-semibold">نوع ملک
+            <label className="space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>نوع ملک
               <select className={inputClass} value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} required>
                 {propertyTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
             </label>
-            <label className="space-y-1.5 text-sm font-semibold">شهر
+            <label className="space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>شهر
               <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} required maxLength={100} />
             </label>
-            <label className="space-y-1.5 text-sm font-semibold">محله / منطقه
+            <label className="space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>محله / منطقه
               <input className={inputClass} value={district} onChange={(e) => setDistrict(e.target.value)} required maxLength={120} />
             </label>
-            <label className="space-y-1.5 text-sm font-semibold">نشانی ملک
+            <label className="space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>نشانی ملک
               <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} required maxLength={500} />
             </label>
             <label className="space-y-1.5 text-sm font-semibold">کد پستی (اختیاری)
@@ -192,30 +209,30 @@ export function PropertyRegistrationPanel({ mode }: PropertyRegistrationPanelPro
           </div>
 
           <fieldset className="rounded-xl border border-slate-200 p-4">
-            <legend className="px-2 text-sm font-bold">موقعیت جغرافیایی (اجباری)</legend>
+            <legend className="px-2 text-sm font-bold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>موقعیت جغرافیایی (اجباری)</legend>
             <PropertyLocationPicker value={coordinates} onChange={setCoordinates} city={city} />
           </fieldset>
         </fieldset>
 
         <fieldset disabled={listingCreated || busy} className="space-y-4 rounded-xl border border-slate-200 p-4 disabled:opacity-70">
           <legend className="px-2 text-base font-bold">۲. نوع معامله و قیمت</legend>
-          <label className="block space-y-1.5 text-sm font-semibold">نوع معامله
+          <label className="block space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>نوع معامله
             <select className={inputClass} value={transactionType} onChange={(e) => setTransactionType(e.target.value as TransactionType)} required>
               {transactionTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
           {transactionType === "SALE" && (
-            <label className="block space-y-1.5 text-sm font-semibold">قیمت فروش (تومان)
+            <label className="block space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>قیمت فروش (تومان)
               <input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} required />
             </label>
           )}
           {transactionType === "FULL_DEPOSIT" && (
-            <label className="block space-y-1.5 text-sm font-semibold">مبلغ رهن کامل (تومان)
+            <label className="block space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>مبلغ رهن کامل (تومان)
               <input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
             </label>
           )}
           {transactionType === "RENT" && (
-            <label className="block space-y-1.5 text-sm font-semibold">مبلغ اجاره ماهانه (تومان)
+            <label className="block space-y-1.5 text-sm font-semibold"><span aria-hidden="true" className="ml-1 text-red-600">*</span>مبلغ اجاره ماهانه (تومان)
               <input className={inputClass} type="number" min="1" step="1" inputMode="numeric" value={rentAmount} onChange={(e) => setRentAmount(e.target.value)} required />
             </label>
           )}
