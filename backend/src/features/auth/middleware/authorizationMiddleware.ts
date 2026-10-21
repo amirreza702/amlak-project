@@ -92,10 +92,16 @@ export function bindOwnProfileIdToBody(kind: ProfileKind, bodyField: string) {
 }
 
 /**
- * فقط مالک مرتبط یا مشاور فعالِ تأییدشده برای همان ملک، یا کارمند هشتی،
- * می‌تواند از مسیرهای خصوصی ملک عبور کند. role باید قبل از این guard محدود شود.
+ * به‌صورت پیش‌فرض فقط مالک مرتبط یا مشاور تأییدشده برای همان ملک،
+ * یا کارمند هشتی، اجازه دسترسی دارد. پارامتر allowUnapprovedAgent فقط
+ * در مسیر ارسال ملک برای بررسی هشتی اجازه می‌دهد مشاورِ مرتبط و فعال
+ * پیش از تأیید مالک، پرونده بررسی ایجاد کند؛ این مجوز انتشار یا ویرایش ملک نیست.
  */
-export function requirePropertyAccess(paramName = "id", requireVerifiedOwner = true) {
+export function requirePropertyAccess(
+  paramName = "id",
+  requireVerifiedOwner = true,
+  allowUnapprovedAgent = false
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const user = currentUser(req, res);
     if (!user) return;
@@ -125,7 +131,7 @@ export function requirePropertyAccess(paramName = "id", requireVerifiedOwner = t
             where: {
               agent: { is: { userId: user.id } },
               status: "ACTIVE",
-              approvedByOwner: true,
+              ...(!allowUnapprovedAgent ? { approvedByOwner: true } : {}),
             },
             select: { agentId: true },
             take: 1,
