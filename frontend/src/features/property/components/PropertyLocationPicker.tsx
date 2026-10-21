@@ -128,6 +128,13 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
       setResults(places);
       if (places.length === 0) {
         setSearchError("مکانی پیدا نشد؛ عبارت دیگری جست‌وجو کنید یا نقطه را مستقیماً روی نقشه انتخاب کنید.");
+      } else {
+        // پس از جست‌وجو، نقشه فوراً به اولین نتیجه نزدیک می‌شود؛
+        // فهرست نتایج هم باز می‌ماند تا کاربر در صورت نیاز محل دقیق‌تری برگزیند.
+        const firstPlace = places[0];
+        setPreview({ latitude: firstPlace.lat, longitude: firstPlace.lon });
+        onChange(null);
+        setSearchError("نقشه به محدوده مکان پیدا‌شده منتقل شد؛ برای انتخاب نتیجه دقیق‌تر، یکی از نشانی‌های فهرست را بزنید.");
       }
     } catch (cause) {
       if (cause instanceof Error && cause.name === "AbortError") {
