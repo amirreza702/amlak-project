@@ -131,6 +131,14 @@ export async function searchProperties(
     gte: now,
   };
 
+  // جست‌وجوی عمومی فقط آگهی دارای تأیید مستقل هشتی و تأیید مالکیت را برمی‌گرداند.
+  propertyWhere.verificationCases = {
+    some: { status: "VERIFIED" },
+  };
+  propertyWhere.owners = {
+    some: { verificationStatus: "VERIFIED" },
+  };
+
   /**
    * ----------------------------------------------------------
    * فیلتر Listing
