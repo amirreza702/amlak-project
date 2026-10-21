@@ -76,7 +76,7 @@ router.post(
 // Listing، قیمت، وضعیت و ویرایش فقط برای مالک/مشاور مرتبط یا کارکنان هشتی.
 router.post(
   "/properties/:id/listing",
-  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess("id", false, true),
   createPropertyListingController
 );
 router.put(
