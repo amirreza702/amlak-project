@@ -73,10 +73,12 @@ router.post(
   registerPropertyController
 );
 
-// Listing، قیمت، وضعیت و ویرایش فقط برای مالک/مشاور مرتبط یا کارکنان هشتی.
+// ثبت اولیه معامله مجاز است تا پیش از تأیید مالکیت/نمایندگی، اطلاعات در وضعیت پیش‌انتشار ثبت شود.
+// این استثنا فقط برای ساخت Listing است؛ قیمت‌گذاری، انتشار و ویرایش همچنان کنترل‌های سخت‌گیرانه خود را دارند.
 router.post(
   "/properties/:id/listing",
-  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess(),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent,
+  requirePropertyAccess("id", false, false),
   createPropertyListingController
 );
 router.put(
