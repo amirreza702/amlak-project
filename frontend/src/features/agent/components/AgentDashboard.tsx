@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from
 import { BadgeCheck, Contact, FileText, LoaderCircle, LockKeyhole, RefreshCw, Save, ShieldAlert, UserRound } from "lucide-react";
 import type { UserPublic } from "@/features/auth/api/authApi";
 import { UserNotificationsPanel } from "@/shared/components/UserNotificationsPanel";
+import { PropertyRegistrationPanel } from "@/features/property/components/PropertyRegistrationPanel";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -335,6 +336,7 @@ export function AgentDashboard({ user }: { user: UserPublic }) {
 
       {profileState === "verified" && (
         <>
+          <PropertyRegistrationPanel />
           <div className="grid gap-3 sm:grid-cols-3">
             <SummaryCard icon={<BadgeCheck className="h-5 w-5" />} label="وضعیت حساب" value="تأیید شده" />
             <SummaryCard icon={<FileText className="h-5 w-5" />} label="درخواست‌های فعال" value={String(requests.length)} />
