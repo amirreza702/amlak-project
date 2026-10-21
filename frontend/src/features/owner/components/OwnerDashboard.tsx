@@ -68,7 +68,7 @@ export function OwnerDashboard({ user, onToolSelected }: { user: UserPublic; onT
         </div>
       </section>
 
-      <div hidden={selectedTool !== "register-property"}><PropertyRegistrationPanel /></div>
+      <div hidden={selectedTool !== "register-property"}><PropertyRegistrationPanel mode="owner" /></div>
       <div hidden={selectedTool !== "properties"}><OwnerPropertiesPanel user={user} mode="properties" /></div>
       <div hidden={selectedTool !== "agents"}><OwnerPropertiesPanel user={user} mode="agents" /></div>
       <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
