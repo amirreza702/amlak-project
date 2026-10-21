@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -90,8 +90,7 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
   const [results, setResults] = useState<Array<{ label: string; lat: number; lon: number }>>([]);
   const [preview, setPreview] = useState<PropertyCoordinates | null>(value);
 
-  async function searchPlace(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function searchPlace() {
     const term = query.trim();
     if (!term || searching) return;
 
@@ -163,7 +162,7 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
 
   return (
     <div className="space-y-3">
-      <form onSubmit={searchPlace} className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#043873]"
           value={query}
@@ -172,13 +171,14 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
           aria-label="جست‌وجوی مکان روی نقشه"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => void searchPlace()}
           disabled={searching || !query.trim()}
           className="rounded-xl bg-[#043873] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {searching ? "در حال جست‌وجو..." : "جست‌وجو"}
         </button>
-      </form>
+      </div>
 
       {searchError && <p role="status" className="text-xs leading-6 text-amber-800">{searchError}</p>}
 
