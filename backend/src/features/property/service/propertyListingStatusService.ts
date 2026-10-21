@@ -161,6 +161,21 @@ export async function updatePropertyListingStatus(
     async (
       tx: Prisma.TransactionClient
     ) => {
+      // با ارسال مجدد آگهی ردشده برای بررسی، پرونده تازه‌ای برای هشتی ایجاد می‌شود.
+      if (data.status === ListingStatus.PENDING_HASHTI_VERIFICATION) {
+        const latestVerificationCase = await tx.verificationCase.findFirst({
+          where: { propertyId },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, status: true },
+        });
+
+        if (!latestVerificationCase || latestVerificationCase.status === VerificationStatus.REJECTED) {
+          await tx.verificationCase.create({
+            data: { propertyId },
+          });
+        }
+      }
+
       if (data.status === ListingStatus.PUBLISHED) {
         // تأیید مالکیت و تأیید انتشار دو شرط مستقل‌اند و هر دو لازم هستند.
         const [verifiedCase, verifiedOwnerCount] = await Promise.all([
