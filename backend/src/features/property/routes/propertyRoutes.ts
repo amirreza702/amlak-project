@@ -144,7 +144,7 @@ router.post(
 // پرونده تأیید و مدارک آن: فقط طرف مرتبط با ملک یا کارکنان هشتی.
 router.post(
   "/properties/:id/verification",
-  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess("id", false),
+  authMiddleware, requireRole(...propertyManagers), requireVerifiedAgent, requirePropertyAccess("id", false, true),
   createVerificationCaseController
 );
 router.post(
