@@ -2,6 +2,8 @@ import {
   ListingStatus,
   Prisma,
   PropertyHistoryAction,
+  UserRole,
+  VerificationStatus,
 } from "@prisma/client";
 
 import { prisma } from "../../../lib/prisma";
@@ -92,7 +94,8 @@ function calculateConfirmUntil(
 
 export async function updatePropertyListingStatus(
   propertyId: string,
-  data: UpdatePropertyListingStatusInput
+  data: UpdatePropertyListingStatusInput,
+  actorRole: UserRole
 ) {
   const listing =
     await findPropertyListingByPropertyId(propertyId);
@@ -112,6 +115,11 @@ export async function updatePropertyListingStatus(
       listing,
       statusChanged: false,
     };
+  }
+
+  // انتشار نهایی فقط با نقش هشتی امکان‌پذیر است.
+  if (data.status === ListingStatus.PUBLISHED && actorRole !== UserRole.HASHTI) {
+    throw new Error("انتشار آگهی فقط پس از تصمیم هشتی و توسط هشتی امکان‌پذیر است.");
   }
 
   /**
@@ -153,6 +161,34 @@ export async function updatePropertyListingStatus(
     async (
       tx: Prisma.TransactionClient
     ) => {
+      if (data.status === ListingStatus.PUBLISHED) {
+        // تأیید مالکیت و تأیید انتشار دو شرط مستقل‌اند و هر دو لازم هستند.
+        const [verifiedCase, verifiedOwnerCount] = await Promise.all([
+          tx.verificationCase.findFirst({
+            where: {
+              propertyId,
+              status: VerificationStatus.VERIFIED,
+            },
+            select: { id: true },
+            orderBy: { reviewedAt: "desc" },
+          }),
+          tx.propertyOwner.count({
+            where: {
+              propertyId,
+              verificationStatus: VerificationStatus.VERIFIED,
+            },
+          }),
+        ]);
+
+        if (!verifiedCase) {
+          throw new Error("ابتدا باید پرونده انتشار ملک توسط هشتی تأیید شود.");
+        }
+
+        if (verifiedOwnerCount === 0) {
+          throw new Error("تا زمانی که هشتی هویت/مالکیت دست‌کم یک مالک را تأیید نکرده باشد، انتشار آگهی مجاز نیست.");
+        }
+      }
+
       const updatedListing =
         await updatePropertyListing(
           listing.id,
