@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState, type FormEvent } from "react";
 import { Building2, LoaderCircle, MapPin, ShieldCheck } from "lucide-react";
-import { registerProperty, type PropertyRegistrationInput } from "../api/propertyRegistrationApi";
+import { createPropertyVerificationCase, registerProperty, type PropertyRegistrationInput } from "../api/propertyRegistrationApi";
 
 const PropertyLocationPicker = dynamic(
   () => import("./PropertyLocationPicker").then((module) => module.PropertyLocationPicker),
@@ -84,7 +84,17 @@ export function PropertyRegistrationPanel() {
     setSubmitting(true);
     try {
       const result = await registerProperty(payload);
-      setSuccess(`اطلاعات ملک ثبت شد. شناسه ملک: ${result.property?.id ?? "ثبت‌شده"}؛ این پیام به معنی انتشار آگهی نیست و بررسی هشتی لازم است.`);
+      const propertyId = result.property?.id;
+      if (propertyId) {
+        try {
+          await createPropertyVerificationCase(propertyId);
+          setSuccess(`ملک ثبت شد و پرونده بررسی هشتی ایجاد شد. شناسه ملک: ${propertyId}. آگهی هنوز منتشر نشده است.`);
+        } catch (verificationError) {
+          setError(`ملک ثبت شد (شناسه: ${propertyId})، اما ایجاد پرونده بررسی هشتی ناموفق بود: ${verificationError instanceof Error ? verificationError.message : "خطای نامشخص"}. لطفاً ملک را دوباره ثبت نکنید.`);
+        }
+      } else {
+        setSuccess("درخواست ثبت ملک با موفقیت پاسخ گرفت، اما شناسه ملک در پاسخ سرور موجود نبود.");
+      }
       setForm(initialForm);
       setCoordinates(null);
     } catch (cause) {
