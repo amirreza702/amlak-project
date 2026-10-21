@@ -37,12 +37,33 @@ export function PropertyRegistrationPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [recoveryPropertyId, setRecoveryPropertyId] = useState("cde9855b-1865-4bdf-b3a3-dfc785f8b712");
+  const [recoveringCase, setRecoveringCase] = useState(false);
 
   const update = (field: keyof typeof initialForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setError(null);
     setSuccess(null);
   };
+
+  async function retryVerificationCase() {
+    const propertyId = recoveryPropertyId.trim();
+    if (!propertyId) {
+      setError("شناسه ملک را وارد کنید.");
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setRecoveringCase(true);
+    try {
+      await createPropertyVerificationCase(propertyId);
+      setSuccess(`پرونده بررسی هشتی برای ملک ${propertyId} ثبت یا بازیابی شد. اگر وضعیت پرونده در انتظار باشد، در صف تأیید هشتی نمایش داده می‌شود.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "ایجاد پرونده بررسی هشتی ناموفق بود.");
+    } finally {
+      setRecoveringCase(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,6 +132,16 @@ export function PropertyRegistrationPanel() {
         <div>
           <h2 className="text-lg font-bold">ثبت ملک جدید</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">اطلاعات پایه را ثبت کنید. ثبت ملک به‌تنهایی آگهی را منتشر نمی‌کند؛ تأیید هشتی جداگانه است.</p>
+        </div>
+      </div>
+      <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <h3 className="font-semibold">بازیابی پرونده برای ملکی که قبلاً ثبت شده</h3>
+        <p className="text-sm leading-6 text-slate-700">اگر ملک ذخیره شده اما در صف هشتی نیست، شناسه همان ملک را وارد کنید. این کار ملک دیگری ثبت نمی‌کند.</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input dir="ltr" value={recoveryPropertyId} onChange={(event) => setRecoveryPropertyId(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm" aria-label="شناسه ملک موجود" />
+          <button type="button" disabled={recoveringCase} onClick={() => void retryVerificationCase()} className="rounded-lg bg-amber-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            {recoveringCase ? "در حال ایجاد پرونده..." : "ایجاد/بازیابی پرونده هشتی"}
+          </button>
         </div>
       </div>
       <form onSubmit={submit} className="space-y-5">
