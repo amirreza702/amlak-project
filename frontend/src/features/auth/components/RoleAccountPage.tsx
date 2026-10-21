@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
+import { useState } from "react";
 import { useRoleAccountAuth, type AccountPortalRole } from "../hooks/useRoleAccountAuth";
 
 const roleCopy: Record<AccountPortalRole, {
@@ -51,6 +52,7 @@ interface RoleAccountPageProps {
 
 export function RoleAccountPage({ role }: RoleAccountPageProps) {
   const copy = roleCopy[role];
+  const [hasSelectedTool, setHasSelectedTool] = useState(false);
   const {
     authMode, mobile, setMobile, password, setPassword, firstName, setFirstName,
     lastName, setLastName, currentUser, isCheckingSession, isSubmitting, authError,
@@ -61,21 +63,27 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 text-slate-900">
       <section className={role === "HASHTI" ? "w-full max-w-none px-0 py-4" : "mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12"}>
-        <div className="mb-6">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
-            {role === "OWNER" ? (
-              <Building2 className="h-6 w-6" />
-            ) : role === "AGENT" ? (
-              <BriefcaseBusiness className="h-6 w-6" />
-            ) : (
-              <ShieldCheck className="h-6 w-6" />
-            )}
-          </div>
-          <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            {role === "HASHTI" ? "پنل هشتی" : copy.heading}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{copy.description}</p>
-        </div>
+        {!hasSelectedTool && (
+  <div className="mb-6">
+    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#043873]">
+      {role === "OWNER" ? (
+        <Building2 className="h-6 w-6" />
+      ) : role === "AGENT" ? (
+        <BriefcaseBusiness className="h-6 w-6" />
+      ) : (
+        <ShieldCheck className="h-6 w-6" />
+      )}
+    </div>
+
+    <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+      {role === "HASHTI" ? "پنل هشتی" : copy.heading}
+    </h1>
+
+    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+      {copy.description}
+    </p>
+  </div>
+)}
 
         {isCheckingSession ? (
           <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
@@ -99,10 +107,10 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
           </section>
         ) : isAuthenticatedForThisRole && currentUser ? (
           <div className="space-y-5">
-            <p className="text-sm text-slate-600">
+            {!hasSelectedTool && <p className="text-sm text-slate-600">
               برای رفتن به صفحهٔ اصلی یا خروج از حساب، از دکمه‌های سراسری بالای صفحه استفاده کنید.
-            </p>
-                        <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
+            </p>}
+            {!hasSelectedTool && <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
                   <CheckCircle2 className="h-6 w-6" />
@@ -113,10 +121,10 @@ export function RoleAccountPage({ role }: RoleAccountPageProps) {
                   <p className="mt-1 text-xs text-slate-500">حساب فعال: <span dir="ltr">{currentUser.mobile}</span></p>
                 </div>
               </div>
-            </section>
-            {role === "OWNER" && <OwnerDashboard user={currentUser} />}
-            {role === "AGENT" && <AgentDashboard user={currentUser} />}
-            {role === "HASHTI" && <HashtiDashboard user={currentUser} />}
+            </section>}
+            {role === "OWNER" && <OwnerDashboard user={currentUser} onToolSelected={() => setHasSelectedTool(true)} />}
+            {role === "AGENT" && <AgentDashboard user={currentUser} onToolSelected={() => setHasSelectedTool(true)} />}
+            {role === "HASHTI" && <HashtiDashboard user={currentUser} onToolSelected={() => setHasSelectedTool(true)} />}
           </div>
         ) : (
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
