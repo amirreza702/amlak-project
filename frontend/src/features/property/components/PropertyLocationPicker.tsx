@@ -26,11 +26,50 @@ function MapClickHandler({ onChange }: { onChange: (value: PropertyCoordinates) 
   return null;
 }
 
-function MoveMap({ position }: { position: PropertyCoordinates | null }) {
+/**
+ * نقشه گاهی داخل پنل/بخش تازه بازشده اندازه واقعی والد را در شروع تشخیص نمی‌دهد.
+ * تغییر اندازه ظرف را مشاهده می‌کنیم تا نقشه و کاشی‌ها کامل رندر شوند.
+ */
+function MapSizeHandler({ position }: { position: PropertyCoordinates | null }) {
   const map = useMap();
+
   useEffect(() => {
-    if (position) map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 15));
+    const container = map.getContainer();
+    let frame = 0;
+
+    const invalidate = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false });
+      });
+    };
+
+    invalidate();
+    const observer = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(invalidate)
+      : null;
+
+    observer?.observe(container);
+    window.addEventListener("resize", invalidate);
+    // دو بار پس از چیدمان اولیه بررسی می‌کنیم؛ به‌ویژه وقتی پنل تازه نمایش داده شده است.
+    const firstLayout = window.setTimeout(invalidate, 150);
+    const secondLayout = window.setTimeout(invalidate, 500);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", invalidate);
+      window.clearTimeout(firstLayout);
+      window.clearTimeout(secondLayout);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (position) {
+      map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 15));
+    }
   }, [map, position]);
+
   return null;
 }
 
@@ -43,24 +82,54 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
   async function searchPlace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const term = query.trim();
-    if (!term) return;
+    if (!term || searching) return;
+
     setSearching(true);
     setSearchError("");
     setResults([]);
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
     try {
-      // جست‌وجوی نام مکان با Nominatim؛ کاربر قبل از ثبت باید نقطه دقیق را روی نقشه تأیید کند.
-      const params = new URLSearchParams({ q: [term, city.trim(), "ایران"].filter(Boolean).join(", "), format: "jsonv2", limit: "5", "accept-language": "fa" });
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-        headers: { Accept: "application/json" },
+      // اگر سرویس جست‌وجو پاسخ ندهد، فرم برای همیشه در حالت انتظار نمی‌ماند.
+      const params = new URLSearchParams({
+        q: [term, city.trim(), "ایران"].filter(Boolean).join(", "),
+        format: "jsonv2",
+        limit: "5",
+        "accept-language": "fa",
       });
-      if (!response.ok) throw new Error("جست‌وجوی مکان در حال حاضر در دسترس نیست.");
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("سرویس جست‌وجوی مکان پاسخ مناسبی نداد. کمی بعد دوباره تلاش کنید یا نقطه را مستقیماً روی نقشه انتخاب کنید.");
+      }
+
       const data = await response.json() as Array<{ display_name: string; lat: string; lon: string }>;
-      const places = data.map((item) => ({ label: item.display_name, lat: Number(item.lat), lon: Number(item.lon) }));
+      const places = data
+        .map((item) => ({ label: item.display_name, lat: Number(item.lat), lon: Number(item.lon) }))
+        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lon));
+
       setResults(places);
-      if (places.length === 0) setSearchError("مکانی پیدا نشد؛ عبارت دیگری جست‌وجو کنید یا نقطه را روی نقشه انتخاب کنید.");
+      if (places.length === 0) {
+        setSearchError("مکانی پیدا نشد؛ عبارت دیگری جست‌وجو کنید یا نقطه را مستقیماً روی نقشه انتخاب کنید.");
+      }
     } catch (cause) {
-      setSearchError(cause instanceof Error ? cause.message : "جست‌وجوی مکان ناموفق بود.");
+      if (cause instanceof Error && cause.name === "AbortError") {
+        setSearchError("پاسخ جست‌وجوی مکان بیش از ۱۲ ثانیه طول کشید. اتصال اینترنت یا دسترسی به سرویس نقشه را بررسی کنید؛ می‌توانید نقطه را مستقیماً روی نقشه انتخاب کنید.");
+      } else {
+        setSearchError(cause instanceof Error
+          ? cause.message
+          : "جست‌وجوی مکان ناموفق بود. می‌توانید نقطه را مستقیماً روی نقشه انتخاب کنید.");
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setSearching(false);
     }
   }
@@ -70,28 +139,74 @@ export default function PropertyLocationPicker({ value, onChange, city }: Proper
   return (
     <div className="space-y-3">
       <form onSubmit={searchPlace} className="flex flex-col gap-2 sm:flex-row">
-        <input className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#043873]" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجوی نشانی یا مکان روی نقشه" aria-label="جست‌وجوی مکان روی نقشه" />
-        <button type="submit" disabled={searching || !query.trim()} className="rounded-xl bg-[#043873] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{searching ? "در حال جست‌وجو..." : "جست‌وجو"}</button>
+        <input
+          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#043873]"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="جست‌وجوی نشانی یا مکان روی نقشه"
+          aria-label="جست‌وجوی مکان روی نقشه"
+        />
+        <button
+          type="submit"
+          disabled={searching || !query.trim()}
+          className="rounded-xl bg-[#043873] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+        >
+          {searching ? "در حال جست‌وجو..." : "جست‌وجو"}
+        </button>
       </form>
+
       {searchError && <p role="status" className="text-xs leading-6 text-amber-800">{searchError}</p>}
+
       {results.length > 0 && (
         <ul className="max-h-44 space-y-1 overflow-auto rounded-xl border border-slate-200 p-2">
           {results.map((item, index) => (
             <li key={`${item.lat}-${item.lon}-${index}`}>
-              <button type="button" onClick={() => { onChange({ latitude: item.lat, longitude: item.lon }); setResults([]); }} className="w-full rounded-lg px-3 py-2 text-right text-sm leading-6 hover:bg-blue-50">{item.label}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange({ latitude: item.lat, longitude: item.lon });
+                  setResults([]);
+                }}
+                className="w-full rounded-lg px-3 py-2 text-right text-sm leading-6 hover:bg-blue-50"
+              >
+                {item.label}
+              </button>
             </li>
           ))}
         </ul>
       )}
-      <div className="h-72 overflow-hidden rounded-xl border border-slate-300 sm:h-96">
-        <MapContainer center={center} zoom={value ? 15 : 13} scrollWheelZoom className="h-full w-full">
-          <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+      <div className="h-80 min-h-80 w-full overflow-hidden rounded-xl border border-slate-300 sm:h-[28rem]">
+        <MapContainer
+          center={center}
+          zoom={value ? 15 : 13}
+          scrollWheelZoom
+          className="h-full w-full"
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer
+            attribution='&copy; OpenStreetMap contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            eventHandlers={{
+              tileerror: () => setSearchError((current) => current || "بخشی از نقشه بارگذاری نشد؛ اتصال اینترنت یا دسترسی به سرور نقشه را بررسی کنید."),
+            }}
+          />
           <MapClickHandler onChange={onChange} />
-          <MoveMap position={value} />
-          {value && <CircleMarker center={[value.latitude, value.longitude]} radius={9} pathOptions={{ color: "#043873", fillColor: "#3b82f6", fillOpacity: 0.9 }} />}
+          <MapSizeHandler position={value} />
+          {value && (
+            <CircleMarker
+              center={[value.latitude, value.longitude]}
+              radius={9}
+              pathOptions={{ color: "#043873", fillColor: "#3b82f6", fillOpacity: 0.9 }}
+            />
+          )}
         </MapContainer>
       </div>
-      <p className="text-xs leading-6 text-slate-500">روی نقشه در محل دقیق ملک کلیک کنید؛ یا ابتدا نشانی را جست‌وجو و سپس نقطه را روی نقشه اصلاح کنید. انتخاب نقطه الزامی است.</p>
+
+      <p className="text-xs leading-6 text-slate-500">
+        روی نقشه در محل دقیق ملک کلیک کنید؛ یا نشانی را جست‌وجو و سپس نقطه را روی نقشه اصلاح کنید. انتخاب نقطه الزامی است.
+      </p>
+
       {value && (
         <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-2">
           <p>عرض جغرافیایی: <b dir="ltr" className="font-mono">{value.latitude.toFixed(6)}</b></p>
