@@ -40,3 +40,46 @@ export async function createPropertyVerificationCase(propertyId: string) {
   if (!response.ok) throw new Error(result.message || "ایجاد پرونده بررسی هشتی انجام نشد.");
   return result;
 }
+
+
+export type PropertyListingInput = {
+  transactionType: "SALE" | "FULL_DEPOSIT" | "RENT";
+  salePrice?: string;
+  depositAmount?: string;
+  rentAmount?: string;
+};
+
+async function propertyRequest<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
+    cache: "no-store",
+    ...init,
+  });
+  const result = await response.json().catch(() => ({})) as { message?: string };
+  if (!response.ok) throw new Error(result.message || "درخواست ملک انجام نشد.");
+  return result as T;
+}
+
+/** Registers transaction details using the existing listing endpoint. */
+export async function createPropertyListing(propertyId: string, input: PropertyListingInput) {
+  return propertyRequest<{ listing: { id: string; status: string } }>(
+    `/properties/${encodeURIComponent(propertyId)}/listing`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/** Moves a listing through the existing server-side state machine. */
+export async function updatePropertyListingStatus(propertyId: string, status: string) {
+  return propertyRequest<{ listing: { id: string; status: string } }>(
+    `/properties/${encodeURIComponent(propertyId)}/status`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    },
+  );
+}
