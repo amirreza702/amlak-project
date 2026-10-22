@@ -150,6 +150,24 @@ export async function registerProperty(
       );
     }
 
+    // هر ثبت ملک باید پرونده بررسی هشتی داشته باشد؛ پرونده در همان
+    // تراکنش ساخته می‌شود تا ثبت ملک بدون پرونده نیمه‌کاره نماند.
+    const ensurePendingVerificationCase = async () => {
+      const pendingCase = await tx.verificationCase.findFirst({
+        where: {
+          propertyId: property.id,
+          status: "PENDING",
+        },
+        select: { id: true },
+      });
+
+      if (!pendingCase) {
+        await tx.verificationCase.create({
+          data: { propertyId: property.id },
+        });
+      }
+    };
+
     if (isOwnerRegistration) {
       // مالکیت ادعاشده با وضعیت PENDING ذخیره می‌شود و تأیید نهایی جداگانه است.
       const propertyOwner = await createPropertyOwner(
@@ -178,6 +196,7 @@ export async function registerProperty(
         tx
       );
 
+      await ensurePendingVerificationCase();
       return { property, propertyOwner, isNewProperty };
     }
 
@@ -206,7 +225,9 @@ export async function registerProperty(
           },
         });
 
-        return { property, propertyAgent, isNewProperty };
+        await ensurePendingVerificationCase();
+        await ensurePendingVerificationCase();
+    return { property, propertyAgent, isNewProperty };
       }
 
       throw new Error("این مشاور قبلاً این ملک را ثبت کرده است.");
