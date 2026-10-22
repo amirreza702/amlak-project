@@ -70,9 +70,14 @@ export async function setManagedUserStatusController(req: Request, res: Response
   if (typeof isActive !== "boolean") return res.status(400).json({ message: "isActive must be boolean" });
   if (!reason) return res.status(400).json({ message: "A change reason of 3 to 1000 characters is required" });
 
+  const userId = req.params.userId;
+  if (typeof userId !== "string" || !userId.trim()) {
+    return res.status(400).json({ message: "Invalid userId" });
+  }
+
   try {
     const result = await setManagedUserStatusService({
-      userId: req.params.userId, isActive, reason, actorUserId: actor.id, actorMobile: actor.mobile,
+      userId, isActive, reason, actorUserId: actor.id, actorMobile: actor.mobile,
     });
     return res.status(200).json(result);
   } catch (error) {
@@ -115,7 +120,13 @@ export async function updateManagedProfileController(req: Request, res: Response
   const actor = getActor(req);
   if (!actor) return res.status(401).json({ message: "Authentication required" });
   const profileType = req.params.profileType;
-  if (!["customer", "owner", "agent", "hashti"].includes(profileType)) return res.status(400).json({ message: "profileType must be customer, owner, agent, or hashti" });
+  if (typeof profileType !== "string" || !["customer", "owner", "agent", "hashti"].includes(profileType)) {
+    return res.status(400).json({ message: "profileType must be customer, owner, agent, or hashti" });
+  }
+  const profileId = req.params.profileId;
+  if (typeof profileId !== "string" || !profileId.trim()) {
+    return res.status(400).json({ message: "Invalid profileId" });
+  }
 
   const { firstName, lastName, agencyName, address } = req.body ?? {};
   const reason = readReason(req.body?.reason);
@@ -130,7 +141,7 @@ export async function updateManagedProfileController(req: Request, res: Response
 
   try {
     const profile = await updateManagedProfileService({
-      profileType: profileType as ManagedProfileType, profileId: req.params.profileId,
+      profileType: profileType as ManagedProfileType, profileId,
       firstName: firstName.trim(), lastName: lastName.trim(),
       ...(profileType === "agent" && agencyName !== undefined ? { agencyName: typeof agencyName === "string" ? agencyName.trim() || null : null } : {}),
       ...(profileType === "agent" && address !== undefined ? { address: typeof address === "string" ? address.trim() || null : null } : {}),
