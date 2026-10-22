@@ -12,6 +12,7 @@ import {
   deleteSessionByTokenHash,
   resetUserPasswordAndSessions,
   resetUserPasswordAndSessionsWithAudit,
+  listAdminUsers,
 } from "../repository/authRepository";
 
 interface RegisterInput {
