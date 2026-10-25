@@ -390,10 +390,10 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
           <section hidden={selectedTool !== "requests"}>{profileId && <OwnerAgentRequestsPanel agentId={profileId} />}</section>
 
           <div className="grid gap-3 lg:grid-cols-2">
-            <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
           </div>
         </>
       )}
+      <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
     </div>
   );
 }
