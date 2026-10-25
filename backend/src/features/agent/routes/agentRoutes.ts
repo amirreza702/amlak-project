@@ -8,6 +8,11 @@ import {
 import { authMiddleware } from "../../auth/middleware/authMiddleware";
 import { requireRole } from "../../auth/middleware/requireRole";
 import { requireOwnProfile } from "../../auth/middleware/authorizationMiddleware";
+import { requireVerifiedAgent } from "../../auth/middleware/verifiedAgentMiddleware";
+import {
+  accessOwnerRequestContactController,
+  getActiveOwnerAgentRequestsController,
+} from "../../owner/controller/ownerAgentRequestController";
 
 const router = Router();
 
@@ -34,6 +39,24 @@ router.put(
   requireRole(UserRole.AGENT),
   requireOwnProfile("agent", "agentId"),
   updateAgentProfileController
+);
+
+// Public request details omit owner contact and exact address until subscription access is granted.
+router.get(
+  "/agents/:agentId/owner-requests",
+  authMiddleware,
+  requireRole(UserRole.AGENT),
+  requireOwnProfile("agent", "agentId"),
+  requireVerifiedAgent,
+  getActiveOwnerAgentRequestsController
+);
+router.post(
+  "/agents/:agentId/owner-requests/:requestId/contact",
+  authMiddleware,
+  requireRole(UserRole.AGENT),
+  requireOwnProfile("agent", "agentId"),
+  requireVerifiedAgent,
+  accessOwnerRequestContactController
 );
 
 export default router;
