@@ -27,7 +27,7 @@ export function OwnerDashboard({ user, onToolSelected }: { user: UserPublic; onT
       <aside aria-label="ابزارهای پنل مالک" className="fixed inset-y-0 right-0 z-30 w-16 overflow-x-hidden overflow-y-auto border-l border-slate-200 bg-white p-1.5 shadow-sm sm:p-2 lg:w-64 lg:p-3">
         <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">پنل مالک</h2>
         <nav className="grid grid-cols-1 gap-1.5 lg:gap-2" aria-label="ابزارهای مالک">
-          {[["profile", "اطلاعات مالک"], ["register-property", "ثبت ملک"], ["properties", "مدیریت املاک"], ["agents", "مدیریت مشاوران"], ["agent-access", "دسترسی مشاوران"], ["agent-requests", "درخواست مشاور"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
+          {[["profile", "پروفایل"], ["property-management", "مدیریت املاک"], ["agents", "مدیریت مشاوران"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
             <button key={target} type="button" title={label} aria-current={selectedTool === target ? "page" : undefined} onClick={() => { setSelectedTool(target); onToolSelected?.(); }} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
           ))}
         </nav>
@@ -54,7 +54,7 @@ export function OwnerDashboard({ user, onToolSelected }: { user: UserPublic; onT
         />
       </div>
 
-      <section hidden={selectedTool !== "agent-access"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section hidden={selectedTool !== "agents"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2"><Users className="h-5 w-5 text-[#043873]" /><h2 className="text-lg font-bold">تأیید یا لغو دسترسی مشاور برای یک ملک</h2></div>
         <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی عملیات تأیید/لغو را دارد، اما فهرست املاک مالک و مشاوران مرتبط را برنمی‌گرداند. تا تکمیل آن API، شناسه‌های موجود را وارد کنید. سرور همچنان مالکیت و دسترسی را کنترل می‌کند.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -69,10 +69,10 @@ export function OwnerDashboard({ user, onToolSelected }: { user: UserPublic; onT
         </div>
       </section>
 
-      <div hidden={selectedTool !== "register-property"}><PropertyRegistrationPanel mode="owner" /></div>
-      <div hidden={selectedTool !== "properties"}><OwnerPropertiesPanel user={user} mode="properties" /></div>
+      <div hidden={selectedTool !== "property-management"}><PropertyRegistrationPanel mode="owner" /></div>
+      <div hidden={selectedTool !== "property-management"}><OwnerPropertiesPanel user={user} mode="properties" /></div>
       <div hidden={selectedTool !== "agents"}><OwnerPropertiesPanel user={user} mode="agents" /></div>
-      <div hidden={selectedTool !== "agent-requests"}><OwnerAgentRequestsPanel ownerId={profile?.id} /></div>
+      <div hidden={selectedTool !== "agents"}><OwnerAgentRequestsPanel ownerId={profile?.id} /></div>
       <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
     </div>
   );
