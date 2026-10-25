@@ -11,6 +11,11 @@ import {
 import { authMiddleware } from "../../auth/middleware/authMiddleware";
 import { requireRole } from "../../auth/middleware/requireRole";
 import { requireOwnProfile } from "../../auth/middleware/authorizationMiddleware";
+import {
+  closeOwnerAgentRequestController,
+  createOwnerAgentRequestController,
+  getOwnerAgentRequestsController,
+} from "../controller/ownerAgentRequestController";
 
 const router = Router();
 
@@ -60,6 +65,29 @@ router.get(
   requireRole(UserRole.OWNER),
   requireOwnProfile("owner", "ownerId"),
   getOwnerPropertiesController
+);
+
+// Requests for an agent to serve a property are owned and managed by the owner.
+router.post(
+  "/owners/:ownerId/agent-requests",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
+  createOwnerAgentRequestController
+);
+router.get(
+  "/owners/:ownerId/agent-requests",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
+  getOwnerAgentRequestsController
+);
+router.put(
+  "/owners/:ownerId/agent-requests/:requestId/close",
+  authMiddleware,
+  requireRole(UserRole.OWNER),
+  requireOwnProfile("owner", "ownerId"),
+  closeOwnerAgentRequestController
 );
 
 export default router;
