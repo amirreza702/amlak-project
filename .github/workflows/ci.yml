@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/complete-platform-hardening-2026-10-25
 
 permissions:
   contents: read
