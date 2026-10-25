@@ -8,6 +8,7 @@ import { useAgentRequestFilters } from "../hooks/useAgentRequestFilters";
 import { agentApiRequest as requestJson } from "../api/agentApi";
 import type { AgentContactUsage, AgentProfile, ActiveAgentSubscription, ActiveRequest, ContactResult, SubscriptionPlan } from "../types/agent";
 import { PropertyRegistrationPanel } from "@/features/property/components/PropertyRegistrationPanel";
+import { OwnerAgentRequestsPanel } from "./OwnerAgentRequestsPanel";
 
 
 function displayMoney(value: string | number | null) {
@@ -384,10 +385,7 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
             )}
           </section>
 
-          <section hidden={selectedTool !== "owner-requests"} className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
-            <h2 className="font-bold">درخواست‌های مالکان</h2>
-            <p className="mt-2 text-sm leading-7 text-slate-600">API فعلی فهرست املاک مرتبط با مشاور و درخواست‌های جداگانهٔ مالکان را برنمی‌گرداند؛ این بخش تا افزودن API مجاز سمت سرور دادهٔ واقعی ندارد.</p>
-          </section>
+          <section hidden={selectedTool !== "owner-requests"}>{profileId && <OwnerAgentRequestsPanel agentId={profileId} />}</section>
 
           <div className="grid gap-3 lg:grid-cols-2">
             <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
