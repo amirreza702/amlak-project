@@ -207,16 +207,16 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
       <aside aria-label="ابزارهای پنل مشاور" className="fixed inset-y-0 right-0 z-30 w-16 overflow-x-hidden overflow-y-auto border-l border-slate-200 bg-white p-1.5 shadow-sm sm:p-2 lg:w-64 lg:p-3">
         <h2 className="hidden px-3 py-2 text-base font-black text-slate-900 lg:block">پنل مشاور</h2>
         <nav className="grid grid-cols-1 gap-1.5 lg:gap-2" aria-label="ابزارهای مشاور">
-          {[["account", "وضعیت حساب"], ["register-property", "ثبت ملک"], ["subscription", "اشتراک و سهمیه"], ["profile", "پروفایل مشاور"], ["requests", "درخواست‌های مشتریان"], ["owner-requests", "درخواست‌های مالکان"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
+          {[["profile", "پروفایل"], ["properties", "مدیریت املاک"], ["requests", "مدیریت درخواست‌ها"], ["notifications", "اعلان‌ها"]].map(([target, label]) => (
             <button key={target} type="button" title={label} aria-current={selectedTool === target ? "page" : undefined} onClick={() => { setSelectedTool(target); onToolSelected?.(); }} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-1 py-2 text-center text-[11px] font-semibold leading-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#043873] lg:justify-start lg:px-3 lg:text-right lg:text-sm ${selectedTool === target ? "border-[#043873] bg-blue-50 text-[#043873]" : "border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-[#043873]"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label.slice(0,2)}</span></button>
           ))}
         </nav>
       </aside>
-      {profileState === "checking" && selectedTool === "account" && (
+      {profileState === "checking" && selectedTool === "profile" && (
         <section className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600"><LoaderCircle className="h-5 w-5 animate-spin" />در حال بررسی تأیید حساب مشاور...</section>
       )}
 
-      {(profileState === "pending" || profileState === "rejected" || profileState === "unknown" || profileState === "error") && selectedTool === "account" && (
+      {(profileState === "pending" || profileState === "rejected" || profileState === "unknown" || profileState === "error") && selectedTool === "profile" && (
         <section className={`rounded-2xl border p-5 ${profileState === "rejected" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
           <div className="flex items-center gap-3">
             <ShieldAlert className={`h-6 w-6 ${profileState === "rejected" ? "text-red-700" : "text-amber-700"}`} />
@@ -243,15 +243,15 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
         </section>
       )}
 
-      {profileState === "verified" && selectedTool === "register-property" && <PropertyRegistrationPanel mode="agent" />}\n\n      {profileState === "verified" && (
-        <section hidden={selectedTool !== "account"} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900">
+      {profileState === "verified" && selectedTool === "properties" && <PropertyRegistrationPanel mode="agent" />}\n\n      {profileState === "verified" && (
+        <section hidden={selectedTool !== "profile"} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900">
           <h2 className="font-bold">حساب مشاور تأیید شده است</h2>
           <p className="mt-2">امکانات پنل بر اساس وضعیت حساب و سطح دسترسی شما نمایش داده می‌شود.</p>
         </section>
       )}
 
       {profileId && profileState !== "checking" && (
-        <section hidden={selectedTool !== "subscription"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section hidden={selectedTool !== "profile"} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-lg font-bold">اشتراک و سهمیهٔ دسترسی به اطلاعات تماس</h2>
           <p className="mt-2 text-sm leading-7 text-slate-600">
             نمایش اطلاعات این بخش از API سرور انجام می‌شود. تخصیص یا ارتقای اشتراک فعلاً توسط هشتی انجام می‌شود؛ پرداخت آنلاین در این مسیر پیاده‌سازی نشده است.
@@ -385,7 +385,7 @@ export function AgentDashboard({ user, onToolSelected }: { user: UserPublic; onT
             )}
           </section>
 
-          <section hidden={selectedTool !== "owner-requests"}>{profileId && <OwnerAgentRequestsPanel agentId={profileId} />}</section>
+          <section hidden={selectedTool !== "requests"}>{profileId && <OwnerAgentRequestsPanel agentId={profileId} />}</section>
 
           <div className="grid gap-3 lg:grid-cols-2">
             <div hidden={selectedTool !== "notifications"}><UserNotificationsPanel userId={user.id} /></div>
