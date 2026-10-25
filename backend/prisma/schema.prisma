@@ -383,6 +383,7 @@ model Agent {
 //سوابق اشتراک
   subscriptions      AgentSubscription[]
 contactAccessUsages ContactAccessUsage[]
+  ownerAgentRequestAccessLogs OwnerAgentRequestAccessLog[]
 
 
 
