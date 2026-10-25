@@ -13,13 +13,20 @@ export const findActiveOwnerRequestForProperty = (ownerId: string, propertyId: s
   prisma.ownerAgentRequest.findFirst({ where: { ownerId, propertyId, status: "ACTIVE" } });
 
 export const createOwnerAgentRequest = (data: { ownerId: string; propertyId: string; description: string | null }) =>
-  prisma.ownerAgentRequest.create({
-    data,
-    select: {
-      id: true, ownerId: true, propertyId: true, description: true, status: true, createdAt: true,
-      property: { select: { propertyType: true, city: true, district: true, area: true } },
-    },
-  });
+  prisma.$transaction(async (tx) => {
+    const existing = await tx.ownerAgentRequest.findFirst({
+      where: { ownerId: data.ownerId, propertyId: data.propertyId, status: "ACTIVE" },
+      select: { id: true },
+    });
+    if (existing) throw new Error("An active request already exists for this property");
+    return tx.ownerAgentRequest.create({
+      data,
+      select: {
+        id: true, ownerId: true, propertyId: true, description: true, status: true, createdAt: true,
+        property: { select: { propertyType: true, city: true, district: true, area: true } },
+      },
+    });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
 export const findOwnerAgentRequests = (ownerId: string) =>
   prisma.ownerAgentRequest.findMany({
