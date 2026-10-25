@@ -25,12 +25,12 @@ export async function createOwnerAgentRequestController(req: Request, res: Respo
 }
 
 export async function getOwnerAgentRequestsController(req: Request, res: Response) {
-  try { return res.status(200).json({ requests: await getOwnerAgentRequestsService(req.params.ownerId) }); }
+  try { return res.status(200).json({ requests: await getOwnerAgentRequestsService(routeParam(req, "ownerId")) }); }
   catch (e) { console.error("Error listing owner requests:", e); return res.status(500).json({ message: "Internal server error" }); }
 }
 
 export async function closeOwnerAgentRequestController(req: Request, res: Response) {
-  try { return res.status(200).json(await closeOwnerAgentRequestService(req.params.ownerId, routeParam(req, "requestId"))); }
+  try { return res.status(200).json(await closeOwnerAgentRequestService(routeParam(req, "ownerId"), routeParam(req, "requestId"))); }
   catch (e) {
     const message = e instanceof Error ? e.message : "";
     if (message === "Active owner request not found") return res.status(404).json({ message });
@@ -45,7 +45,7 @@ export async function getActiveOwnerAgentRequestsController(_req: Request, res: 
 }
 
 export async function accessOwnerRequestContactController(req: Request, res: Response) {
-  try { return res.status(200).json(await accessOwnerRequestContactService(routeParam(req, "agentId"), req.params.requestId)); }
+  try { return res.status(200).json(await accessOwnerRequestContactService(routeParam(req, "agentId"), routeParam(req, "requestId"))); }
   catch (e) {
     const message = e instanceof Error ? e.message : "";
     if (message === "Active owner request not found") return res.status(404).json({ message });
