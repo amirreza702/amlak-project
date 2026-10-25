@@ -347,6 +347,7 @@ model Owner {
 
   properties  PropertyOwner[]
   evaluations Evaluation[]
+  agentRequests OwnerAgentRequest[]
 
   @@map("owners")
 }
@@ -563,6 +564,7 @@ model Property {
 
   owners PropertyOwner[]
   agents PropertyAgent[]
+  ownerAgentRequests OwnerAgentRequest[]
 
   media PropertyMedia[]
 
@@ -649,6 +651,45 @@ model PropertyOwner {
   @@id([propertyId, ownerId])
   @@index([ownerId])
   @@map("property_owners")
+}
+
+
+// ============================================================
+// OWNER REQUEST FOR AGENT SERVICES
+// ============================================================
+
+model OwnerAgentRequest {
+  id          String   @id @default(uuid())
+  ownerId     String
+  propertyId  String
+  description String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner    Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  accessLogs OwnerAgentRequestAccessLog[]
+
+  @@index([ownerId, createdAt])
+  @@index([propertyId, status])
+  @@index([status, createdAt])
+  @@map("owner_agent_requests")
+}
+
+model OwnerAgentRequestAccessLog {
+  id                   String   @id @default(uuid())
+  agentId              String
+  ownerAgentRequestId  String
+  accessedAt           DateTime @default(now())
+
+  agent       Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  ownerRequest OwnerAgentRequest @relation(fields: [ownerAgentRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, ownerAgentRequestId])
+  @@index([agentId, accessedAt])
+  @@index([ownerAgentRequestId])
+  @@map("owner_agent_request_access_logs")
 }
 
 // ============================================================
